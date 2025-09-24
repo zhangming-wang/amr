@@ -1,0 +1,11 @@
+# ninja log v5
+6	588	1758529698322342219	pc_software_autogen/timestamp	4bc165bdf765620b
+588	8706	1758529706444480336	CMakeFiles/pc_software.dir/pc_software_autogen/mocs_compilation.cpp.o	149c82f86d1959e7
+589	12881	1758529710593550685	CMakeFiles/pc_software.dir/src/nodeqthread/nodeqthread.cpp.o	17fd1e0cb26f6c03
+6	588	1758529698322342219	pc_software_autogen/mocs_compilation.cpp	4bc165bdf765620b
+6	588	1758529698322342219	/home/linux/work/ROS2-Car/ros2_code/my_build/pc_software_autogen/timestamp	4bc165bdf765620b
+6	588	1758529698322342219	/home/linux/work/ROS2-Car/ros2_code/my_build/pc_software_autogen/mocs_compilation.cpp	4bc165bdf765620b
+588	7613	1758529705357461883	CMakeFiles/pc_software.dir/src/main.cpp.o	847f0847f010a296
+589	9670	1758529707401496575	CMakeFiles/pc_software.dir/src/qcustomplot/qcustomplot.cpp.o	f9c29036f4475038
+588	8724	1758529706464480676	CMakeFiles/pc_software.dir/src/mainwindow/mainwindow.cpp.o	5e7ee7332f304260
+12882	14741	1758529712475582551	pc_software	fe09212b16b73c80
