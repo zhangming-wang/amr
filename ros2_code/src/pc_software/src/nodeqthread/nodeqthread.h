@@ -83,19 +83,15 @@ private:
 
     rclcpp::Client<motion_params_service::srv::MotionParamsService>::SharedPtr motion_params_client_;
 
-    std::shared_ptr<QTimer> watch_dog_timer_;
-    std::atomic<bool> micro_ros_is_online_, command_running_;
+    std::atomic<bool> micro_ros_is_online_;
 
     void recv_motion_status_msg(const motion_status_msgs::msg::MotionStatus::SharedPtr msg);
     // void recv_odom_msg(const nav_msgs::msg::Odometry::SharedPtr msg);
     void recv_serial_msg(const std_msgs::msg::String::SharedPtr msg);
 
-    void on_watch_dog_timer_timeout();
-    void on_stop_watch_dog_timer();
-    void on_start_watch_dog_timer();
-
     void _publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist);
     void _ask_motion_params_service(motion_params_service::srv::MotionParamsService::Request::SharedPtr request);
+    void _send_heartbeat_request();
 
     void _run_command(const Command &command);
 

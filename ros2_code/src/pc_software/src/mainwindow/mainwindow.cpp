@@ -22,6 +22,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(ui->pushButton_move_back, &QPushButton::clicked, this, &MainWindow::move_back);
     connect(ui->pushButton_move_left, &QPushButton::clicked, this, &MainWindow::move_left);
     connect(ui->pushButton_move_right, &QPushButton::clicked, this, &MainWindow::move_right);
+    connect(ui->pushButton_move_front, &QPushButton::clicked, this, &MainWindow::move_front);
+    connect(ui->pushButton_move_left_front, &QPushButton::clicked, this, &MainWindow::move_left_front);
+    connect(ui->pushButton_move_left_back, &QPushButton::clicked, this, &MainWindow::move_left_back);
+    connect(ui->pushButton_move_right_front, &QPushButton::clicked, this, &MainWindow::move_right_front);
+    connect(ui->pushButton_move_right_back, &QPushButton::clicked, this, &MainWindow::move_right_back);
+    connect(ui->pushButton_turn_left, &QPushButton::clicked, this, &MainWindow::turn_left);
+    connect(ui->pushButton_turn_right, &QPushButton::clicked, this, &MainWindow::turn_right);
 
     connect(ui->pushButton_write_params, &QPushButton::clicked, this, &MainWindow::on_write_params);
     connect(ui->pushButton_read_params, &QPushButton::clicked, this, &MainWindow::on_read_params);
@@ -40,6 +47,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(ui->pushButton_show_dockWidget, &QPushButton::clicked, this, [this]() { ui->dockWidget_set->show(); });
 
     connect(ui->horizontalSlider_speed_percent, &QSlider::sliderReleased, this, &MainWindow::set_speed_percent);
+
+    connect(ui->checkBox_enable_pub_motion_status, &QCheckBox::stateChanged, this, &MainWindow::set_enable_pub_motion_status);
 
     connect(ui->checkBox_enable_speed_plan, &QCheckBox::stateChanged, this, &MainWindow::set_speed_plan_state);
 
@@ -286,54 +295,85 @@ void MainWindow::_initStatusBar() {
 
 void MainWindow::_initGamepad() {
     gamepad_ = std::make_shared<QGamepad>(0);
-    connect(gamepad_.get(), &QGamepad::axisLeftXChanged, this, [this](double) {
-        std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
-        twist->linear.x = gamepad_->axisLeftY() * -0.4;
-        twist->angular.z = gamepad_->axisLeftX() * -4.5;
-        auto cmd_string = _get_cmd_string_prefix() + "手柄遥感指令";
-        _publish_twist(twist, cmd_string);
-    });
+    // connect(gamepad_.get(), &QGamepad::axisLeftXChanged, this, [this](double) {
+    //     std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
+    //     twist->linear.x = gamepad_->axisLeftY() * -0.4;
+    //     twist->angular.z = gamepad_->axisLeftX() * -4.5;
+    //     auto cmd_string = _get_cmd_string_prefix() + "手柄遥感指令";
+    //     _publish_twist(twist, cmd_string);
+    // });
 
-    connect(gamepad_.get(), &QGamepad::axisLeftXChanged, this, [this](double) {
-        std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
-        twist->linear.x = gamepad_->axisLeftY() * -0.4;
-        twist->angular.z = gamepad_->axisLeftX() * -4.5;
-        auto cmd_string = _get_cmd_string_prefix() + "手柄遥感指令";
-        _publish_twist(twist, cmd_string);
-    });
+    // connect(gamepad_.get(), &QGamepad::axisLeftXChanged, this, [this](double) {
+    //     std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
+    //     twist->linear.x = gamepad_->axisLeftY() * -0.4;
+    //     twist->angular.z = gamepad_->axisLeftX() * -4.5;
+    //     auto cmd_string = _get_cmd_string_prefix() + "手柄遥感指令";
+    //     _publish_twist(twist, cmd_string);
+    // });
 
+    // connect(gamepad_.get(), &QGamepad::buttonUpChanged, this, [this](bool value) {
+    //     if (value) {
+    //         ui->pushButton_move_front->click();
+    //     } else {
+    //         ui->pushButton_stop_move->click();
+    //     }
+    // });
+    // connect(gamepad_.get(), &QGamepad::buttonDownChanged, this, [this](bool value) {
+    //     if (value) {
+    //         ui->pushButton_move_back->click();
+    //     } else {
+    //         ui->pushButton_stop_move->click();
+    //     }
+    // });
+    // connect(gamepad_.get(), &QGamepad::buttonLeftChanged, this, [this](bool value) {
+    //     if (value) {
+    //         ui->pushButton_move_left->click();
+    //     } else {
+    //         ui->pushButton_stop_move->click();
+    //     }
+    // });
+    // connect(gamepad_.get(), &QGamepad::buttonRightChanged, this, [this](bool value) {
+    //     if (value) {
+    //         ui->pushButton_move_right->click();
+    //     } else {
+    //         ui->pushButton_stop_move->click();
+    //     }
+    // });
     connect(gamepad_.get(), &QGamepad::buttonGuideChanged, this, [this](bool) {
-        ui->pushButton_stop_move->click();
+        ui->pushButton_brake->click();
     });
+    connect(gamepad_.get(), &QGamepad::buttonXChanged, this, &MainWindow::on_gamepad_set_move);
+    connect(gamepad_.get(), &QGamepad::buttonYChanged, this, &MainWindow::on_gamepad_set_move);
+    connect(gamepad_.get(), &QGamepad::buttonAChanged, this, &MainWindow::on_gamepad_set_move);
+    connect(gamepad_.get(), &QGamepad::buttonBChanged, this, &MainWindow::on_gamepad_set_move);
+    connect(gamepad_.get(), &QGamepad::buttonL1Changed, this, &MainWindow::on_gamepad_set_move);
+    connect(gamepad_.get(), &QGamepad::buttonR1Changed, this, &MainWindow::on_gamepad_set_move);
+}
 
-    connect(gamepad_.get(), &QGamepad::buttonYChanged, this, [this](bool value) {
-        if (value) {
-            ui->pushButton_move_front->click();
-        } else {
-            ui->pushButton_stop_move->click();
-        }
-    });
-    connect(gamepad_.get(), &QGamepad::buttonAChanged, this, [this](bool value) {
-        if (value) {
-            ui->pushButton_move_back->click();
-        } else {
-            ui->pushButton_stop_move->click();
-        }
-    });
-    connect(gamepad_.get(), &QGamepad::buttonXChanged, this, [this](bool value) {
-        if (value) {
-            ui->pushButton_move_left->click();
-        } else {
-            ui->pushButton_stop_move->click();
-        }
-    });
-    connect(gamepad_.get(), &QGamepad::buttonBChanged, this, [this](bool value) {
-        if (value) {
-            ui->pushButton_move_right->click();
-        } else {
-            ui->pushButton_stop_move->click();
-        }
-    });
+void MainWindow::on_gamepad_set_move() {
+    if (!gamepad_->buttonX() && gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_front->click();
+    } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_back->click();
+    } else if (gamepad_->buttonX() && !gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_left->click();
+    } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && !gamepad_->buttonA() && gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_right->click();
+    } else if (gamepad_->buttonX() && gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_left_front->click();
+    } else if (gamepad_->buttonX() && !gamepad_->buttonY() && gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_left_back->click();
+    } else if (!gamepad_->buttonX() && gamepad_->buttonY() && !gamepad_->buttonA() && gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_right_front->click();
+    } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && gamepad_->buttonA() && gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_move_right_back->click();
+    } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_turn_left->click();
+    } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && gamepad_->buttonR1()) {
+        ui->pushButton_turn_right->click();
+    } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
+        ui->pushButton_stop_move->click();
+    }
 }
 
 QString MainWindow::_get_cmd_string_prefix() {
@@ -484,6 +524,14 @@ void MainWindow::set_speed_plan_state() {
     _ask_motion_params_service(request, cmd_string);
 }
 
+void MainWindow::set_enable_pub_motion_status() {
+    motion_params_service::srv::MotionParamsService::Request::SharedPtr request(std::make_shared<motion_params_service::srv::MotionParamsService::Request>());
+    request->mode = ServiceType::SetEnablePubMotionStatus;
+    request->enable_pub_motion_status = ui->checkBox_enable_pub_motion_status->isChecked();
+    auto cmd_string = _get_cmd_string_prefix() + "设置调试模式指令";
+    _ask_motion_params_service(request, cmd_string);
+}
+
 void MainWindow::on_read_params() {
     motion_params_service::srv::MotionParamsService::Request::SharedPtr request(std::make_shared<motion_params_service::srv::MotionParamsService::Request>());
     request->mode = ServiceType::ReadParams;
@@ -493,28 +541,22 @@ void MainWindow::on_read_params() {
 
 void MainWindow::on_write_params() {
     motion_params_service::srv::MotionParamsService::Request::SharedPtr request(std::make_shared<motion_params_service::srv::MotionParamsService::Request>());
-    if (ui->doubleSpinBox_max_v->value() <= 0) {
-        QMessageBox::critical(this, "错误", "最大速度参数不能为负数或零，写入失败！");
-        return;
-    }
-    if (ui->doubleSpinBox_max_acc->value() <= 0) {
-        QMessageBox::critical(this, "错误", "最大加速度参数不能为负数或零，写入失败！");
-        return;
-    }
-    if (ui->doubleSpinBox_jerk->value() <= 0) {
-        QMessageBox::critical(this, "错误", "加加速度参数不能为负数或零，写入失败！");
-        return;
-    }
-    if (ui->spinBox_millseconds->value() <= 0) {
-        QMessageBox::critical(this, "错误", "时间周期参数不能为负数或零，写入失败！");
-        return;
-    }
     request->mode = ServiceType::WriteParams;
 
     request->position_p = ui->doubleSpinBox_position_p->value();
     request->position_i = ui->doubleSpinBox_position_i->value();
     request->position_d = ui->doubleSpinBox_position_d->value();
     request->position_max_total_integral = ui->doubleSpinBox_position_max_total_integral->value();
+
+    request->motor_enable_flags = 0;
+    if (ui->checkBox_enable_left_front_motor->isChecked())
+        request->motor_enable_flags |= 0x01;
+    if (ui->checkBox_enable_left_back_motor->isChecked())
+        request->motor_enable_flags |= 0x02;
+    if (ui->checkBox_enable_right_front_motor->isChecked())
+        request->motor_enable_flags |= 0x04;
+    if (ui->checkBox_enable_right_back_motor->isChecked())
+        request->motor_enable_flags |= 0x08;
 
     request->line_speed_p = ui->doubleSpinBox_line_speed_p->value();
     request->line_speed_i = ui->doubleSpinBox_line_speed_i->value();
@@ -655,6 +697,15 @@ void MainWindow::on_recv_motion_params_service_response(motion_params_service::s
         ui->checkBox_enable_speed_plan->setChecked(response->enable_speed_plan);
         ui->checkBox_enable_speed_plan->blockSignals(false);
 
+        ui->checkBox_enable_pub_motion_status->blockSignals(true);
+        ui->checkBox_enable_pub_motion_status->setChecked(response->enable_pub_motion_status);
+        ui->checkBox_enable_pub_motion_status->blockSignals(false);
+
+        ui->checkBox_enable_left_front_motor->setChecked(response->motor_enable_flags & 0x01);
+        ui->checkBox_enable_left_back_motor->setChecked(response->motor_enable_flags & 0x02);
+        ui->checkBox_enable_right_front_motor->setChecked(response->motor_enable_flags & 0x04);
+        ui->checkBox_enable_right_back_motor->setChecked(response->motor_enable_flags & 0x08);
+
         ui->horizontalSlider_speed_percent->blockSignals(true);
         ui->horizontalSlider_speed_percent->setValue(response->speed_percent * ui->horizontalSlider_speed_percent->maximum());
         ui->horizontalSlider_speed_percent->blockSignals(false);
@@ -790,40 +841,40 @@ void MainWindow::on_update_status() {
 }
 
 void MainWindow::on_recv_motion_status_msg(const motion_status_msgs::msg::MotionStatus::SharedPtr msg) {
-    QString speed_text = QString(
-                             "速度:\n"
-                             "    linear_x = %1 m/s\n"
-                             "    linear_y = %2 rad/s\n"
-                             "    linear_z = %3 rad/s\n"
-                             "    angular_x = %4 rad/s\n"
-                             "    angular_y = %5 rad/s\n"
-                             "    angular_z = %6 rad/s")
-                             .arg(msg->twist_current_linear_x, 9, 'f', 3)
-                             .arg(msg->twist_current_linear_y, 9, 'f', 3)
-                             .arg(msg->twist_current_linear_z, 9, 'f', 3)
-                             .arg(msg->twist_current_angular_x, 9, 'f', 3)
-                             .arg(msg->twist_current_angular_y, 9, 'f', 3)
-                             .arg(msg->twist_current_angular_z, 9, 'f', 3);
-
-    QString pose_text = QString(
-                            "位置:\n"
-                            "    x = %1 m\n"
-                            "    y = %2 m\n"
-                            "    z = %3 m\n"
-                            "    roll = %4 °\n"
-                            "    pitch = %5 °\n"
-                            "    yaw = %6 °")
-                            .arg(msg->twist_current_euler_pose_x, 9, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_y, 9, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_z, 9, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_roll, 9, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_pitch, 9, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_yaw, 9, 'f', 3);
-
-    ui->label_speed_msg->setText(speed_text);
-    ui->label_pose_msg->setText(pose_text);
-
     if (ui->checkBox_dynamic_refresh->isChecked()) {
+        QString speed_text = QString(
+                                 "速度:\n"
+                                 "    linear_x = %1 m/s\n"
+                                 "    linear_y = %2 m/s\n"
+                                 "    linear_z = %3 m/s\n"
+                                 "    angular_x = %4 °/s\n"
+                                 "    angular_y = %5 °/s\n"
+                                 "    angular_z = %6 °/s")
+                                 .arg(msg->twist_current_linear_x, 0, 'f', 3)
+                                 .arg(msg->twist_current_linear_y, 0, 'f', 3)
+                                 .arg(msg->twist_current_linear_z, 0, 'f', 3)
+                                 .arg(msg->twist_current_angular_x, 0, 'f', 3)
+                                 .arg(msg->twist_current_angular_y, 0, 'f', 3)
+                                 .arg(msg->twist_current_angular_z, 0, 'f', 3);
+
+        QString pose_text = QString(
+                                "位置:\n"
+                                "    x = %1 m\n"
+                                "    y = %2 m\n"
+                                "    z = %3 m\n"
+                                "    roll = %4 °\n"
+                                "    pitch = %5 °\n"
+                                "    yaw = %6 °")
+                                .arg(msg->twist_current_euler_pose_x, 0, 'f', 3)
+                                .arg(msg->twist_current_euler_pose_y, 0, 'f', 3)
+                                .arg(msg->twist_current_euler_pose_z, 0, 'f', 3)
+                                .arg(msg->twist_current_euler_pose_roll, 0, 'f', 3)
+                                .arg(msg->twist_current_euler_pose_pitch, 0, 'f', 3)
+                                .arg(msg->twist_current_euler_pose_yaw, 0, 'f', 3);
+
+        ui->label_speed_msg->setText(speed_text);
+        ui->label_pose_msg->setText(pose_text);
+
         double minValue = pow(10, -6);
         if (qFabs(msg->left_front_current_v) > minValue ||
             qFabs(msg->left_front_target_v) > minValue ||
@@ -838,14 +889,7 @@ void MainWindow::on_recv_motion_status_msg(const motion_status_msgs::msg::Motion
             qFabs(msg->twist_current_linear_y) > minValue ||
             qFabs(msg->twist_target_linear_y) > minValue ||
             qFabs(msg->twist_current_angular_z) > minValue ||
-            qFabs(msg->twist_target_angular_z) > minValue //||
-            // qFabs(msg->twist_current_euler_pose_x) > minValue ||
-            // qFabs(msg->twist_target_euler_pose_x) > minValue ||
-            // qFabs(msg->twist_current_euler_pose_y) > minValue ||
-            // qFabs(msg->twist_target_euler_pose_y) > minValue ||
-            // qFabs(msg->twist_current_euler_pose_yaw) > minValue ||
-            // qFabs(msg->twist_target_euler_pose_yaw) > minValue
-        ) {
+            qFabs(msg->twist_target_angular_z) > minValue) {
             if (stop_plot_) {
                 stop_plot_ = false;
             }
@@ -885,45 +929,59 @@ void MainWindow::on_recv_motion_status_msg(const motion_status_msgs::msg::Motion
         angular_pose_customPlot_->graph(1)->addData(reference_sconds, msg->twist_target_euler_pose_yaw);
 
         if (ui->checkBox_dynami_follow->isChecked()) {
-            linear_speed_customPlot_->rescaleAxes();  // 自动缩放坐标轴，包含所有数据
-            linear_pose_customPlot_->rescaleAxes();   // 自动缩放坐标轴，包含所有数据
-            angular_speed_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
-            angular_pose_customPlot_->rescaleAxes();  // 自动缩放坐标轴，包含所有数据
+            if (linear_speed_customPlot_->isVisible()) {
+                linear_speed_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
+            }
+            if (linear_pose_customPlot_->isVisible()) {
+                linear_pose_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
+            }
+            if (angular_speed_customPlot_->isVisible()) {
+                angular_speed_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
+            }
+            if (angular_pose_customPlot_->isVisible()) {
+                angular_pose_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
+            }
         }
-
-        linear_speed_customPlot_->replot();  // 刷新绘图
-        linear_pose_customPlot_->replot();   // 刷新绘图
-        angular_speed_customPlot_->replot(); // 刷新绘图
-        angular_pose_customPlot_->replot();  // 刷新绘图
-
-        // QString line = QString("t= %1\n"
-        //                        "left_front_current_v= %2,  left_front_target_v= %3,  left_back_current_v= %4,  left_back_target_v= %5\n"
-        //                        "right_front_current_v= %6,  right_front_target_v= %7,  right_back_current_v= %8,  right_back_target_v= %9\n"
-        //                        "twist_current_linear_x= %10,  twist_target_linear_x= %11,  twist_current_linear_y= %12,  twist_target_linear_y= %13\n"
-        //                        "twist_current_angular_z= %14,  twist_target_angular_z= %15,  twist_current_euler_pose_x= %16,  twist_target_euler_pose_x= %17\n"
-        //                        "twist_current_euler_pose_y= %18,  twist_target_euler_pose_y= %19,  twist_current_euler_pose_yaw= %20,  twist_target_euler_pose_yaw= %21\n")
-        //                    .arg(reference_sconds, 0, 'f', 3)
-        //                    .arg(msg->left_front_current_v, 0, 'f', 3)
-        //                    .arg(msg->left_front_target_v, 0, 'f', 3)
-        //                    .arg(msg->left_back_current_v, 0, 'f', 3)
-        //                    .arg(msg->left_back_target_v, 0, 'f', 3)
-        //                    .arg(msg->right_front_current_v, 0, 'f', 3)
-        //                    .arg(msg->right_front_target_v, 0, 'f', 3)
-        //                    .arg(msg->right_back_current_v, 0, 'f', 3)
-        //                    .arg(msg->right_back_target_v, 0, 'f', 3)
-        //                    .arg(msg->twist_current_linear_x, 0, 'f', 3)
-        //                    .arg(msg->twist_target_linear_x, 0, 'f', 3)
-        //                    .arg(msg->twist_current_linear_y, 0, 'f', 3)
-        //                    .arg(msg->twist_target_linear_y, 0, 'f', 3)
-        //                    .arg(msg->twist_current_angular_z, 0, 'f', 3)
-        //                    .arg(msg->twist_target_angular_z, 0, 'f', 3)
-        //                    .arg(msg->twist_current_euler_pose_x, 0, 'f', 3)
-        //                    .arg(msg->twist_target_euler_pose_x, 0, 'f', 3)
-        //                    .arg(msg->twist_current_euler_pose_y, 0, 'f', 3)
-        //                    .arg(msg->twist_target_euler_pose_y, 0, 'f', 3)
-        //                    .arg(msg->twist_current_euler_pose_yaw, 0, 'f', 3)
-        //                    .arg(msg->twist_target_euler_pose_yaw, 0, 'f', 3);
-        // motion_info_text_->append(line);
+        if (linear_speed_customPlot_->isVisible()) {
+            linear_speed_customPlot_->replot(); // 刷新绘图
+        }
+        if (linear_pose_customPlot_->isVisible()) {
+            linear_pose_customPlot_->replot(); // 刷新绘图
+        }
+        if (angular_speed_customPlot_->isVisible()) {
+            angular_speed_customPlot_->replot(); // 刷新绘图
+        }
+        if (angular_pose_customPlot_->isVisible()) {
+            angular_pose_customPlot_->replot(); // 刷新绘图
+        }
+        QString line = QString("t= %1\n"
+                               "left_front_current_v= %2,  left_front_target_v= %3,  left_back_current_v= %4,  left_back_target_v= %5\n"
+                               "right_front_current_v= %6,  right_front_target_v= %7,  right_back_current_v= %8,  right_back_target_v= %9\n"
+                               "twist_current_linear_x= %10,  twist_target_linear_x= %11,  twist_current_linear_y= %12,  twist_target_linear_y= %13\n"
+                               "twist_current_angular_z= %14,  twist_target_angular_z= %15,  twist_current_euler_pose_x= %16,  twist_target_euler_pose_x= %17\n"
+                               "twist_current_euler_pose_y= %18,  twist_target_euler_pose_y= %19,  twist_current_euler_pose_yaw= %20,  twist_target_euler_pose_yaw= %21\n")
+                           .arg(reference_sconds, 0, 'f', 3)
+                           .arg(msg->left_front_current_v, 0, 'f', 3)
+                           .arg(msg->left_front_target_v, 0, 'f', 3)
+                           .arg(msg->left_back_current_v, 0, 'f', 3)
+                           .arg(msg->left_back_target_v, 0, 'f', 3)
+                           .arg(msg->right_front_current_v, 0, 'f', 3)
+                           .arg(msg->right_front_target_v, 0, 'f', 3)
+                           .arg(msg->right_back_current_v, 0, 'f', 3)
+                           .arg(msg->right_back_target_v, 0, 'f', 3)
+                           .arg(msg->twist_current_linear_x, 0, 'f', 3)
+                           .arg(msg->twist_target_linear_x, 0, 'f', 3)
+                           .arg(msg->twist_current_linear_y, 0, 'f', 3)
+                           .arg(msg->twist_target_linear_y, 0, 'f', 3)
+                           .arg(msg->twist_current_angular_z, 0, 'f', 3)
+                           .arg(msg->twist_target_angular_z, 0, 'f', 3)
+                           .arg(msg->twist_current_euler_pose_x, 0, 'f', 3)
+                           .arg(msg->twist_target_euler_pose_x, 0, 'f', 3)
+                           .arg(msg->twist_current_euler_pose_y, 0, 'f', 3)
+                           .arg(msg->twist_target_euler_pose_y, 0, 'f', 3)
+                           .arg(msg->twist_current_euler_pose_yaw, 0, 'f', 3)
+                           .arg(msg->twist_target_euler_pose_yaw, 0, 'f', 3);
+        motion_info_text_->append(line);
 
         if (qFabs(msg->left_front_current_v) < minValue &&
             qFabs(msg->left_front_target_v) < minValue &&
@@ -938,14 +996,7 @@ void MainWindow::on_recv_motion_status_msg(const motion_status_msgs::msg::Motion
             qFabs(msg->twist_current_linear_y) < minValue &&
             qFabs(msg->twist_target_linear_y) < minValue &&
             qFabs(msg->twist_current_angular_z) < minValue &&
-            qFabs(msg->twist_target_angular_z) < minValue //&&
-            // qFabs(msg->twist_current_euler_pose_x) < minValue &&
-            // qFabs(msg->twist_target_euler_pose_x) < minValue &&
-            // qFabs(msg->twist_current_euler_pose_y) < minValue &&
-            // qFabs(msg->twist_target_euler_pose_y) < minValue &&
-            // qFabs(msg->twist_current_euler_pose_yaw) < minValue &&
-            // qFabs(msg->twist_target_euler_pose_yaw) < minValue
-        ) {
+            qFabs(msg->twist_target_angular_z) < minValue) {
             stop_plot_ = true;
         }
         ui->groupBox_plot->setTitle(QString(("绘图设置（%1个点）")).arg(linear_speed_customPlot_->graph(0)->dataCount()));

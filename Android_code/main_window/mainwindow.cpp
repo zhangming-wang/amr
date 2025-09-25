@@ -5,27 +5,28 @@ MainWindow::MainWindow(QWidget *parent)
       httpClient_(new HttpClient(this)) {
     ui->setupUi(this);
 
-    connect(ui->pushButton_move_front, &QPushButton::clicked, httpClient_, &HttpClient::moveFront);
-    connect(ui->pushButton_move_back, &QPushButton::clicked, httpClient_, &HttpClient::moveBack);
-    connect(ui->pushButton_move_left, &QPushButton::clicked, httpClient_, &HttpClient::moveLeft);
-    connect(ui->pushButton_move_right, &QPushButton::clicked, httpClient_, &HttpClient::moveRight);
-    connect(ui->pushButton_stop_move, &QPushButton::clicked, httpClient_, &HttpClient::stopMove);
+    connect(ui->pushButton_move_front, &QPushButton::clicked, httpClient_, &HttpClient::move_front);
+    connect(ui->pushButton_move_back, &QPushButton::clicked, httpClient_, &HttpClient::move_back);
+    connect(ui->pushButton_move_left, &QPushButton::clicked, httpClient_, &HttpClient::move_left);
+    connect(ui->pushButton_move_right, &QPushButton::clicked, httpClient_, &HttpClient::move_right);
+    connect(ui->pushButton_move_left_front, &QPushButton::clicked, httpClient_, &HttpClient::move_left_front);
+    connect(ui->pushButton_move_right_front, &QPushButton::clicked, httpClient_, &HttpClient::move_right_front);
+    connect(ui->pushButton_move_left_back, &QPushButton::clicked, httpClient_, &HttpClient::move_left_back);
+    connect(ui->pushButton_move_right_back, &QPushButton::clicked, httpClient_, &HttpClient::move_right_back);
+    connect(ui->pushButton_turn_left, &QPushButton::clicked, httpClient_, &HttpClient::turn_left);
+    connect(ui->pushButton_turn_right, &QPushButton::clicked, httpClient_, &HttpClient::turn_right);
+    connect(ui->pushButton_stop_move, &QPushButton::clicked, httpClient_, &HttpClient::stop_move);
     connect(ui->pushButton_brake, &QPushButton::clicked, httpClient_, &HttpClient::brake);
     connect(ui->pushButton_restart, &QPushButton::clicked, httpClient_, &HttpClient::restart);
     connect(ui->pushButton_save, &QPushButton::clicked, httpClient_, &HttpClient::save);
-    connect(ui->pushButton_refresh, &QPushButton::clicked, [this]() { update_ui_ = true; });
 
-    connect(ui->radioButton_no_balance, &QRadioButton::clicked, this, &MainWindow::onSetMotionMode);
-    connect(ui->radioButton_static_balance, &QRadioButton::clicked, this, &MainWindow::onSetMotionMode);
-    connect(ui->radioButton_dynamic_balance, &QRadioButton::clicked, this, &MainWindow::onSetMotionMode);
-
-    // connect(ui->horizontalSlider_speed_percent, &QSlider::sliderPressed, this, [this]() {
-    //     httpClient_->stop_timer();
-    // });
+    connect(ui->horizontalSlider_speed_percent, &QSlider::sliderPressed, this, [this]() {
+        speed_slider_is_pressed_ = true;
+    });
     connect(ui->horizontalSlider_speed_percent, &QSlider::sliderReleased, this, [this]() {
         auto percent = ui->horizontalSlider_speed_percent->value() * 1.0 / ui->horizontalSlider_speed_percent->maximum();
         httpClient_->setSpeedPercent(percent);
-        // httpClient_->start_timer();
+        speed_slider_is_pressed_ = false;
     });
     connect(ui->horizontalSlider_speed_percent, &QSlider::valueChanged, this, [this](int value) {
         auto percent = value * 1.0 / ui->horizontalSlider_speed_percent->maximum();
@@ -57,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(httpClient_, &HttpClient::sendConnectStatus, this, &MainWindow::onHttpStatusChanged);
     connect(httpClient_, &HttpClient::sendData, this, &MainWindow::onRecvData);
-
+    onRecvData(QJsonObject());
     httpClient_->start_timer();
 }
 
@@ -70,7 +71,6 @@ void MainWindow::onHttpStatusChanged(bool connect) {
         ui->label_connect_status->setStyleSheet(QString("background-color:green;color:white;font-size:%1px;").arg(this->font().pointSize()));
         ui->label_connect_status->setText("已连接");
         setEnabled(true);
-        update_ui_ = true;
     } else {
         ui->label_connect_status->setStyleSheet(QString("background-color:red; color:white; font-size:%1px;").arg(this->font().pointSize()));
         ui->label_connect_status->setText("已断开");
@@ -78,78 +78,43 @@ void MainWindow::onHttpStatusChanged(bool connect) {
     }
 }
 void MainWindow::onRecvData(QJsonObject jsonData) {
-    if (update_ui_) {
-        if (jsonData.keys().contains("motion_mode")) {
-            auto mode = jsonData["motion_mode"].toInt();
-            ui->radioButton_no_balance->blockSignals(true);
-            ui->radioButton_static_balance->blockSignals(true);
-            ui->radioButton_dynamic_balance->blockSignals(true);
-            if (mode == MotionMode::NoBalanceMode) {
-                ui->radioButton_no_balance->click();
-            } else if (mode == MotionMode::StaticBalanceMode) {
-                ui->radioButton_static_balance->click();
-            } else if (mode == MotionMode::DynamicBalanceMode) {
-                ui->radioButton_dynamic_balance->click();
-            }
-            ui->radioButton_no_balance->blockSignals(false);
-            ui->radioButton_static_balance->blockSignals(false);
-            ui->radioButton_dynamic_balance->blockSignals(false);
-        }
-        if (jsonData.keys().contains("speed_percent")) {
-            auto percent = jsonData["speed_percent"].toDouble();
-            ui->horizontalSlider_speed_percent->blockSignals(true);
-            ui->horizontalSlider_speed_percent->setValue(percent * ui->horizontalSlider_speed_percent->maximum());
-            ui->horizontalSlider_speed_percent->blockSignals(false);
-            _updateSPeedPercentLabel(percent);
-        }
-        update_ui_ = false;
+    if (jsonData.keys().contains("speed_percent") && speed_slider_is_pressed_ == false) {
+        ui->horizontalSlider_speed_percent->blockSignals(true);
+        ui->horizontalSlider_speed_percent->setValue(jsonData["speed_percent"].toDouble() * ui->horizontalSlider_speed_percent->maximum());
+        ui->horizontalSlider_speed_percent->blockSignals(false);
+        _updateSPeedPercentLabel(jsonData["speed_percent"].toDouble());
     }
 
-    if (jsonData.keys().contains("current_v") && jsonData.keys().contains("current_w") && jsonData.keys().contains("current_x") && jsonData.keys().contains("current_y") && jsonData.keys().contains("current_angle")) {
-        QString text = QString(
-                           "速度:\n"
-                           "    v = %1 m/s\n"
-                           "    w = %2 rad/s\n"
-                           "位置:\n"
-                           "    x = %3 m\n"
-                           "    y = %4 m\n"
-                           "角度:\n"
-                           "    z = %5 °")
-                           .arg(jsonData["current_v"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["current_w"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["current_x"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["current_y"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["current_angle"].toDouble(), 9, 'f', 2);
-        ui->label_motion_status->setText(text);
-    }
-    if (jsonData.keys().contains("yaw") && jsonData.keys().contains("pitch") && jsonData.keys().contains("roll") && jsonData.keys().contains("gyro_x") && jsonData.keys().contains("gyro_y") && jsonData.keys().contains("gyro_z")) {
-        QString text = QString(
-                           "姿态角:\n"
-                           "    偏航角 : %1 °\n"
-                           "    俯仰角 : %2 °\n"
-                           "    横滚角 : %3 °\n"
-                           "角速度:\n"
-                           "    X轴 : %4 °/s\n"
-                           "    Y轴 : %5 °/s\n"
-                           "    Z轴 : %6 °/s")
-                           .arg(jsonData["yaw"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["pitch"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["roll"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["gyro_x"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["gyro_y"].toDouble(), 9, 'f', 3)
-                           .arg(jsonData["gyro_z"].toDouble(), 9, 'f', 3);
-        ui->label_mpu_status->setText(text);
-    }
-}
+    QVector<double> speedVector = {0, 0, 0}, poseVector = {0, 0, 0};
+    QString text;
 
-void MainWindow::onSetMotionMode() {
-    if (ui->radioButton_no_balance->isChecked()) {
-        httpClient_->setMotionMode(0);
-    } else if (ui->radioButton_static_balance->isChecked()) {
-        httpClient_->setMotionMode(1);
-    } else if (ui->radioButton_dynamic_balance->isChecked()) {
-        httpClient_->setMotionMode(2);
+    if (jsonData.keys().contains("twist_linear_x") && jsonData.keys().contains("twist_linear_y") && jsonData.keys().contains("twist_angular_z")) {
+        speedVector[0] = jsonData["twist_linear_x"].toDouble();
+        speedVector[1] = jsonData["twist_linear_y"].toDouble();
+        speedVector[2] = jsonData["twist_angular_z"].toDouble();
     }
+    text = QString(
+               "linear_x = %1 m/s\n"
+               "linear_y = %2 m/s\n"
+               "angular_z = %3 °/s")
+               .arg(speedVector[0], 0, 'f', 3)
+               .arg(speedVector[1], 0, 'f', 3)
+               .arg(speedVector[2], 0, 'f', 3);
+    ui->label_speed_status->setText(text);
+
+    if (jsonData.keys().contains("euler_pose_x") && jsonData.keys().contains("euler_pose_y") && jsonData.keys().contains("euler_pose_yaw")) {
+        poseVector[0] = jsonData["euler_pose_x"].toDouble();
+        poseVector[1] = jsonData["euler_pose_y"].toDouble();
+        poseVector[2] = jsonData["euler_pose_yaw"].toDouble();
+    }
+    text = QString(
+               "pose_x = %1 m/s\n"
+               "pose_y = %2 m/s\n"
+               "pose_yaw = %3 °/s")
+               .arg(poseVector[0], 0, 'f', 3)
+               .arg(poseVector[1], 0, 'f', 3)
+               .arg(poseVector[2], 0, 'f', 3);
+    ui->label_euler_pose_status->setText(text);
 }
 
 void MainWindow::_updateSPeedPercentLabel(double percent) {

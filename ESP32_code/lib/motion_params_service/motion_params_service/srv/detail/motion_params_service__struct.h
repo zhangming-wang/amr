@@ -22,11 +22,13 @@ typedef struct motion_params_service__srv__MotionParamsService_Request
 {
   int32_t mode;
   int64_t id;
+  uint8_t motor_enable_flags;
   int32_t milliseconds;
   int32_t position_loop_milliseconds_cnt;
   int32_t speed_loop_milliseconds_cnt;
   bool enable_speed_plan;
   bool is_mecanum_wheel;
+  bool enable_pub_motion_status;
   float speed_percent;
   float max_v;
   float max_acc;
@@ -113,12 +115,13 @@ typedef struct motion_params_service__srv__MotionParamsService_Response
 {
   int32_t state;
   int64_t id;
-  int32_t motion_mode;
+  uint8_t motor_enable_flags;
   int32_t milliseconds;
   int32_t position_loop_milliseconds_cnt;
   int32_t speed_loop_milliseconds_cnt;
   bool enable_speed_plan;
   bool is_mecanum_wheel;
+  bool enable_pub_motion_status;
   float speed_percent;
   float max_v;
   float max_acc;

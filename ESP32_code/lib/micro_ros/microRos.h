@@ -26,11 +26,14 @@ public:
 
     bool is_connected();
 
+    void set_enable_pub_motion_status(bool status);
+    bool get_enable_pub_motion_status();
+
     rcl_publisher_t *get_motion_status_publisher();
     // rcl_publisher_t *get_odom_publisher();
     rcl_publisher_t *get_serial_msg_publisher();
 
-    bool reCreate_service_timer();
+    void reCreate_service_timer();
 
     rclc_executor_t executor;
     geometry_msgs__msg__Twist msg_cmd_vel;
@@ -65,11 +68,16 @@ private:
     bool cmd_vel_subscription_initialized_ = false;
     bool motion_status_publisher_initialized_ = false, serial_msg_publisher_initialized_ = false; //, odom_publisher_initialized_ = false
 
+    bool enable_pub_motion_status_ = false;
+
     bool init();
     void clean();
     bool enable_task_run = false;
 
     volatile bool connected = false;
+
+    bool _create_timer();
+    void _destroy_timer();
 };
 
 void motion_params_service_callback(const void *req, void *res);

@@ -52,13 +52,13 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="tab_9">
         <attribute name="title">
          <string>参数设置</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_36">
+        <layout class="QVBoxLayout" name="verticalLayout_13">
          <item>
           <widget class="QGroupBox" name="groupBox_21">
            <property name="title">
@@ -117,6 +117,60 @@
              <widget class="QCheckBox" name="checkBox_enable_speed_plan">
               <property name="text">
                <string>速度规划</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QWidget" name="widget" native="true">
+           <layout class="QHBoxLayout" name="horizontalLayout_55">
+            <item>
+             <widget class="QCheckBox" name="checkBox_enable_pub_motion_status">
+              <property name="text">
+               <string>调试模式</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_enable_left_front_motor">
+              <property name="text">
+               <string>左上电机</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_enable_left_back_motor">
+              <property name="text">
+               <string>左下电机</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_enable_right_front_motor">
+              <property name="text">
+               <string>右上电机</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="checkBox_enable_right_back_motor">
+              <property name="text">
+               <string>右下电机</string>
               </property>
              </widget>
             </item>
@@ -2882,7 +2936,7 @@
    <property name="minimumSize">
     <size>
      <width>450</width>
-     <height>803</height>
+     <height>829</height>
     </size>
    </property>
    <property name="features">
@@ -2973,7 +3027,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
@@ -2992,7 +3046,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
@@ -3011,7 +3065,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
@@ -3022,7 +3076,7 @@
             </layout>
            </item>
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0">
              <item>
               <widget class="QPushButton" name="pushButton_move_front">
                <property name="sizePolicy">
@@ -3034,11 +3088,30 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
                 <string>向前</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_stop_move">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>停止</string>
                </property>
               </widget>
              </item>
@@ -3053,7 +3126,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
@@ -3076,7 +3149,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
@@ -3095,7 +3168,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
@@ -3104,7 +3177,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_move_rifht_back">
+              <widget class="QPushButton" name="pushButton_move_right_back">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -3114,7 +3187,7 @@
                <property name="minimumSize">
                 <size>
                  <width>0</width>
-                 <height>0</height>
+                 <height>50</height>
                 </size>
                </property>
                <property name="text">
@@ -3133,7 +3206,7 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>0</height>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -3146,7 +3219,7 @@
              <property name="minimumSize">
               <size>
                <width>0</width>
-               <height>0</height>
+               <height>50</height>
               </size>
              </property>
              <property name="text">
@@ -3488,6 +3561,19 @@
           </layout>
          </item>
          <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
           <widget class="QPushButton" name="pushButton_set_speed">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -3728,6 +3814,19 @@
           </widget>
          </item>
          <item>
+          <spacer name="verticalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_18">
            <item>
             <widget class="QPushButton" name="pushButton_path_move">
@@ -3779,25 +3878,6 @@
         <string/>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_20">
-        <item>
-         <widget class="QPushButton" name="pushButton_stop_move">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>40</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>停止</string>
-          </property>
-         </widget>
-        </item>
         <item>
          <widget class="QPushButton" name="pushButton_brake">
           <property name="sizePolicy">

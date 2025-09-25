@@ -22,11 +22,10 @@ public:
 private:
     void onHttpStatusChanged(bool connect);
     void onRecvData(QJsonObject jsonData);
-    void onSetMotionMode();
 
     void _updateSPeedPercentLabel(double percent);
 
-    bool update_ui_ = false;
+    bool speed_slider_is_pressed_ = false;
 
     HttpClient *httpClient_;
     Ui::MainWindow *ui;

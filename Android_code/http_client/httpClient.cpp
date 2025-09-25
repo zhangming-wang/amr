@@ -23,30 +23,59 @@ void HttpClient::_checkConnect() {
     network_access_manager_->get(request);
 }
 
-void HttpClient::moveFront() {
+void HttpClient::move_front() {
     QNetworkRequest request(QUrl(ESP32_url_ + "/move_front"));
     network_access_manager_->get(request);
 }
 
-void HttpClient::moveBack() {
+void HttpClient::move_back() {
     QNetworkRequest request(QUrl(ESP32_url_ + "/move_back"));
     network_access_manager_->get(request);
 }
-void HttpClient::moveLeft() {
+void HttpClient::move_left() {
     QNetworkRequest request(QUrl(ESP32_url_ + "/move_left"));
     network_access_manager_->get(request);
 }
 
-void HttpClient::moveRight() {
+void HttpClient::move_right() {
     QNetworkRequest request(QUrl(ESP32_url_ + "/move_right"));
     network_access_manager_->get(request);
 }
 
-void HttpClient::stopMove() {
-    QNetworkRequest request(QUrl(ESP32_url_ + "/stop_move"));
+void HttpClient::move_left_front() {
+    QNetworkRequest request(QUrl(ESP32_url_ + "/move_left_front"));
     network_access_manager_->get(request);
 }
 
+void HttpClient::move_right_front() {
+    QNetworkRequest request(QUrl(ESP32_url_ + "/move_right_front"));
+    network_access_manager_->get(request);
+}
+
+void HttpClient::move_left_back() {
+    QNetworkRequest request(QUrl(ESP32_url_ + "/move_left_back"));
+    network_access_manager_->get(request);
+}
+
+void HttpClient::move_right_back() {
+    QNetworkRequest request(QUrl(ESP32_url_ + "/move_right_back"));
+    network_access_manager_->get(request);
+}
+
+void HttpClient::turn_left() {
+    QNetworkRequest request(QUrl(ESP32_url_ + "/turn_left"));
+    network_access_manager_->get(request);
+}
+
+void HttpClient::turn_right() {
+    QNetworkRequest request(QUrl(ESP32_url_ + "/turn_right"));
+    network_access_manager_->get(request);
+}
+
+void HttpClient::stop_move() {
+    QNetworkRequest request(QUrl(ESP32_url_ + "/stop_move"));
+    network_access_manager_->get(request);
+}
 
 void HttpClient::brake() {
     QNetworkRequest request(QUrl(ESP32_url_ + "/brake"));
@@ -69,16 +98,6 @@ void HttpClient::setSpeedPercent(float speedPercent) {
 
     QUrlQuery postData;
     postData.addQueryItem("value", QString::number(speedPercent));
-
-    network_access_manager_->post(request, postData.query(QUrl::FullyEncoded).toUtf8());
-}
-
-void HttpClient::setMotionMode(int mode) {
-    QNetworkRequest request(QUrl(ESP32_url_ + "/set_motion_mode"));
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-
-    QUrlQuery postData;
-    postData.addQueryItem("value", QString::number(mode));
 
     network_access_manager_->post(request, postData.query(QUrl::FullyEncoded).toUtf8());
 }

@@ -71,8 +71,6 @@ void Motor::set_speed(float speed_percent) {
     if (speed_percent > 1)
         speed_percent = 1;
 
-    Serial.println(uint(speed_percent * pow(2, RESOLUTIONBITS)));
-
     _set_pwm(uint(speed_percent * pow(2, RESOLUTIONBITS)));
 }
 

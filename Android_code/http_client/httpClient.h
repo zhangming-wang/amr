@@ -20,11 +20,17 @@ public:
 
     void restart();
     void brake();
-    void stopMove();
-    void moveFront();
-    void moveBack();
-    void moveLeft();
-    void moveRight();
+    void stop_move();
+    void move_front();
+    void move_back();
+    void move_left();
+    void move_right();
+    void move_left_front();
+    void move_right_front();
+    void move_left_back();
+    void move_right_back();
+    void turn_left();
+    void turn_right();
 
     void setSpeedPercent(float speedPercent);
     void setMotionMode(int mode);
@@ -45,7 +51,7 @@ private:
     QNetworkAccessManager *network_access_manager_;
     QTimer *timer_;
     int timeout_cnt_ = 0;
-    const QString ESP32_url_ = "http://192.168.1.200"; // ESP32 IP 地址，改成你的
+    const QString ESP32_url_ = "http://192.168.1.190"; // ESP32 IP 地址，改成你的
 };
 
 #endif // HTTPCLIENT_H

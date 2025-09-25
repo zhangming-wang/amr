@@ -19,14 +19,10 @@ bool MicroRos::is_connected() {
 }
 
 void MicroRos::clean() {
+    _destroy_timer();
+
     rcl_ret_t ret;
-    if (timer_initialized_) {
-        ret = rcl_timer_fini(&timer_);
-        if (ret != RCL_RET_OK) {
-            serial_print("rcl_timer_fini error: " + std::to_string(ret));
-        }
-        timer_initialized_ = false;
-    }
+
     if (motion_params_service_initialized_) {
         ret = rcl_service_fini(&motion_params_service_, &node_);
         if (ret != RCL_RET_OK) {
@@ -174,7 +170,7 @@ bool MicroRos::init() {
     // }
 
     if (!motion_status_publisher_initialized_) {
-        ret = rclc_publisher_init_default(&motion_status_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(motion_status_msgs, msg, MotionStatus), "/motion_status_topic"); //
+        ret = rclc_publisher_init_best_effort(&motion_status_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(motion_status_msgs, msg, MotionStatus), "/motion_status_topic"); //
         if (ret != RCL_RET_OK) {
             serial_print("motion_status_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
             return false;
@@ -183,30 +179,12 @@ bool MicroRos::init() {
     }
 
     if (!serial_msg_publisher_initialized_) {
-        ret = rclc_publisher_init_default(&serial_msg_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "/serial_msg_topic"); //
+        ret = rclc_publisher_init_best_effort(&serial_msg_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "/serial_msg_topic"); //
         if (ret != RCL_RET_OK) {
             serial_print("serial_msg_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
             return false;
         }
         serial_msg_publisher_initialized_ = true;
-    }
-
-    if (!timer_initialized_) {
-        ret = rclc_timer_init_default(&timer_, &support_, RCL_MS_TO_NS(centerControl.get_milliseconds()), timer_callback);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_timer_init_default:" + std::to_string(ret));
-            return false;
-        }
-        ret = rclc_executor_add_timer(&executor, &timer_);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_executor_add_timer:" + std::to_string(ret));
-            ret = rcl_timer_fini(&timer_);
-            if (ret != RCL_RET_OK) {
-                serial_print("rcl_timer_fini error: " + std::to_string(ret));
-            }
-            return false;
-        }
-        timer_initialized_ = true;
     }
 
     if (!motion_params_service_initialized_) {
@@ -230,38 +208,67 @@ bool MicroRos::init() {
     return true;
 }
 
-bool MicroRos::reCreate_service_timer() {
-    if (timer_initialized_) {
-        auto ret = rclc_executor_remove_timer(&executor, &timer_);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_executor_remove_timer error: " + std::to_string(ret));
-        }
-        ret = rcl_timer_fini(&timer_);
-        if (ret != RCL_RET_OK) {
-            serial_print("rcl_timer_fini error: " + std::to_string(ret));
-        }
-        timer_initialized_ = false;
-    }
-
-    if (timer_initialized_ == false) {
+bool MicroRos::_create_timer() {
+    if (!timer_initialized_) {
         auto ret = rclc_timer_init_default(&timer_, &support_, RCL_MS_TO_NS(centerControl.get_milliseconds()), timer_callback);
         if (ret != RCL_RET_OK) {
-            serial_print("rclc_timer_init_default:" + std::to_string(ret));
+            Serial.println("rclc_timer_init_default.");
             return false;
         }
-
         ret = rclc_executor_add_timer(&executor, &timer_);
         if (ret != RCL_RET_OK) {
-            serial_print("rclc_executor_add_timer:" + std::to_string(ret));
+            Serial.println("rclc_executor_add_timer.");
             ret = rcl_timer_fini(&timer_);
             if (ret != RCL_RET_OK) {
-                serial_print("rcl_timer_fini error: " + std::to_string(ret));
+                Serial.println("rcl_timer_fini error.");
             }
             return false;
         }
+        timer_initialized_ = true;
     }
-    timer_initialized_ = true;
     return true;
+}
+void MicroRos::_destroy_timer() {
+    if (timer_initialized_) {
+        auto ret = rclc_executor_remove_timer(&executor, &timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.println("rclc_executor_remove_timer error.");
+        }
+        ret = rcl_timer_fini(&timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.println("rcl_timer_fini error.");
+        }
+        timer_initialized_ = false;
+    }
+}
+
+void MicroRos::set_enable_pub_motion_status(bool status) {
+    enable_pub_motion_status_ = status;
+    reCreate_service_timer();
+}
+
+bool MicroRos::get_enable_pub_motion_status() {
+    return enable_pub_motion_status_;
+}
+
+void MicroRos::reCreate_service_timer() {
+    if (enable_pub_motion_status_) {
+        if (timer_initialized_) {
+            int64_t period_ns;
+            rcl_ret_t ret = rcl_timer_get_period(&timer_, &period_ns);
+            if (ret != RCL_RET_OK || RCL_MS_TO_NS(centerControl.get_milliseconds()) != period_ns) {
+                _destroy_timer();
+            }
+        }
+        if (_create_timer()) {
+            Serial.println("create timer success.");
+        } else {
+            Serial.println("create timer failed.");
+        }
+    } else {
+        _destroy_timer();
+        Serial.println("enable_pub_motion_status is false,create timer stopped!");
+    }
 }
 
 void MicroRos::start_task() {
@@ -322,7 +329,9 @@ void motion_params_service_callback(const void *req, void *res) {
     const motion_params_service__srv__MotionParamsService_Request *request = (const motion_params_service__srv__MotionParamsService_Request *)req;
     motion_params_service__srv__MotionParamsService_Response *response = (motion_params_service__srv__MotionParamsService_Response *)res;
 
-    if (request->mode == ServiceType::Restart) {
+    if (request->mode == ServiceType::HeartBeat) {
+        ;
+    } else if (request->mode == ServiceType::Restart) {
         centerControl.restart();
     } else if (request->mode == ServiceType::Brake) {
         centerControl.brake();
@@ -360,16 +369,18 @@ void motion_params_service_callback(const void *req, void *res) {
         centerControl.set_speed_plan_state(request->enable_speed_plan);
     }
 
+    else if (request->mode == ServiceType::SetEnablePubMotionStatus) {
+        microRos.set_enable_pub_motion_status(request->enable_pub_motion_status);
+    }
+
     else if (request->mode == ServiceType::ReadParams) {
         centerControl.read_params(response);
+        response->enable_pub_motion_status = microRos.get_enable_pub_motion_status();
     } else if (request->mode == ServiceType::WriteParams) {
         if (centerControl.get_milliseconds() != request->milliseconds && request->milliseconds > 0) {
-            if (microRos.reCreate_service_timer()) {
-                serial_print("定时器重新创建成功!");
-            } else {
-                serial_print("定时器重新创建失败.");
-            }
+            microRos.reCreate_service_timer();
         }
+
         centerControl.set_milliseconds(request->milliseconds);
         centerControl.set_loop_period_cnt(request->position_loop_milliseconds_cnt, request->speed_loop_milliseconds_cnt);
 
@@ -385,6 +396,8 @@ void motion_params_service_callback(const void *req, void *res) {
         centerControl.set_right_back_motor_pid_params(request->right_back_motor_p, request->right_back_motor_i, request->right_back_motor_d, request->right_back_motor_max_total_integral);
 
         centerControl.set_speed_plan_parms(request->max_v, request->max_acc, request->jerk);
+
+        centerControl.set_motor_enable_flags(request->motor_enable_flags);
 
         response->max_v = centerControl.get_max_speed();
         response->speed_percent = centerControl.get_speed_percent();

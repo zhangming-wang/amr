@@ -56,8 +56,11 @@ public:
     void set_speed();
     void set_speed_percent();
     void set_speed_plan_state();
+    void set_enable_pub_motion_status();
 
     void clear_plot();
+
+    void on_gamepad_set_move();
 
     void on_write_params();
     void on_read_params();

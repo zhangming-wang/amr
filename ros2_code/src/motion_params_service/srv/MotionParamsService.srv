@@ -1,12 +1,15 @@
 int32 mode
 int64 id
 
+uint8 motor_enable_flags
+
 int32 milliseconds
 int32 position_loop_milliseconds_cnt
 int32 speed_loop_milliseconds_cnt
 
 bool enable_speed_plan
 bool is_mecanum_wheel
+bool enable_pub_motion_status
 
 float32 speed_percent
 float32 max_v
@@ -87,7 +90,8 @@ int32 right_back_motor_revolutions_per_minute
 
 int32 state
 int64 id
-int32 motion_mode
+
+uint8 motor_enable_flags
 
 int32 milliseconds
 int32 position_loop_milliseconds_cnt
@@ -95,6 +99,7 @@ int32 speed_loop_milliseconds_cnt
 
 bool enable_speed_plan
 bool is_mecanum_wheel
+bool enable_pub_motion_status
 
 float32 speed_percent
 float32 max_v

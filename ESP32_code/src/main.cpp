@@ -7,8 +7,6 @@
 #include <Arduino.h>
 #include <ESP32Encoder.h>
 
-// put function declarations here:
-
 const char *wifi_name = "TP-LINK_403";
 const char *wifi_password = "403123456";
 const char *wifi_IP = "192.168.1.101";
@@ -32,7 +30,6 @@ void setup() {
     delay(1000);
 
     centerControl.init_and_start();
-
     microRos.start_task();
     httpService.start_task();
 }
@@ -52,26 +49,3 @@ void loop() {
     }
     delay(1000);
 }
-
-// Motor left_front_motor = Motor();
-// Motor left_back_motor = Motor();
-
-// void setup() {
-//     Serial.begin(115200);
-//     delay(1000); // 等串口稳定
-//     left_front_motor.set_pins(21, 22, 23);
-//     left_back_motor.set_pins(19, 18, 17);
-// }
-
-// void loop() {
-//     left_front_motor.set_speed((float)1.0);
-//     left_back_motor.set_speed((float)1.0);
-//     left_front_motor.move();
-//     left_back_motor.move();
-//     delay(1000);
-//     left_front_motor.set_speed((float)-1.0);
-//     left_back_motor.set_speed((float)-1.0);
-//     left_front_motor.move();
-//     left_back_motor.move();
-//     delay(1000);
-// }

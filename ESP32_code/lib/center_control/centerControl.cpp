@@ -28,6 +28,8 @@ void CenterControl::init_and_start() {
     _load_settings();
     _load_params();
 
+    update_target_max_speed();
+
     set_milliseconds(milliseconds_);
     set_speed_plan_parms(max_v_, max_acc_, jerk_);
     start();
@@ -155,6 +157,13 @@ void CenterControl::set_speed_plan_state(bool enable) {
     enable_speed_plan_ = enable;
 }
 
+void CenterControl::set_motor_enable_flags(uint8_t flags) {
+    motor_enable_flags_ = flags;
+}
+uint8_t CenterControl::get_motor_enable_flags() {
+    return motor_enable_flags_;
+}
+
 void CenterControl::_start_control_timer() {
     if (!control_timer_) {
         esp_timer_create_args_t timer_args = {
@@ -258,9 +267,9 @@ void CenterControl::move_left() {
         max_v = max_v_;
     }
     wheel_speed.left_front_v = -max_v;
-    wheel_speed.left_back_v = -max_v;
+    wheel_speed.left_back_v = max_v;
     wheel_speed.right_front_v = max_v;
-    wheel_speed.right_back_v = max_v;
+    wheel_speed.right_back_v = -max_v;
     start_move(wheel_speed);
 }
 
@@ -273,9 +282,9 @@ void CenterControl::move_right() {
         max_v = max_v_;
     }
     wheel_speed.left_front_v = max_v;
-    wheel_speed.left_back_v = max_v;
+    wheel_speed.left_back_v = -max_v;
     wheel_speed.right_front_v = -max_v;
-    wheel_speed.right_back_v = -max_v;
+    wheel_speed.right_back_v = max_v;
     start_move(wheel_speed);
 }
 
@@ -287,38 +296,8 @@ void CenterControl::move_left_front() {
     } else {
         max_v = max_v_;
     }
-    wheel_speed.left_front_v = max_v;
-    wheel_speed.left_back_v = 0;
-    wheel_speed.right_front_v = 0;
-    wheel_speed.right_back_v = -max_v;
-    start_move(wheel_speed);
-}
-
-void CenterControl::move_left_back() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
     wheel_speed.left_front_v = 0;
     wheel_speed.left_back_v = max_v;
-    wheel_speed.right_front_v = -max_v;
-    wheel_speed.right_back_v = 0;
-    start_move(wheel_speed);
-}
-
-void CenterControl::move_right_front() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = 0;
-    wheel_speed.left_back_v = -max_v;
     wheel_speed.right_front_v = max_v;
     wheel_speed.right_back_v = 0;
     start_move(wheel_speed);
@@ -332,10 +311,40 @@ void CenterControl::move_right_back() {
     } else {
         max_v = max_v_;
     }
-    wheel_speed.left_front_v = -max_v;
+    wheel_speed.left_front_v = 0;
+    wheel_speed.left_back_v = -max_v;
+    wheel_speed.right_front_v = -max_v;
+    wheel_speed.right_back_v = 0;
+    start_move(wheel_speed);
+}
+
+void CenterControl::move_right_front() {
+    auto wheel_speed = WheelSpeed();
+    float max_v = 0;
+    if (is_mecanum_wheel_) {
+        max_v = max_v_ * 2 / sqrt(2);
+    } else {
+        max_v = max_v_;
+    }
+    wheel_speed.left_front_v = max_v;
     wheel_speed.left_back_v = 0;
     wheel_speed.right_front_v = 0;
     wheel_speed.right_back_v = max_v;
+    start_move(wheel_speed);
+}
+
+void CenterControl::move_left_back() {
+    auto wheel_speed = WheelSpeed();
+    float max_v = 0;
+    if (is_mecanum_wheel_) {
+        max_v = max_v_ * 2 / sqrt(2);
+    } else {
+        max_v = max_v_;
+    }
+    wheel_speed.left_front_v = -max_v;
+    wheel_speed.left_back_v = 0;
+    wheel_speed.right_front_v = 0;
+    wheel_speed.right_back_v = -max_v;
     start_move(wheel_speed);
 }
 
@@ -347,9 +356,9 @@ void CenterControl::turn_left() {
     } else {
         max_v = max_v_;
     }
-    wheel_speed.left_front_v = max_v;
+    wheel_speed.left_front_v = -max_v;
     wheel_speed.left_back_v = -max_v;
-    wheel_speed.right_front_v = -max_v;
+    wheel_speed.right_front_v = max_v;
     wheel_speed.right_back_v = max_v;
     start_move(wheel_speed);
 }
@@ -362,9 +371,9 @@ void CenterControl::turn_right() {
     } else {
         max_v = max_v_;
     }
-    wheel_speed.left_front_v = -max_v;
+    wheel_speed.left_front_v = max_v;
     wheel_speed.left_back_v = max_v;
-    wheel_speed.right_front_v = max_v;
+    wheel_speed.right_front_v = -max_v;
     wheel_speed.right_back_v = -max_v;
     start_move(wheel_speed);
 }
@@ -380,10 +389,10 @@ void CenterControl::start_move(WheelSpeed &target_wheel_speed) {
 
     if (enable_speed_plan_) {
         float MIN_V_CHANGE = 0.001;
-        auto changed_left_front_v = target_wheel_speed.left_front_v - current_wheel_v_.left_front_v;
-        auto changed_left_back_v = target_wheel_speed.right_front_v - current_wheel_v_.left_back_v;
-        auto changed_right_front_v = target_wheel_speed.left_back_v - current_wheel_v_.right_front_v;
-        auto changed_right_back_v = target_wheel_speed.right_back_v - current_wheel_v_.right_back_v;
+        auto changed_left_front_v = target_wheel_speed.left_front_v - target_wheel_v_.left_front_v;
+        auto changed_left_back_v = target_wheel_speed.left_back_v - target_wheel_v_.left_back_v;
+        auto changed_right_front_v = target_wheel_speed.right_front_v - target_wheel_v_.right_front_v;
+        auto changed_right_back_v = target_wheel_speed.right_back_v - target_wheel_v_.right_back_v;
 
         if (fabs(changed_left_front_v) > MIN_V_CHANGE || fabs(changed_left_back_v) > MIN_V_CHANGE || fabs(changed_right_front_v) > MIN_V_CHANGE || fabs(changed_right_back_v) > MIN_V_CHANGE) {
             std::map<float, int> wheel_change_map;
@@ -392,23 +401,23 @@ void CenterControl::start_move(WheelSpeed &target_wheel_speed) {
             wheel_change_map[std::fabs(changed_right_front_v)] = 2;
             wheel_change_map[std::fabs(changed_right_back_v)] = 3;
 
-            auto planned_current_v = 0, planned_target_v = 0, changed_v = 0;
+            float planned_current_v = 0, planned_target_v = 0, changed_v = 0;
             WheelSpeed wheel_speed;
 
-            if (wheel_change_map.cbegin()->second == 0) {
-                planned_current_v = current_wheel_v_.left_front_v;
+            if (wheel_change_map.rbegin()->second == 0) {
+                planned_current_v = target_wheel_v_.left_front_v;
                 planned_target_v = target_wheel_speed.left_front_v;
                 changed_v = changed_left_front_v;
-            } else if (wheel_change_map.cbegin()->second == 1) {
-                planned_current_v = current_wheel_v_.left_back_v;
+            } else if (wheel_change_map.rbegin()->second == 1) {
+                planned_current_v = target_wheel_v_.left_back_v;
                 planned_target_v = target_wheel_speed.left_back_v;
                 changed_v = changed_left_back_v;
-            } else if (wheel_change_map.cbegin()->second == 2) {
-                planned_current_v = current_wheel_v_.right_front_v;
+            } else if (wheel_change_map.rbegin()->second == 2) {
+                planned_current_v = target_wheel_v_.right_front_v;
                 planned_target_v = target_wheel_speed.right_front_v;
                 changed_v = changed_right_front_v;
-            } else if (wheel_change_map.cbegin()->second == 3) {
-                planned_current_v = current_wheel_v_.right_back_v;
+            } else if (wheel_change_map.rbegin()->second == 3) {
+                planned_current_v = target_wheel_v_.right_back_v;
                 planned_target_v = target_wheel_speed.right_back_v;
                 changed_v = changed_right_back_v;
             }
@@ -419,22 +428,22 @@ void CenterControl::start_move(WheelSpeed &target_wheel_speed) {
                 if (fabs(changed_left_front_v) < MIN_V_CHANGE) {
                     wheel_speed.left_front_v = target_wheel_speed.left_front_v;
                 } else {
-                    wheel_speed.left_front_v = speed_bi * changed_left_front_v + current_wheel_v_.left_front_v;
+                    wheel_speed.left_front_v = speed_bi * changed_left_front_v + target_wheel_v_.left_front_v;
                 }
                 if (fabs(changed_left_back_v) < MIN_V_CHANGE) {
                     wheel_speed.left_back_v = target_wheel_speed.left_back_v;
                 } else {
-                    wheel_speed.left_back_v = speed_bi * changed_left_back_v + current_wheel_v_.left_back_v;
+                    wheel_speed.left_back_v = speed_bi * changed_left_back_v + target_wheel_v_.left_back_v;
                 }
                 if (fabs(changed_right_front_v) < MIN_V_CHANGE) {
                     wheel_speed.right_front_v = target_wheel_speed.right_front_v;
                 } else {
-                    wheel_speed.right_front_v = speed_bi * changed_right_front_v + current_wheel_v_.right_front_v;
+                    wheel_speed.right_front_v = speed_bi * changed_right_front_v + target_wheel_v_.right_front_v;
                 }
                 if (fabs(changed_right_back_v) < MIN_V_CHANGE) {
                     wheel_speed.right_back_v = target_wheel_speed.right_back_v;
                 } else {
-                    wheel_speed.right_back_v = speed_bi * changed_right_back_v + current_wheel_v_.right_back_v;
+                    wheel_speed.right_back_v = speed_bi * changed_right_back_v + target_wheel_v_.right_back_v;
                 }
                 speed_deque.push_back(wheel_speed);
             }
@@ -536,7 +545,6 @@ void CenterControl::update() {
     dt_ = (time_record_ - last_time_record_) / 1e6;
 
     // TODO:位置环
-
     left_front_motor_control_->update(dt_);
     left_back_motor_control_->update(dt_);
     right_front_motor_control_->update(dt_);
@@ -592,24 +600,31 @@ void CenterControl::update() {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
             target_wheel_v_ = wheel_speed_deque_.front();
-            Serial.println("----------");
-            Serial.println(target_wheel_v_.left_front_v);
-            Serial.println(target_wheel_v_.left_back_v);
-            Serial.println(target_wheel_v_.right_front_v);
-            Serial.println(target_wheel_v_.right_back_v);
-            Serial.println("----------");
-            Serial.println("");
             wheel_speed_deque_.pop_front();
         }
         xSemaphoreGive(mutex_);
     }
 
-    left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt_, running_); // running_
-    Serial.println("");
-    left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt_, running_);
-    Serial.println("--------");
-    // right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt_, running_);
-    // right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt_, running_);
+    if (motor_enable_flags_ & 0x01) {
+        left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt_, running_); // running_
+    } else {
+        left_front_motor_control_->set_speed(0, dt_, false);
+    }
+    if (motor_enable_flags_ & 0x02) {
+        left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt_, running_);
+    } else {
+        left_back_motor_control_->set_speed(0, dt_, false);
+    }
+    if (motor_enable_flags_ & 0x04) {
+        right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt_, running_);
+    } else {
+        right_front_motor_control_->set_speed(0, dt_, false);
+    }
+    if (motor_enable_flags_ & 0x08) {
+        right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt_, running_);
+    } else {
+        right_back_motor_control_->set_speed(0, dt_, false);
+    }
 
     left_front_motor_control_->move();
     left_back_motor_control_->move();
@@ -657,19 +672,18 @@ void CenterControl::_fix_speed(float &v) {
         v = -1 * max_v;
 }
 
-std::pair<float, float> CenterControl::_forwardKinematics(float left_v, float right_v) {
-    return std::pair<float, float>((left_v + right_v) / 2, (right_v - left_v) / track_width_);
+geometry_msgs__msg__Twist CenterControl::_forwardKinematics(const WheelSpeed &wheelSpeed) {
 }
-
-std::pair<float, float> CenterControl::_inverseKinematics(float v, float w) {
-    return std::pair<float, float>(v - w * track_width_ / 2, v + w * track_width_ / 2);
+WheelSpeed CenterControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
 }
+WheelSpeed CenterControl::_inverseKinematics(float linear_vx, float linear_vy, float angular_wz) {}
 
 void CenterControl::read_params(motion_params_service__srv__MotionParamsService_Response *response) {
     response->milliseconds = milliseconds_;
     response->position_loop_milliseconds_cnt = position_loop_period_cnt_;
     response->speed_loop_milliseconds_cnt = speed_loop_period_cnt_;
 
+    response->motor_enable_flags = motor_enable_flags_;
     response->enable_speed_plan = enable_speed_plan_;
 
     response->speed_percent = speed_percent_;
@@ -716,35 +730,22 @@ void CenterControl::read_params(motion_params_service__srv__MotionParamsService_
 void CenterControl::save_params() {
     preferences_.begin("params", false);
     preferences_.clear();
-    Serial.println(0);
 
     preferences_.putInt("millisec", milliseconds_);
-
-    Serial.println(1);
     preferences_.putInt("posPeCnt", position_loop_period_cnt_);
-    Serial.println(2);
-
     preferences_.putInt("spdPeCnt", speed_loop_period_cnt_);
-    Serial.println(3);
-
     preferences_.putBool("spdPlan", enable_speed_plan_);
-    Serial.println(4);
 
     preferences_.putFloat("maxV", max_v_);
-    Serial.println(5);
-
     preferences_.putFloat("maxAcc", max_acc_);
-    Serial.println(6);
-
     preferences_.putFloat("jerk", jerk_);
+
+    preferences_.end();
 
     left_front_motor_control_->save_pid_params();
     left_back_motor_control_->save_pid_params();
     right_front_motor_control_->save_pid_params();
     right_back_motor_control_->save_pid_params();
-
-    preferences_.end();
-    serial_print("保存 params 完成!");
 }
 
 void CenterControl::_load_params() {
@@ -824,8 +825,6 @@ void CenterControl::save_settings() {
     left_back_motor_control_->save_motor_params();
     right_front_motor_control_->save_motor_params();
     right_back_motor_control_->save_motor_params();
-
-    serial_print("保存 settings 完成!");
 }
 
 void CenterControl::_load_settings() {
@@ -841,8 +840,6 @@ void CenterControl::_load_settings() {
     left_back_motor_control_->load_motor_params();
     right_front_motor_control_->load_motor_params();
     right_back_motor_control_->load_motor_params();
-
-    update_target_max_speed();
 }
 
 void CenterControl::update_target_max_speed() {

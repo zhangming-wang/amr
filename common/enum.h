@@ -2,6 +2,7 @@
 
 enum ServiceType {
     Idle = 0,
+    HeartBeat,
     Restart,
 
     Brake,
@@ -19,6 +20,7 @@ enum ServiceType {
 
     SetSpeedPercent,
     SetSpeedPlanState,
+    SetEnablePubMotionStatus,
 
     ReadParams,
     WriteParams,

@@ -72,6 +72,9 @@ public:
 
     void update_target_max_speed();
 
+    void set_motor_enable_flags(uint8_t flags);
+    uint8_t get_motor_enable_flags();
+
     void set_model_params(float track_width, float wheel_width);
 
     void set_left_front_motor_settings_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
@@ -124,6 +127,8 @@ private:
     float target_max_v_ = 0, target_max_w_ = 0, speed_percent_ = 0;
 
     //---------局部内部参数---------
+    uint8_t motor_enable_flags_ = 0xff;
+
     int period_cnt_ = 0;
     volatile bool running_ = false, enable_speed_plan_ = false;
 
@@ -150,8 +155,9 @@ private:
     motion_status_msgs__msg__MotionStatus motion_status_msg_;
     // nav_msgs__msg__Odometry odom_msg_;
 
-    std::pair<float, float> _forwardKinematics(float left_v, float right_v);
-    std::pair<float, float> _inverseKinematics(float v, float w);
+    geometry_msgs__msg__Twist _forwardKinematics(const WheelSpeed &wheelSpeed);
+    WheelSpeed _inverseKinematics(const geometry_msgs__msg__Twist &twist);
+    WheelSpeed _inverseKinematics(float linear_vx, float linear_vy, float angular_wz);
 
     void _calculateOdomMsg();
 

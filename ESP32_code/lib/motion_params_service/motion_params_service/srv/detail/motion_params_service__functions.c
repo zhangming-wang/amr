@@ -18,11 +18,13 @@ motion_params_service__srv__MotionParamsService_Request__init(motion_params_serv
   }
   // mode
   // id
+  // motor_enable_flags
   // milliseconds
   // position_loop_milliseconds_cnt
   // speed_loop_milliseconds_cnt
   // enable_speed_plan
   // is_mecanum_wheel
+  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
@@ -100,11 +102,13 @@ motion_params_service__srv__MotionParamsService_Request__fini(motion_params_serv
   }
   // mode
   // id
+  // motor_enable_flags
   // milliseconds
   // position_loop_milliseconds_cnt
   // speed_loop_milliseconds_cnt
   // enable_speed_plan
   // is_mecanum_wheel
+  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
@@ -187,6 +191,10 @@ motion_params_service__srv__MotionParamsService_Request__are_equal(const motion_
   if (lhs->id != rhs->id) {
     return false;
   }
+  // motor_enable_flags
+  if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
+    return false;
+  }
   // milliseconds
   if (lhs->milliseconds != rhs->milliseconds) {
     return false;
@@ -205,6 +213,10 @@ motion_params_service__srv__MotionParamsService_Request__are_equal(const motion_
   }
   // is_mecanum_wheel
   if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
+    return false;
+  }
+  // enable_pub_motion_status
+  if (lhs->enable_pub_motion_status != rhs->enable_pub_motion_status) {
     return false;
   }
   // speed_percent
@@ -486,6 +498,8 @@ motion_params_service__srv__MotionParamsService_Request__copy(
   output->mode = input->mode;
   // id
   output->id = input->id;
+  // motor_enable_flags
+  output->motor_enable_flags = input->motor_enable_flags;
   // milliseconds
   output->milliseconds = input->milliseconds;
   // position_loop_milliseconds_cnt
@@ -496,6 +510,8 @@ motion_params_service__srv__MotionParamsService_Request__copy(
   output->enable_speed_plan = input->enable_speed_plan;
   // is_mecanum_wheel
   output->is_mecanum_wheel = input->is_mecanum_wheel;
+  // enable_pub_motion_status
+  output->enable_pub_motion_status = input->enable_pub_motion_status;
   // speed_percent
   output->speed_percent = input->speed_percent;
   // max_v
@@ -819,12 +835,13 @@ motion_params_service__srv__MotionParamsService_Response__init(motion_params_ser
   }
   // state
   // id
-  // motion_mode
+  // motor_enable_flags
   // milliseconds
   // position_loop_milliseconds_cnt
   // speed_loop_milliseconds_cnt
   // enable_speed_plan
   // is_mecanum_wheel
+  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
@@ -902,12 +919,13 @@ motion_params_service__srv__MotionParamsService_Response__fini(motion_params_ser
   }
   // state
   // id
-  // motion_mode
+  // motor_enable_flags
   // milliseconds
   // position_loop_milliseconds_cnt
   // speed_loop_milliseconds_cnt
   // enable_speed_plan
   // is_mecanum_wheel
+  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
@@ -990,8 +1008,8 @@ motion_params_service__srv__MotionParamsService_Response__are_equal(const motion
   if (lhs->id != rhs->id) {
     return false;
   }
-  // motion_mode
-  if (lhs->motion_mode != rhs->motion_mode) {
+  // motor_enable_flags
+  if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
     return false;
   }
   // milliseconds
@@ -1012,6 +1030,10 @@ motion_params_service__srv__MotionParamsService_Response__are_equal(const motion
   }
   // is_mecanum_wheel
   if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
+    return false;
+  }
+  // enable_pub_motion_status
+  if (lhs->enable_pub_motion_status != rhs->enable_pub_motion_status) {
     return false;
   }
   // speed_percent
@@ -1293,8 +1315,8 @@ motion_params_service__srv__MotionParamsService_Response__copy(
   output->state = input->state;
   // id
   output->id = input->id;
-  // motion_mode
-  output->motion_mode = input->motion_mode;
+  // motor_enable_flags
+  output->motor_enable_flags = input->motor_enable_flags;
   // milliseconds
   output->milliseconds = input->milliseconds;
   // position_loop_milliseconds_cnt
@@ -1305,6 +1327,8 @@ motion_params_service__srv__MotionParamsService_Response__copy(
   output->enable_speed_plan = input->enable_speed_plan;
   // is_mecanum_wheel
   output->is_mecanum_wheel = input->is_mecanum_wheel;
+  // enable_pub_motion_status
+  output->enable_pub_motion_status = input->enable_pub_motion_status;
   // speed_percent
   output->speed_percent = input->speed_percent;
   // max_v

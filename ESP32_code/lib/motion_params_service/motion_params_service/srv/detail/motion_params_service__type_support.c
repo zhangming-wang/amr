@@ -31,7 +31,7 @@ void motion_params_service__srv__MotionParamsService_Request__rosidl_typesupport
   motion_params_service__srv__MotionParamsService_Request__fini(message_memory);
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_params_service__srv__MotionParamsService_Request__rosidl_typesupport_introspection_c__MotionParamsService_Request_message_member_array[73] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_params_service__srv__MotionParamsService_Request__rosidl_typesupport_introspection_c__MotionParamsService_Request_message_member_array[75] = {
   {
     "mode",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
@@ -58,6 +58,23 @@ static rosidl_typesupport_introspection_c__MessageMember motion_params_service__
     0,  // array size
     false,  // is upper bound
     offsetof(motion_params_service__srv__MotionParamsService_Request, id),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "motor_enable_flags",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_UINT8,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_params_service__srv__MotionParamsService_Request, motor_enable_flags),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -143,6 +160,23 @@ static rosidl_typesupport_introspection_c__MessageMember motion_params_service__
     0,  // array size
     false,  // is upper bound
     offsetof(motion_params_service__srv__MotionParamsService_Request, is_mecanum_wheel),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "enable_pub_motion_status",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_BOOLEAN,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_params_service__srv__MotionParamsService_Request, enable_pub_motion_status),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -1278,7 +1312,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_params_service__
 static const rosidl_typesupport_introspection_c__MessageMembers motion_params_service__srv__MotionParamsService_Request__rosidl_typesupport_introspection_c__MotionParamsService_Request_message_members = {
   "motion_params_service__srv",  // message namespace
   "MotionParamsService_Request",  // message name
-  73,  // number of fields
+  75,  // number of fields
   sizeof(motion_params_service__srv__MotionParamsService_Request),
   motion_params_service__srv__MotionParamsService_Request__rosidl_typesupport_introspection_c__MotionParamsService_Request_message_member_array,  // message members
   motion_params_service__srv__MotionParamsService_Request__rosidl_typesupport_introspection_c__MotionParamsService_Request_init_function,  // function to initialize message memory (memory has to be allocated)
@@ -1343,7 +1377,7 @@ void motion_params_service__srv__MotionParamsService_Response__rosidl_typesuppor
   motion_params_service__srv__MotionParamsService_Response__fini(message_memory);
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_params_service__srv__MotionParamsService_Response__rosidl_typesupport_introspection_c__MotionParamsService_Response_message_member_array[74] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_params_service__srv__MotionParamsService_Response__rosidl_typesupport_introspection_c__MotionParamsService_Response_message_member_array[75] = {
   {
     "state",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
@@ -1379,14 +1413,14 @@ static rosidl_typesupport_introspection_c__MessageMember motion_params_service__
     NULL  // resize(index) function pointer
   },
   {
-    "motion_mode",  // name
-    rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
+    "motor_enable_flags",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_UINT8,  // type
     0,  // upper bound of string
     NULL,  // members of sub message
     false,  // is array
     0,  // array size
     false,  // is upper bound
-    offsetof(motion_params_service__srv__MotionParamsService_Response, motion_mode),  // bytes offset in struct
+    offsetof(motion_params_service__srv__MotionParamsService_Response, motor_enable_flags),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -1472,6 +1506,23 @@ static rosidl_typesupport_introspection_c__MessageMember motion_params_service__
     0,  // array size
     false,  // is upper bound
     offsetof(motion_params_service__srv__MotionParamsService_Response, is_mecanum_wheel),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "enable_pub_motion_status",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_BOOLEAN,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_params_service__srv__MotionParamsService_Response, enable_pub_motion_status),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -2607,7 +2658,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_params_service__
 static const rosidl_typesupport_introspection_c__MessageMembers motion_params_service__srv__MotionParamsService_Response__rosidl_typesupport_introspection_c__MotionParamsService_Response_message_members = {
   "motion_params_service__srv",  // message namespace
   "MotionParamsService_Response",  // message name
-  74,  // number of fields
+  75,  // number of fields
   sizeof(motion_params_service__srv__MotionParamsService_Response),
   motion_params_service__srv__MotionParamsService_Response__rosidl_typesupport_introspection_c__MotionParamsService_Response_message_member_array,  // message members
   motion_params_service__srv__MotionParamsService_Response__rosidl_typesupport_introspection_c__MotionParamsService_Response_init_function,  // function to initialize message memory (memory has to be allocated)
