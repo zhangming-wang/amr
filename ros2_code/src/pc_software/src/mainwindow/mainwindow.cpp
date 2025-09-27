@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(ui->pushButton_restart, &QPushButton::clicked, this, &MainWindow::restart);
     connect(ui->pushButton_brake, &QPushButton::clicked, this, &MainWindow::brake);
     connect(ui->pushButton_stop_move, &QPushButton::clicked, this, &MainWindow::stop_move);
+    connect(ui->pushButton_stop_move_0, &QPushButton::clicked, this, &MainWindow::stop_move);
     connect(ui->pushButton_set_speed, &QPushButton::clicked, this, &MainWindow::set_speed);
     connect(ui->pushButton_move_front, &QPushButton::clicked, this, &MainWindow::move_front);
     connect(ui->pushButton_move_back, &QPushButton::clicked, this, &MainWindow::move_back);
@@ -841,40 +842,40 @@ void MainWindow::on_update_status() {
 }
 
 void MainWindow::on_recv_motion_status_msg(const motion_status_msgs::msg::MotionStatus::SharedPtr msg) {
+    QString speed_text = QString(
+                             "速度:\n"
+                             "    linear_x = %1 m/s\n"
+                             "    linear_y = %2 m/s\n"
+                             "    linear_z = %3 m/s\n"
+                             "    angular_x = %4 °/s\n"
+                             "    angular_y = %5 °/s\n"
+                             "    angular_z = %6 °/s")
+                             .arg(msg->twist_current_linear_x, 0, 'f', 3)
+                             .arg(msg->twist_current_linear_y, 0, 'f', 3)
+                             .arg(msg->twist_current_linear_z, 0, 'f', 3)
+                             .arg(msg->twist_current_angular_x * 180.0 / M_PI, 0, 'f', 3)
+                             .arg(msg->twist_current_angular_y * 180.0 / M_PI, 0, 'f', 3)
+                             .arg(msg->twist_current_angular_z * 180.0 / M_PI, 0, 'f', 3);
+
+    QString pose_text = QString(
+                            "位置:\n"
+                            "    x = %1 m\n"
+                            "    y = %2 m\n"
+                            "    z = %3 m\n"
+                            "    roll = %4 °\n"
+                            "    pitch = %5 °\n"
+                            "    yaw = %6 °")
+                            .arg(msg->twist_current_euler_pose_x, 0, 'f', 3)
+                            .arg(msg->twist_current_euler_pose_y, 0, 'f', 3)
+                            .arg(msg->twist_current_euler_pose_z, 0, 'f', 3)
+                            .arg(msg->twist_current_euler_pose_roll * 180.0 / M_PI, 0, 'f', 3)
+                            .arg(msg->twist_current_euler_pose_pitch * 180.0 / M_PI, 0, 'f', 3)
+                            .arg(msg->twist_current_euler_pose_yaw * 180.0 / M_PI, 0, 'f', 3);
+
+    ui->label_speed_msg->setText(speed_text);
+    ui->label_pose_msg->setText(pose_text);
+
     if (ui->checkBox_dynamic_refresh->isChecked()) {
-        QString speed_text = QString(
-                                 "速度:\n"
-                                 "    linear_x = %1 m/s\n"
-                                 "    linear_y = %2 m/s\n"
-                                 "    linear_z = %3 m/s\n"
-                                 "    angular_x = %4 °/s\n"
-                                 "    angular_y = %5 °/s\n"
-                                 "    angular_z = %6 °/s")
-                                 .arg(msg->twist_current_linear_x, 0, 'f', 3)
-                                 .arg(msg->twist_current_linear_y, 0, 'f', 3)
-                                 .arg(msg->twist_current_linear_z, 0, 'f', 3)
-                                 .arg(msg->twist_current_angular_x, 0, 'f', 3)
-                                 .arg(msg->twist_current_angular_y, 0, 'f', 3)
-                                 .arg(msg->twist_current_angular_z, 0, 'f', 3);
-
-        QString pose_text = QString(
-                                "位置:\n"
-                                "    x = %1 m\n"
-                                "    y = %2 m\n"
-                                "    z = %3 m\n"
-                                "    roll = %4 °\n"
-                                "    pitch = %5 °\n"
-                                "    yaw = %6 °")
-                                .arg(msg->twist_current_euler_pose_x, 0, 'f', 3)
-                                .arg(msg->twist_current_euler_pose_y, 0, 'f', 3)
-                                .arg(msg->twist_current_euler_pose_z, 0, 'f', 3)
-                                .arg(msg->twist_current_euler_pose_roll, 0, 'f', 3)
-                                .arg(msg->twist_current_euler_pose_pitch, 0, 'f', 3)
-                                .arg(msg->twist_current_euler_pose_yaw, 0, 'f', 3);
-
-        ui->label_speed_msg->setText(speed_text);
-        ui->label_pose_msg->setText(pose_text);
-
         double minValue = pow(10, -6);
         if (qFabs(msg->left_front_current_v) > minValue ||
             qFabs(msg->left_front_target_v) > minValue ||

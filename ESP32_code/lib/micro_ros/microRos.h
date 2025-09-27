@@ -33,7 +33,7 @@ public:
     // rcl_publisher_t *get_odom_publisher();
     rcl_publisher_t *get_serial_msg_publisher();
 
-    void reCreate_service_timer();
+    void reset_timer();
 
     rclc_executor_t executor;
     geometry_msgs__msg__Twist msg_cmd_vel;

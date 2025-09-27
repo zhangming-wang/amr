@@ -50,7 +50,7 @@ public:
     void restart();
 
     void start_move(WheelSpeed &target_wheel_speed);
-    void start_move(float twist_linear_x, float twist_linear_y, float twist_angular_z);
+    void start_move(const geometry_msgs__msg__Twist &twist);
     void stop_move();
     void brake();
 
@@ -65,8 +65,8 @@ public:
     void turn_left();
     void turn_right();
 
-    void move_absolute_euler_pose(float euler_pose_x, float euler_pose_y, float euler_pose_yaw);
-    void move_relative_euler_pose(float euler_pose_x, float euler_pose_y, float euler_pose_yaw);
+    void move_absolute_euler_pose(const EulerPose &eulerPose);
+    void move_relative_euler_pose(const EulerPose &eulerPose);
 
     String get_http_data();
 
@@ -113,7 +113,6 @@ public:
     void save_params();
 
     motion_status_msgs__msg__MotionStatus &get_motion_status_msg();
-    // nav_msgs__msg__Odometry &get_odom_msg();
 
 private:
     //---------需要保存配置---------
@@ -123,8 +122,8 @@ private:
     volatile int milliseconds_ = 10, position_loop_period_cnt_ = 2, speed_loop_period_cnt_ = 5;
     bool is_mecanum_wheel_ = false;
 
-    float max_v_ = 1, max_acc_ = 10, jerk_ = 1, max_w_ = 0;
-    float target_max_v_ = 0, target_max_w_ = 0, speed_percent_ = 0;
+    float max_acc_ = 10, jerk_ = 1;
+    float target_max_v_ = 0, max_v_ = 1, speed_percent_ = 0;
 
     //---------局部内部参数---------
     uint8_t motor_enable_flags_ = 0xff;
@@ -153,13 +152,9 @@ private:
     SemaphoreHandle_t mutex_; // 互斥量句柄
 
     motion_status_msgs__msg__MotionStatus motion_status_msg_;
-    // nav_msgs__msg__Odometry odom_msg_;
 
     geometry_msgs__msg__Twist _forwardKinematics(const WheelSpeed &wheelSpeed);
     WheelSpeed _inverseKinematics(const geometry_msgs__msg__Twist &twist);
-    WheelSpeed _inverseKinematics(float linear_vx, float linear_vy, float angular_wz);
-
-    void _calculateOdomMsg();
 
     void _load_params();
     void _load_settings();
@@ -168,9 +163,10 @@ private:
     void _stop_control_timer();
 
     void _fix_speed(float &v);
+    void _plan_wheel_speed(WheelSpeed &target_wheel_speed);
 
     void update();
-    void reset();
+    // void reset();
 };
 
 extern CenterControl centerControl;

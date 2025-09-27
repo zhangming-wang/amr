@@ -12,16 +12,6 @@ CenterControl::CenterControl() {
     position_loop_ = std::make_shared<PIDControl>("pl");
 
     mutex_ = xSemaphoreCreateMutex();
-
-    // odom_msg_.header.frame_id = micro_ros_string_utilities_set(odom_msg_.header.frame_id, "odom");
-    // odom_msg_.child_frame_id = micro_ros_string_utilities_set(odom_msg_.child_frame_id, "base_link");
-    // odom_msg_.twist.twist.linear.y = 0;
-    // odom_msg_.twist.twist.linear.z = 0;
-    // odom_msg_.twist.twist.angular.x = 0;
-    // odom_msg_.twist.twist.angular.y = 0;
-    // odom_msg_.pose.pose.position.z = 0;
-    // odom_msg_.pose.pose.orientation.x = 0;
-    // odom_msg_.pose.pose.orientation.y = 0;
 }
 
 void CenterControl::init_and_start() {
@@ -108,7 +98,6 @@ void CenterControl::set_speed_plan_parms(float max_v, float max_acc, float jerk)
     jerk_ = jerk;
 
     speed_percent_ = max_v_ / target_max_v_;
-    // max_w_ = target_max_w_ * speed_percent_;
 
     speedPlan_->set_maxAcc_and_jerk(max_acc_, jerk_);
 }
@@ -146,7 +135,6 @@ void CenterControl::set_speed_percent(float percent) {
         percent = 1;
     speed_percent_ = percent;
     max_v_ = target_max_v_ * speed_percent_;
-    // max_w_ = target_max_w_ * speed_percent_;
 }
 
 float CenterControl::get_speed_percent() {
@@ -199,20 +187,40 @@ void CenterControl::_stop_control_timer() {
     }
 }
 
-void CenterControl::move_relative_euler_pose(float euler_pose_x, float euler_pose_y, float euler_pose_yaw) {
-    target_euler_pose_.x = current_euler_pose_.x + euler_pose_x;
-    target_euler_pose_.y = current_euler_pose_.y + euler_pose_y;
-    target_euler_pose_.yaw = current_euler_pose_.yaw + euler_pose_yaw;
+void CenterControl::move_relative_euler_pose(const EulerPose &eulerPose) {
+    target_euler_pose_.x = current_euler_pose_.x + eulerPose.x;
+    target_euler_pose_.y = current_euler_pose_.y + eulerPose.y;
+    target_euler_pose_.yaw = current_euler_pose_.yaw + eulerPose.yaw;
+
+    while (target_euler_pose_.yaw > PI) {
+        target_euler_pose_.yaw -= 2.0 * PI;
+    }
+    while (target_euler_pose_.yaw < -PI) {
+        target_euler_pose_.yaw += 2.0 * PI;
+    }
 }
 
-void CenterControl::move_absolute_euler_pose(float euler_pose_x, float euler_pose_y, float euler_pose_yaw) {
-    target_euler_pose_.x = euler_pose_x;
-    target_euler_pose_.y = euler_pose_y;
-    target_euler_pose_.yaw = euler_pose_yaw;
+void CenterControl::move_absolute_euler_pose(const EulerPose &eulerPose) {
+    target_euler_pose_.x = eulerPose.x;
+    target_euler_pose_.y = eulerPose.y;
+    target_euler_pose_.yaw = eulerPose.yaw;
+
+    while (target_euler_pose_.yaw > PI) {
+        target_euler_pose_.yaw -= 2.0 * PI;
+    }
+    while (target_euler_pose_.yaw < -PI) {
+        target_euler_pose_.yaw += 2.0 * PI;
+    }
 }
 
 void CenterControl::brake() {
     running_ = false;
+    if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
+        if (!wheel_speed_deque_.empty()) {
+            wheel_speed_deque_.clear();
+        }
+        xSemaphoreGive(mutex_);
+    }
     left_front_motor_control_->brake();
     left_back_motor_control_->brake();
     right_front_motor_control_->brake();
@@ -378,7 +386,16 @@ void CenterControl::turn_right() {
     start_move(wheel_speed);
 }
 
+void CenterControl::start_move(const geometry_msgs__msg__Twist &twist) {
+    auto target_wheel_speed = _inverseKinematics(twist);
+    _plan_wheel_speed(target_wheel_speed);
+}
+
 void CenterControl::start_move(WheelSpeed &target_wheel_speed) {
+    _plan_wheel_speed(target_wheel_speed);
+}
+
+void CenterControl::_plan_wheel_speed(WheelSpeed &target_wheel_speed) {
     running_ = true;
     std::deque<WheelSpeed> speed_deque;
 
@@ -457,84 +474,20 @@ void CenterControl::start_move(WheelSpeed &target_wheel_speed) {
     }
 }
 
-void CenterControl::start_move(float twist_linear_x, float twist_linear_y, float twist_angular_z) {
-    // running_ = true;
-    // std::deque<std::pair<float, float>> speed_deque;
-    // if (enable_speed_plan_) {
-    //     float MIN_V_CHANGE = 0.001;
-    //     std::deque<float> single_wheel_speed_deque;
-    //     float left_target_v = 0, right_target_v = 0;
+// void CenterControl::reset() {
+//     period_cnt_ = 0;
+//     speed_loop_dt_ = 0;
 
-    //     auto target_wheels_v = _inverseKinematics(v, w);
-    //     auto current_wheels_v = _inverseKinematics(target_v_, target_w_);
+//     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
+//         wheel_speed_deque_.clear();
+//         wheel_speed_deque_.push_back(WheelSpeed());
+//         xSemaphoreGive(mutex_);
+//     }
 
-    //     _fix_speed(target_wheels_v.first);
-    //     _fix_speed(target_wheels_v.second);
-
-    //     float changed_left_v = target_wheels_v.first - current_wheels_v.first;
-    //     float changed_right_v = target_wheels_v.second - current_wheels_v.second;
-
-    //     if (fabs(changed_left_v) < MIN_V_CHANGE && fabs(changed_right_v) < MIN_V_CHANGE) {
-    //         speed_deque.push_back(std::pair<float, float>(v, w));
-    //     } else {
-    //         if (fabs(changed_left_v) > fabs(changed_right_v)) {
-    //             single_wheel_speed_deque = speedPlan_->plan(current_wheels_v.first, target_wheels_v.first, milliseconds_ / 1000.0);
-    //             for (auto value : single_wheel_speed_deque) {
-    //                 if (fabs(changed_right_v) < MIN_V_CHANGE) {
-    //                     right_target_v = target_wheels_v.second;
-    //                 } else {
-    //                     right_target_v = (value - current_wheels_v.first) / changed_left_v * changed_right_v + current_wheels_v.second;
-    //                 }
-    //                 speed_deque.push_back(_forwardKinematics(value, right_target_v));
-    //             }
-    //         } else {
-    //             single_wheel_speed_deque = speedPlan_->plan(current_wheels_v.second, target_wheels_v.second, milliseconds_ / 1000.0);
-    //             for (auto value : single_wheel_speed_deque) {
-    //                 if (fabs(changed_left_v) < MIN_V_CHANGE) {
-    //                     left_target_v = target_wheels_v.first;
-    //                 } else {
-    //                     left_target_v = (value - current_wheels_v.second) / changed_right_v * changed_left_v + current_wheels_v.first;
-    //                 }
-    //                 speed_deque.push_back(_forwardKinematics(left_target_v, value));
-    //             }
-    //         }
-    //     }
-    // } else {
-    //     auto target_wheels_v = _inverseKinematics(v, w);
-
-    //     _fix_speed(target_wheels_v.first);
-    //     _fix_speed(target_wheels_v.second);
-
-    //     speed_deque.push_back(_forwardKinematics(target_wheels_v.first, target_wheels_v.second));
-    // }
-
-    // if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
-    //     target_speed_deque_ = std::move(speed_deque);
-    //     xSemaphoreGive(mutex_);
-    // }
-}
-
-void CenterControl::reset() {
-    target_twist_.linear.x = 0;
-    target_twist_.linear.y = 0;
-    target_twist_.linear.z = 0;
-    target_twist_.angular.x = 0;
-    target_twist_.angular.y = 0;
-    target_twist_.angular.z = 0;
-
-    period_cnt_ = 0;
-    speed_loop_dt_ = 0;
-
-    if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
-        wheel_speed_deque_.clear();
-        wheel_speed_deque_.push_back(WheelSpeed());
-        xSemaphoreGive(mutex_);
-    }
-
-    position_loop_->reset();
-    line_speed_loop_->reset();
-    angle_speed_loop_->reset();
-}
+//     position_loop_->reset();
+//     line_speed_loop_->reset();
+//     angle_speed_loop_->reset();
+// }
 
 void CenterControl::update() {
     if (milliseconds_ <= 0) {
@@ -550,53 +503,6 @@ void CenterControl::update() {
     right_front_motor_control_->update(dt_);
     right_back_motor_control_->update(dt_);
 
-    _calculateOdomMsg();
-
-    // if (running_) {
-    //     period_cnt_ = (period_cnt_ + 1) % (position_loop_period_cnt_ * speed_loop_period_cnt_);
-    //     speed_loop_dt_ += dt_;
-
-    //     if (period_cnt_ % speed_loop_period_cnt_ == 0) {
-    //         if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
-    //             if (!target_speed_deque_.empty()) {
-    //                 auto target_speed = target_speed_deque_.front();
-    //                 target_v_ = target_speed.first;
-    //                 target_w_ = target_speed.second;
-    //                 target_speed_deque_.pop_front();
-    //             }
-    //             xSemaphoreGive(mutex_);
-    //         }
-
-    //         if (motion_mode_ == MotionMode::DynamicBalanceMode) {
-    //             target_pitch_ = line_speed_loop_->calculate(current_v_, target_v_, speed_loop_dt_);
-    //             adjust_target_w_ = angle_speed_loop_->calculate(current_w_, target_w_, speed_loop_dt_);
-    //         } else {
-    //             target_pitch_ = 0;
-    //             adjust_target_w_ = target_w_;
-    //         }
-    //         speed_loop_dt_ = 0;
-    //     }
-
-    //     if (period_cnt_ % position_loop_period_cnt_ == 0) {
-    //         if (motion_mode_ == MotionMode::NoBalanceMode) {
-    //             adjust_target_v_ = target_v_;
-    //         } else {
-    //             if (fabs(mpu6050_control_->pitch_) >= 45) {
-    //                 reset();
-    //             } else {
-    //                 adjust_target_v_ = attitude_p_ * (target_pitch_ - (mpu6050_control_->pitch_ - mpu6050_control_->pitch_offset_)) + attitude_d_ * mpu6050_control_->gyroY_;
-    //             }
-    //         }
-    //     }
-    // } else {
-    //     reset();
-    // }
-
-    // target_wheel_v_ = _inverseKinematics(target_v_, target_w_);
-
-    // left_motor_control_->set_speed(target_wheel_v_.first, dt_, running_);
-    // right_motor_control_->set_speed(target_wheel_v_.second, dt_, running_);
-
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
             target_wheel_v_ = wheel_speed_deque_.front();
@@ -605,57 +511,66 @@ void CenterControl::update() {
         xSemaphoreGive(mutex_);
     }
 
-    if (motor_enable_flags_ & 0x01) {
-        left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt_, running_); // running_
+    current_wheel_v_.left_back_v = left_front_motor_control_->get_current_speed();
+    current_wheel_v_.left_front_v = left_back_motor_control_->get_current_speed();
+    current_wheel_v_.right_back_v = right_front_motor_control_->get_current_speed();
+    current_wheel_v_.right_front_v = right_back_motor_control_->get_current_speed();
+
+    current_twist_ = _forwardKinematics(current_wheel_v_);
+
+    current_euler_pose_.x += current_twist_.linear.x * dt_;
+    current_euler_pose_.y += current_twist_.linear.y * dt_;
+    current_euler_pose_.yaw += current_twist_.angular.z * dt_;
+    while (current_euler_pose_.yaw > PI) {
+        current_euler_pose_.yaw -= 2.0 * PI;
+    }
+    while (current_euler_pose_.yaw < -PI) {
+        current_euler_pose_.yaw += 2.0 * PI;
+    }
+
+    if (running_) {
+        if (motor_enable_flags_ & 0x01) {
+            left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt_, true); // running_
+        } else {
+            left_front_motor_control_->set_speed(0, dt_, false);
+        }
+        if (motor_enable_flags_ & 0x02) {
+            left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt_, true);
+        } else {
+            left_back_motor_control_->set_speed(0, dt_, false);
+        }
+        if (motor_enable_flags_ & 0x04) {
+            right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt_, true);
+        } else {
+            right_front_motor_control_->set_speed(0, dt_, false);
+        }
+        if (motor_enable_flags_ & 0x08) {
+            right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt_, true);
+        } else {
+            right_back_motor_control_->set_speed(0, dt_, false);
+        }
+        left_front_motor_control_->move();
+        left_back_motor_control_->move();
+        right_front_motor_control_->move();
+        right_back_motor_control_->move();
     } else {
+        target_wheel_v_.left_back_v = 0;
+        target_wheel_v_.left_front_v = 0;
+        target_wheel_v_.right_back_v = 0;
+        target_wheel_v_.right_front_v = 0;
         left_front_motor_control_->set_speed(0, dt_, false);
-    }
-    if (motor_enable_flags_ & 0x02) {
-        left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt_, running_);
-    } else {
         left_back_motor_control_->set_speed(0, dt_, false);
-    }
-    if (motor_enable_flags_ & 0x04) {
-        right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt_, running_);
-    } else {
         right_front_motor_control_->set_speed(0, dt_, false);
-    }
-    if (motor_enable_flags_ & 0x08) {
-        right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt_, running_);
-    } else {
         right_back_motor_control_->set_speed(0, dt_, false);
     }
 
-    left_front_motor_control_->move();
-    left_back_motor_control_->move();
-    right_front_motor_control_->move();
-    right_back_motor_control_->move();
+    target_twist_ = _forwardKinematics(target_wheel_v_);
 
     last_time_record_ = time_record_;
 
     if (esp_timer_get_time() - time_record_ >= milliseconds_ * 1000) {
         serial_print("控制处理超时(ms): " + std::to_string((esp_timer_get_time() - time_record_) / 1000.0));
     }
-}
-
-void CenterControl::_calculateOdomMsg() {
-    // auto right_distance = right_motor_control_->get_distance_change();
-    // auto left_distance = left_motor_control_->get_distance_change();
-    // auto distance = (right_distance + left_distance) / 2;
-    // auto angle = (right_distance - left_distance) / track_width_;
-    // current_x_ += distance * std::cos(current_angle_ + angle / 2.0);
-    // current_y_ += distance * std::sin(current_angle_ + angle / 2.0);
-    // current_angle_ += angle;
-    // current_angle_ = std::atan2(std::sin(current_angle_), std::cos(current_angle_));
-
-    // auto speed = _forwardKinematics(left_distance / dt_, right_distance / dt_);
-    // current_v_ = speed.first;
-    // current_w_ = speed.second;
-
-    current_wheel_v_.left_back_v = left_front_motor_control_->get_current_speed();
-    current_wheel_v_.left_front_v = left_back_motor_control_->get_current_speed();
-    current_wheel_v_.right_back_v = right_front_motor_control_->get_current_speed();
-    current_wheel_v_.right_front_v = right_back_motor_control_->get_current_speed();
 }
 
 void CenterControl::_fix_speed(float &v) {
@@ -673,10 +588,27 @@ void CenterControl::_fix_speed(float &v) {
 }
 
 geometry_msgs__msg__Twist CenterControl::_forwardKinematics(const WheelSpeed &wheelSpeed) {
+    geometry_msgs__msg__Twist twist;
+    twist.linear.x = sqrt(2.0) / 4.0 * (wheelSpeed.left_front_v - wheelSpeed.left_back_v - wheelSpeed.right_front_v + wheelSpeed.right_back_v);
+    twist.linear.y = sqrt(2.0) / 4.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v);
+    twist.linear.z = 0;
+    twist.angular.x = 0;
+    twist.angular.y = 0;
+    twist.angular.z = sqrt(2.0) / 2.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) / (track_width_ + wheel_width_);
+    // twist.angular.z = sqrt(2.0) / 4.0 * ((wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) / track_width_ + (-wheelSpeed.left_front_v - wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v) / wheel_width_);
+    return twist;
 }
+
 WheelSpeed CenterControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
+    WheelSpeed wheelSpeed;
+
+    wheelSpeed.left_front_v = (twist.linear.x + twist.linear.y + (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
+    wheelSpeed.right_front_v = (twist.linear.x - twist.linear.y - (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
+    wheelSpeed.left_back_v = (-twist.linear.x + twist.linear.y - (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
+    wheelSpeed.right_back_v = (-twist.linear.x - twist.linear.y + (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
+
+    return wheelSpeed;
 }
-WheelSpeed CenterControl::_inverseKinematics(float linear_vx, float linear_vy, float angular_wz) {}
 
 void CenterControl::read_params(motion_params_service__srv__MotionParamsService_Response *response) {
     response->milliseconds = milliseconds_;
@@ -852,35 +784,11 @@ void CenterControl::update_target_max_speed() {
 
     if (is_mecanum_wheel_) {
         target_max_v_ = max_v * sqrt(2) / 2.0;
-
-        // target_max_v_ = (left_front_max_wheel_speed + right_front_max_wheel_speed + left_back_max_wheel_speed + right_back_max_wheel_speed) / 4.0;
-        // target_max_w_ = (left_front_max_wheel_speed - right_front_max_wheel_speed + left_back_max_wheel_speed - right_back_max_wheel_speed) / (4.0 * (track_width_ + wheel_width_));
     } else {
         target_max_v_ = max_v;
-        // target_max_v_ = (left_front_max_wheel_speed + right_front_max_wheel_speed) / 2.0;
-        // target_max_w_ = (left_front_max_wheel_speed - right_front_max_wheel_speed) / (2.0 * track_width_);
     }
     speed_percent_ = max_v_ / target_max_v_;
 }
-
-// nav_msgs__msg__Odometry &CenterControl::get_odom_msg() {
-//     auto stamp = rmw_uros_epoch_millis();
-//     odom_msg_.header.stamp.sec = stamp / 1000;
-//     odom_msg_.header.stamp.nanosec = (stamp % 1000 * 1e6);
-
-//     odom_msg_.twist.twist = current_twist_;
-
-//     odom_msg_.pose.pose.position.x = current_euler_pose_.x;
-//     odom_msg_.pose.pose.position.y = current_euler_pose_.y;
-//     odom_msg_.pose.pose.position.z = current_euler_pose_.z;
-
-//     odom_msg_.pose.pose.orientation.x = 0; // 显式设为0
-//     odom_msg_.pose.pose.orientation.y = 0;
-//     odom_msg_.pose.pose.orientation.w = std::cos(current_euler_pose_.yaw / 2.0);
-//     odom_msg_.pose.pose.orientation.z = std::sin(current_euler_pose_.yaw / 2.0);
-
-//     return odom_msg_;
-// }
 
 motion_status_msgs__msg__MotionStatus &CenterControl::get_motion_status_msg() {
     motion_status_msg_.left_front_current_v = left_front_motor_control_->get_current_speed();

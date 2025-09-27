@@ -4,20 +4,19 @@
 #include "microRos.h"
 #include "motorControl.h"
 #include "serial_print.h"
+#include "settings.h"
 #include <Arduino.h>
 #include <ESP32Encoder.h>
 
-const char *wifi_name = "TP-LINK_403";
-const char *wifi_password = "403123456";
-const char *wifi_IP = "192.168.1.101";
-
-IPAddress ESP32_IP = IPAddress(192, 168, 1, 190);
+// const char *wifi_name = "TP-LINK_403";
+// const char *wifi_password = "403123456";
+// const char *wifi_IP = "192.168.1.101";
 
 void (*serial_print)(const std::string &) = _serial_print;
 
 CenterControl centerControl;
-MicroRos microRos("micro_ros_node", wifi_name, wifi_password, wifi_IP, 8888);
-HttpService httpService(80);
+MicroRos microRos("micro_ros_node", wifi_name, wifi_password, wifi_IP, micro_ros_port);
+HttpService httpService(http_port);
 
 void setup() {
     Serial.begin(115200);
@@ -25,7 +24,13 @@ void setup() {
 
     WiFi.mode(WIFI_STA);
     WiFi.persistent(false);
-    WiFi.config(ESP32_IP, IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
+
+    IPAddress ESP32_IP = IPAddress(), ESP32_gateway = IPAddress(), ESP32_subnet = IPAddress();
+    ESP32_IP.fromString(esp32_ip);
+    ESP32_gateway.fromString(esp32_gateway);
+    ESP32_subnet.fromString(esp32_subnet);
+
+    WiFi.config(ESP32_IP, ESP32_gateway, ESP32_subnet);
     WiFi.begin(wifi_name, wifi_password);
     delay(1000);
 

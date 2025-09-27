@@ -99,7 +99,7 @@ void MainWindow::onRecvData(QJsonObject jsonData) {
                "angular_z = %3 °/s")
                .arg(speedVector[0], 0, 'f', 3)
                .arg(speedVector[1], 0, 'f', 3)
-               .arg(speedVector[2], 0, 'f', 3);
+               .arg(speedVector[2] * 180.0 / M_PI, 0, 'f', 3);
     ui->label_speed_status->setText(text);
 
     if (jsonData.keys().contains("euler_pose_x") && jsonData.keys().contains("euler_pose_y") && jsonData.keys().contains("euler_pose_yaw")) {
@@ -108,12 +108,12 @@ void MainWindow::onRecvData(QJsonObject jsonData) {
         poseVector[2] = jsonData["euler_pose_yaw"].toDouble();
     }
     text = QString(
-               "pose_x = %1 m/s\n"
-               "pose_y = %2 m/s\n"
-               "pose_yaw = %3 °/s")
+               "pose_x = %1 m\n"
+               "pose_y = %2 m\n"
+               "pose_yaw = %3 °")
                .arg(poseVector[0], 0, 'f', 3)
                .arg(poseVector[1], 0, 'f', 3)
-               .arg(poseVector[2], 0, 'f', 3);
+               .arg(poseVector[2] * 180.0 / M_PI, 0, 'f', 3);
     ui->label_euler_pose_status->setText(text);
 }
 

@@ -205,6 +205,12 @@ bool MicroRos::init() {
         motion_params_service_initialized_ = true;
     }
 
+    if (enable_pub_motion_status_) {
+        if (!_create_timer()) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -244,14 +250,14 @@ void MicroRos::_destroy_timer() {
 
 void MicroRos::set_enable_pub_motion_status(bool status) {
     enable_pub_motion_status_ = status;
-    reCreate_service_timer();
+    reset_timer();
 }
 
 bool MicroRos::get_enable_pub_motion_status() {
     return enable_pub_motion_status_;
 }
 
-void MicroRos::reCreate_service_timer() {
+void MicroRos::reset_timer() {
     if (enable_pub_motion_status_) {
         if (timer_initialized_) {
             int64_t period_ns;
@@ -378,7 +384,7 @@ void motion_params_service_callback(const void *req, void *res) {
         response->enable_pub_motion_status = microRos.get_enable_pub_motion_status();
     } else if (request->mode == ServiceType::WriteParams) {
         if (centerControl.get_milliseconds() != request->milliseconds && request->milliseconds > 0) {
-            microRos.reCreate_service_timer();
+            microRos.reset_timer();
         }
 
         centerControl.set_milliseconds(request->milliseconds);
@@ -444,7 +450,7 @@ void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
 
 void msg_twist_callback(const void *msg) {
     const geometry_msgs__msg__Twist *twist_msg = static_cast<const geometry_msgs__msg__Twist *>(msg);
-    centerControl.start_move(twist_msg->linear.y, twist_msg->linear.x, twist_msg->angular.z);
+    centerControl.start_move(*twist_msg);
 }
 
 void _serial_print(const std::string &msg) {
