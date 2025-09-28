@@ -589,24 +589,25 @@ void CenterControl::_fix_speed(float &v) {
 
 geometry_msgs__msg__Twist CenterControl::_forwardKinematics(const WheelSpeed &wheelSpeed) {
     geometry_msgs__msg__Twist twist;
-    twist.linear.x = sqrt(2.0) / 4.0 * (wheelSpeed.left_front_v - wheelSpeed.left_back_v - wheelSpeed.right_front_v + wheelSpeed.right_back_v);
-    twist.linear.y = sqrt(2.0) / 4.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v);
-    twist.linear.z = 0;
-    twist.angular.x = 0;
-    twist.angular.y = 0;
-    twist.angular.z = sqrt(2.0) / 2.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) / (track_width_ + wheel_width_);
-    // twist.angular.z = sqrt(2.0) / 4.0 * ((wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) / track_width_ + (-wheelSpeed.left_front_v - wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v) / wheel_width_);
+    if (is_mecanum_wheel_) {
+        twist.linear.x = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v - wheelSpeed.left_back_v - wheelSpeed.right_front_v + wheelSpeed.right_back_v);
+        twist.linear.y = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v);
+        twist.linear.z = 0;
+        twist.angular.x = 0;
+        twist.angular.y = 0;
+        twist.angular.z = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) / (1.0 / track_width_ + 1.0 / wheel_width_);
+    }
     return twist;
 }
 
 WheelSpeed CenterControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
     WheelSpeed wheelSpeed;
-
-    wheelSpeed.left_front_v = (twist.linear.x + twist.linear.y + (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
-    wheelSpeed.right_front_v = (twist.linear.x - twist.linear.y - (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
-    wheelSpeed.left_back_v = (-twist.linear.x + twist.linear.y - (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
-    wheelSpeed.right_back_v = (-twist.linear.x - twist.linear.y + (track_width_ + wheel_width_) / 2.0 * twist.angular.z) / sqrt(2.0);
-
+    if (is_mecanum_wheel_) {
+        wheelSpeed.left_front_v = (4 * (twist.linear.x - twist.linear.y) / sqrt(2.0)) + (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
+        wheelSpeed.left_back_v = (4 * (-twist.linear.x - twist.linear.y) / sqrt(2.0)) + (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
+        wheelSpeed.right_front_v = (4 * (-twist.linear.x - twist.linear.y) / sqrt(2.0)) - (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
+        wheelSpeed.right_back_v = (4 * (twist.linear.x - twist.linear.y) / sqrt(2.0)) - (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
+    }
     return wheelSpeed;
 }
 
