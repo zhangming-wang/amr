@@ -296,62 +296,48 @@ void MainWindow::_initStatusBar() {
 
 void MainWindow::_initGamepad() {
     gamepad_ = std::make_shared<QGamepad>(0);
-    // connect(gamepad_.get(), &QGamepad::axisLeftXChanged, this, [this](double) {
-    //     std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
-    //     twist->linear.x = gamepad_->axisLeftY() * -0.4;
-    //     twist->angular.z = gamepad_->axisLeftX() * -4.5;
-    //     auto cmd_string = _get_cmd_string_prefix() + "手柄遥感指令";
-    //     _publish_twist(twist, cmd_string);
-    // });
 
-    // connect(gamepad_.get(), &QGamepad::axisLeftXChanged, this, [this](double) {
-    //     std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
-    //     twist->linear.x = gamepad_->axisLeftY() * -0.4;
-    //     twist->angular.z = gamepad_->axisLeftX() * -4.5;
-    //     auto cmd_string = _get_cmd_string_prefix() + "手柄遥感指令";
-    //     _publish_twist(twist, cmd_string);
-    // });
+    connect(gamepad_.get(), &QGamepad::buttonGuideChanged, this, &MainWindow::brake);
+    connect(gamepad_.get(), &QGamepad::buttonXChanged, this, &MainWindow::on_gamepad_button_clicked);
+    connect(gamepad_.get(), &QGamepad::buttonYChanged, this, &MainWindow::on_gamepad_button_clicked);
+    connect(gamepad_.get(), &QGamepad::buttonAChanged, this, &MainWindow::on_gamepad_button_clicked);
+    connect(gamepad_.get(), &QGamepad::buttonBChanged, this, &MainWindow::on_gamepad_button_clicked);
+    connect(gamepad_.get(), &QGamepad::buttonL1Changed, this, &MainWindow::on_gamepad_button_clicked);
+    connect(gamepad_.get(), &QGamepad::buttonR1Changed, this, &MainWindow::on_gamepad_button_clicked);
+    connect(gamepad_.get(), &QGamepad::axisLeftXChanged, this, &MainWindow::on_gamepad_axis_changed);
+    connect(gamepad_.get(), &QGamepad::axisLeftYChanged, this, &MainWindow::on_gamepad_axis_changed);
+    connect(gamepad_.get(), &QGamepad::axisRightXChanged, this, &MainWindow::on_gamepad_axis_changed);
+    connect(gamepad_.get(), &QGamepad::axisRightYChanged, this, &MainWindow::on_gamepad_axis_changed);
 
-    // connect(gamepad_.get(), &QGamepad::buttonUpChanged, this, [this](bool value) {
-    //     if (value) {
-    //         ui->pushButton_move_front->click();
-    //     } else {
-    //         ui->pushButton_stop_move->click();
-    //     }
-    // });
-    // connect(gamepad_.get(), &QGamepad::buttonDownChanged, this, [this](bool value) {
-    //     if (value) {
-    //         ui->pushButton_move_back->click();
-    //     } else {
-    //         ui->pushButton_stop_move->click();
-    //     }
-    // });
-    // connect(gamepad_.get(), &QGamepad::buttonLeftChanged, this, [this](bool value) {
-    //     if (value) {
-    //         ui->pushButton_move_left->click();
-    //     } else {
-    //         ui->pushButton_stop_move->click();
-    //     }
-    // });
-    // connect(gamepad_.get(), &QGamepad::buttonRightChanged, this, [this](bool value) {
-    //     if (value) {
-    //         ui->pushButton_move_right->click();
-    //     } else {
-    //         ui->pushButton_stop_move->click();
-    //     }
-    // });
-    connect(gamepad_.get(), &QGamepad::buttonGuideChanged, this, [this](bool) {
-        ui->pushButton_brake->click();
+    auto change_spd = [this](bool add) {
+        double min_step = 0.05;
+        double percent = 1.0 * ui->horizontalSlider_speed_percent->value() / ui->horizontalSlider_speed_percent->maximum();
+        if (add) {
+            percent += min_step;
+            if (percent > 1) {
+                percent = 1;
+            }
+        } else {
+            percent -= min_step;
+            if (percent < min_step) {
+                percent = min_step;
+            }
+        }
+        ui->horizontalSlider_speed_percent->setValue(percent * ui->horizontalSlider_speed_percent->maximum());
+        set_speed_percent();
+    };
+
+    connect(gamepad_.get(), &QGamepad::buttonUpChanged, this, [change_spd](bool value) {
+        if (value)
+            change_spd(true);
     });
-    connect(gamepad_.get(), &QGamepad::buttonXChanged, this, &MainWindow::on_gamepad_set_move);
-    connect(gamepad_.get(), &QGamepad::buttonYChanged, this, &MainWindow::on_gamepad_set_move);
-    connect(gamepad_.get(), &QGamepad::buttonAChanged, this, &MainWindow::on_gamepad_set_move);
-    connect(gamepad_.get(), &QGamepad::buttonBChanged, this, &MainWindow::on_gamepad_set_move);
-    connect(gamepad_.get(), &QGamepad::buttonL1Changed, this, &MainWindow::on_gamepad_set_move);
-    connect(gamepad_.get(), &QGamepad::buttonR1Changed, this, &MainWindow::on_gamepad_set_move);
+    connect(gamepad_.get(), &QGamepad::buttonDownChanged, this, [change_spd](bool value) {
+        if (value)
+            change_spd(false);
+    });
 }
 
-void MainWindow::on_gamepad_set_move() {
+void MainWindow::on_gamepad_button_clicked() {
     if (!gamepad_->buttonX() && gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
         ui->pushButton_move_front->click();
     } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
@@ -375,6 +361,37 @@ void MainWindow::on_gamepad_set_move() {
     } else if (!gamepad_->buttonX() && !gamepad_->buttonY() && !gamepad_->buttonA() && !gamepad_->buttonB() && !gamepad_->buttonL1() && !gamepad_->buttonR1()) {
         ui->pushButton_stop_move->click();
     }
+}
+
+void MainWindow::on_gamepad_axis_changed() {
+    std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
+
+    double axixLeftX_value = gamepad_->axisLeftX();
+    double axixLeftY_value = gamepad_->axisLeftY();
+    double axixRightX_value = gamepad_->axisRightX();
+
+    const double MIN_VALUE = 0.1;
+
+    if (fabs(axixLeftX_value) < MIN_VALUE)
+        axixLeftX_value = 0;
+    if (fabs(axixLeftY_value) < MIN_VALUE)
+        axixLeftY_value = 0;
+    if (fabs(axixRightX_value) < MIN_VALUE)
+        axixRightX_value = 0;
+
+    twist->linear.x = axixLeftX_value * ui->doubleSpinBox_max_v->value();
+    twist->linear.y = -1.0 * axixLeftY_value * ui->doubleSpinBox_max_v->value();
+    twist->linear.z = 0;
+    twist->angular.x = 0;
+    twist->angular.y = 0;
+    twist->angular.z = axixRightX_value * ui->doubleSpinBox_max_v->value() / (1.0 / (ui->spinBox_track_width->value() / 1000.0) + 1.0 / (ui->spinBox_track_width->value() / 1000.0));
+
+    if (fabs(axixLeftX_value) < MIN_VALUE && fabs(axixLeftY_value) < MIN_VALUE && fabs(axixRightX_value) < MIN_VALUE) {
+        nodeThread_->is_pubing_twist.store(false);
+    } else {
+        nodeThread_->is_pubing_twist.store(true);
+    }
+    nodeThread_->add_twist(-1, twist);
 }
 
 QString MainWindow::_get_cmd_string_prefix() {

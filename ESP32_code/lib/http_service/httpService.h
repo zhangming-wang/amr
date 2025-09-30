@@ -1,31 +1,36 @@
 #pragma once
 
 #include "centerControl.h"
-#include "serial_print.h"
+#include "serialPrint.h"
 #include <WebServer.h>
 #include <WiFi.h>
 
 class HttpService {
-    friend void http_serive_task(void *args);
 
 public:
-    HttpService(const int port);
-    ~HttpService();
+    static HttpService &get_instance();
 
+    HttpService(const HttpService &) = delete;
+    HttpService &operator=(const HttpService &) = delete;
+
+    void init(const int port);
     void start_task();
     void stop_task();
 
 private:
+    HttpService();
+    ~HttpService();
+
     WebServer webServer_;
-    bool enable_task_run = false;
+    bool enable_task_run_ = false;
+    int port_ = 0;
+
+    CenterControl *centerControl = nullptr;
 
     void begin();
     void stop();
     void handleClient();
+    bool is_enable_task_run();
 
-    void _send_update_ui_data();
+    static void http_serive_task(void *args);
 };
-
-extern HttpService httpService;
-
-void http_serive_task(void *args);

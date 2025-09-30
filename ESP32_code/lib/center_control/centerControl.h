@@ -11,6 +11,10 @@ extern "C" {
 #include "motion_status_msgs/msg/motion_status.h"
 }
 #include "enum.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+#include "freertos/task.h"
 #include <Arduino.h>
 #include <Preferences.h>
 #include <deque>
@@ -39,15 +43,21 @@ struct EulerPose {
 };
 
 class CenterControl {
-    friend void control_loop(void *args);
+
+private:
+    CenterControl();
+    ~CenterControl();
 
 public:
-    CenterControl();
+    static CenterControl &get_instance();
 
-    void init_and_start();
-    void start();
-    void stop();
-    void restart();
+    CenterControl(const CenterControl &) = delete;
+    CenterControl &operator=(const CenterControl &) = delete;
+
+    void init();
+    void start_task();
+    void stop_task();
+    void restart_task();
 
     void start_move(WheelSpeed &target_wheel_speed);
     void start_move(const geometry_msgs__msg__Twist &twist);
@@ -123,7 +133,7 @@ private:
     bool is_mecanum_wheel_ = false;
 
     float max_acc_ = 10, jerk_ = 1;
-    float target_max_v_ = 0, max_v_ = 1, speed_percent_ = 0;
+    float target_max_v_ = 0, max_v_ = 1, max_w_ = 0, speed_percent_ = 0;
 
     //---------局部内部参数---------
     uint8_t motor_enable_flags_ = 0xff;
@@ -137,7 +147,7 @@ private:
     EulerPose current_euler_pose_, target_euler_pose_;
 
     WheelSpeed current_wheel_v_, target_wheel_v_;
-    geometry_msgs__msg__Twist current_twist_, target_twist_;
+    geometry_msgs__msg__Twist last_twist_, current_twist_, target_twist_;
 
     std::deque<WheelSpeed> wheel_speed_deque_;
 
@@ -148,8 +158,8 @@ private:
     std::shared_ptr<SpeedPlan> speedPlan_;
 
     esp_timer_handle_t control_timer_ = nullptr;
-
     SemaphoreHandle_t mutex_; // 互斥量句柄
+    QueueHandle_t control_queue_;
 
     motion_status_msgs__msg__MotionStatus motion_status_msg_;
 
@@ -163,12 +173,13 @@ private:
     void _stop_control_timer();
 
     void _fix_speed(float &v);
-    void _plan_wheel_speed(WheelSpeed &target_wheel_speed);
+    void _plan_wheel_speed(); // WheelSpeed &target_wheel_speed
 
     void update();
+    QueueHandle_t &get_control_deque();
+
+    static void control_loop(void *args);
+    static void control_timer_callback(void *args);
+
     // void reset();
 };
-
-extern CenterControl centerControl;
-
-void control_loop(void *args);

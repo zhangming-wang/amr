@@ -60,7 +60,8 @@ public:
 
     void clear_plot();
 
-    void on_gamepad_set_move();
+    void on_gamepad_button_clicked();
+    void on_gamepad_axis_changed();
 
     void on_write_params();
     void on_read_params();

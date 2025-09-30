@@ -1,12 +1,22 @@
 #include "microRos.h"
 
-MicroRos::MicroRos(const std::string &node_name, const std::string &wifi_name, const std::string &wifi_passward, const std::string &ip, const uint16_t port) : node_name_(node_name),
-                                                                                                                                                               wifi_name_(wifi_name),
-                                                                                                                                                               wifi_passward_(wifi_passward),
-                                                                                                                                                               ip_(ip),
-                                                                                                                                                               port_(port) {
-
+MicroRos::MicroRos() {
     allocator_ = rcl_get_default_allocator();
+    centerControl = &CenterControl::get_instance();
+}
+MicroRos::~MicroRos() {}
+
+MicroRos &MicroRos::get_instance() {
+    static MicroRos microRos;
+    return microRos;
+}
+
+void MicroRos::init(const std::string &node_name, const std::string &wifi_name, const std::string &wifi_passward, const std::string &ip, const uint16_t port) {
+    node_name_ = node_name;
+    wifi_name_ = wifi_name;
+    wifi_passward_ = wifi_passward;
+    ip_ = ip;
+    port_ = port;
 
     IPAddress agent_ip;
     agent_ip.fromString(ip.c_str());
@@ -142,7 +152,13 @@ bool MicroRos::init() {
     }
 
     if (!cmd_vel_subscription_initialized_) {
-        ret = rclc_subscription_init_default(&cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel");
+        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
+        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
+        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;           // 保存最后 N 条
+        my_qos.depth = 1;                                            // 队列长度
+        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;      // 临时消息
+
+        ret = rclc_subscription_init(&cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel", &my_qos);
         if (ret != RCL_RET_OK) {
             serial_print("rclc_subscription_init_default:" + std::to_string(ret));
             return false;
@@ -216,7 +232,7 @@ bool MicroRos::init() {
 
 bool MicroRos::_create_timer() {
     if (!timer_initialized_) {
-        auto ret = rclc_timer_init_default(&timer_, &support_, RCL_MS_TO_NS(centerControl.get_milliseconds()), timer_callback);
+        auto ret = rclc_timer_init_default(&timer_, &support_, RCL_MS_TO_NS(centerControl->get_milliseconds()), timer_callback);
         if (ret != RCL_RET_OK) {
             Serial.println("rclc_timer_init_default.");
             return false;
@@ -262,7 +278,7 @@ void MicroRos::reset_timer() {
         if (timer_initialized_) {
             int64_t period_ns;
             rcl_ret_t ret = rcl_timer_get_period(&timer_, &period_ns);
-            if (ret != RCL_RET_OK || RCL_MS_TO_NS(centerControl.get_milliseconds()) != period_ns) {
+            if (ret != RCL_RET_OK || RCL_MS_TO_NS(centerControl->get_milliseconds()) != period_ns) {
                 _destroy_timer();
             }
         }
@@ -278,14 +294,17 @@ void MicroRos::reset_timer() {
 }
 
 void MicroRos::start_task() {
-    if (enable_task_run == false) {
-        enable_task_run = true;
-        xTaskCreate(microros_task, "microros_task", 8192, this, 1, NULL);
+    if (enable_task_run_ == false) {
+        enable_task_run_ = true;
+        xTaskCreatePinnedToCore(microros_task, "microros_task", 8192, this, 1, NULL, 0);
     }
 }
 
 void MicroRos::stop_task() {
-    enable_task_run = false;
+    enable_task_run_ = false;
+}
+bool MicroRos::is_enable_task_run() {
+    return enable_task_run_;
 }
 
 rcl_publisher_t *MicroRos::get_motion_status_publisher() {
@@ -300,11 +319,11 @@ rcl_publisher_t *MicroRos::get_serial_msg_publisher() {
     return &serial_msg_publisher_;
 }
 
-void microros_task(void *args) {
+void MicroRos::microros_task(void *args) {
     MicroRos *microRos = static_cast<MicroRos *>(args);
     bool init_success = false;
     microRos->connected = false;
-    while (microRos->enable_task_run) {
+    while (microRos->is_enable_task_run()) {
         if (!init_success) {
             if (!microRos->init()) {
                 serial_print("microros init failed, try again...");
@@ -316,7 +335,7 @@ void microros_task(void *args) {
             }
         }
 
-        rclc_executor_spin_some(&microRos->executor, RCL_MS_TO_NS(centerControl.get_milliseconds()));
+        rclc_executor_spin_some(&microRos->executor, RCL_MS_TO_NS(MicroRos::get_instance().centerControl->get_milliseconds()));
         if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
             microRos->connected = false;
             serial_print("microros is disconnected, reconnecting...");
@@ -324,145 +343,147 @@ void microros_task(void *args) {
             vTaskDelay(pdMS_TO_TICKS(500));
         } else {
             microRos->connected = true;
-            vTaskDelay(pdMS_TO_TICKS(centerControl.get_milliseconds()));
+            vTaskDelay(pdMS_TO_TICKS(MicroRos::get_instance().centerControl->get_milliseconds()));
         }
     }
     microRos->clean();
     vTaskDelete(NULL);
 }
 
-void motion_params_service_callback(const void *req, void *res) {
+void MicroRos::motion_params_service_callback(const void *req, void *res) {
     const motion_params_service__srv__MotionParamsService_Request *request = (const motion_params_service__srv__MotionParamsService_Request *)req;
     motion_params_service__srv__MotionParamsService_Response *response = (motion_params_service__srv__MotionParamsService_Response *)res;
+
+    MicroRos &instance = MicroRos::get_instance();
 
     if (request->mode == ServiceType::HeartBeat) {
         ;
     } else if (request->mode == ServiceType::Restart) {
-        centerControl.restart();
+        instance.centerControl->restart_task();
     } else if (request->mode == ServiceType::Brake) {
-        centerControl.brake();
+        instance.centerControl->brake();
     } else if (request->mode == ServiceType::StopMove) {
-        centerControl.stop_move();
+        instance.centerControl->stop_move();
     } else if (request->mode == ServiceType::MoveFront) {
-        centerControl.move_front();
+        instance.centerControl->move_front();
     } else if (request->mode == ServiceType::MoveBack) {
-        centerControl.move_back();
+        instance.centerControl->move_back();
     } else if (request->mode == ServiceType::MoveLeft) {
-        centerControl.move_left();
+        instance.centerControl->move_left();
     } else if (request->mode == ServiceType::MoveRight) {
-        centerControl.move_right();
+        instance.centerControl->move_right();
     } else if (request->mode == ServiceType::MoveLeftFront) {
-        centerControl.move_left_front();
+        instance.centerControl->move_left_front();
     } else if (request->mode == ServiceType::MoveRightFront) {
-        centerControl.move_right_front();
+        instance.centerControl->move_right_front();
     } else if (request->mode == ServiceType::MoveLeftBack) {
-        centerControl.move_left_back();
+        instance.centerControl->move_left_back();
     } else if (request->mode == ServiceType::MoveRightBack) {
-        centerControl.move_right_back();
+        instance.centerControl->move_right_back();
     } else if (request->mode == ServiceType::TurnLeft) {
-        centerControl.turn_left();
+        instance.centerControl->turn_left();
     } else if (request->mode == ServiceType::TurnRight) {
-        centerControl.turn_right();
+        instance.centerControl->turn_right();
     }
 
     else if (request->mode == ServiceType::SetSpeedPercent) {
-        centerControl.set_speed_percent(request->speed_percent);
-        response->max_v = centerControl.get_max_speed();
-        response->speed_percent = centerControl.get_speed_percent();
+        instance.centerControl->set_speed_percent(request->speed_percent);
+        response->max_v = instance.centerControl->get_max_speed();
+        response->speed_percent = instance.centerControl->get_speed_percent();
     }
 
     else if (request->mode == ServiceType::SetSpeedPlanState) {
-        centerControl.set_speed_plan_state(request->enable_speed_plan);
+        instance.centerControl->set_speed_plan_state(request->enable_speed_plan);
     }
 
     else if (request->mode == ServiceType::SetEnablePubMotionStatus) {
-        microRos.set_enable_pub_motion_status(request->enable_pub_motion_status);
+        instance.set_enable_pub_motion_status(request->enable_pub_motion_status);
     }
 
     else if (request->mode == ServiceType::ReadParams) {
-        centerControl.read_params(response);
-        response->enable_pub_motion_status = microRos.get_enable_pub_motion_status();
+        instance.centerControl->read_params(response);
+        response->enable_pub_motion_status = instance.get_enable_pub_motion_status();
     } else if (request->mode == ServiceType::WriteParams) {
-        if (centerControl.get_milliseconds() != request->milliseconds && request->milliseconds > 0) {
-            microRos.reset_timer();
+        if (instance.centerControl->get_milliseconds() != request->milliseconds && request->milliseconds > 0) {
+            instance.reset_timer();
         }
 
-        centerControl.set_milliseconds(request->milliseconds);
-        centerControl.set_loop_period_cnt(request->position_loop_milliseconds_cnt, request->speed_loop_milliseconds_cnt);
+        instance.centerControl->set_milliseconds(request->milliseconds);
+        instance.centerControl->set_loop_period_cnt(request->position_loop_milliseconds_cnt, request->speed_loop_milliseconds_cnt);
 
-        centerControl.set_position_pid_params(request->position_p, request->position_i, request->position_d, request->position_max_total_integral);
+        instance.centerControl->set_position_pid_params(request->position_p, request->position_i, request->position_d, request->position_max_total_integral);
 
-        centerControl.set_line_speed_pid_params(request->line_speed_p, request->line_speed_i, request->line_speed_d, request->line_speed_max_total_integral);
-        centerControl.set_angle_speed_pid_params(request->angle_speed_p, request->angle_speed_i, request->angle_speed_d, request->angle_speed_max_total_integral);
+        instance.centerControl->set_line_speed_pid_params(request->line_speed_p, request->line_speed_i, request->line_speed_d, request->line_speed_max_total_integral);
+        instance.centerControl->set_angle_speed_pid_params(request->angle_speed_p, request->angle_speed_i, request->angle_speed_d, request->angle_speed_max_total_integral);
 
-        centerControl.set_left_front_motor_pid_params(request->left_front_motor_p, request->left_front_motor_i, request->left_front_motor_d, request->left_front_motor_max_total_integral);
-        centerControl.set_left_back_motor_pid_params(request->left_back_motor_p, request->left_back_motor_i, request->left_back_motor_d, request->left_back_motor_max_total_integral);
+        instance.centerControl->set_left_front_motor_pid_params(request->left_front_motor_p, request->left_front_motor_i, request->left_front_motor_d, request->left_front_motor_max_total_integral);
+        instance.centerControl->set_left_back_motor_pid_params(request->left_back_motor_p, request->left_back_motor_i, request->left_back_motor_d, request->left_back_motor_max_total_integral);
 
-        centerControl.set_right_front_motor_pid_params(request->right_front_motor_p, request->right_front_motor_i, request->right_front_motor_d, request->right_front_motor_max_total_integral);
-        centerControl.set_right_back_motor_pid_params(request->right_back_motor_p, request->right_back_motor_i, request->right_back_motor_d, request->right_back_motor_max_total_integral);
+        instance.centerControl->set_right_front_motor_pid_params(request->right_front_motor_p, request->right_front_motor_i, request->right_front_motor_d, request->right_front_motor_max_total_integral);
+        instance.centerControl->set_right_back_motor_pid_params(request->right_back_motor_p, request->right_back_motor_i, request->right_back_motor_d, request->right_back_motor_max_total_integral);
 
-        centerControl.set_speed_plan_parms(request->max_v, request->max_acc, request->jerk);
+        instance.centerControl->set_speed_plan_parms(request->max_v, request->max_acc, request->jerk);
 
-        centerControl.set_motor_enable_flags(request->motor_enable_flags);
+        instance.centerControl->set_motor_enable_flags(request->motor_enable_flags);
 
-        response->max_v = centerControl.get_max_speed();
-        response->speed_percent = centerControl.get_speed_percent();
+        response->max_v = instance.centerControl->get_max_speed();
+        response->speed_percent = instance.centerControl->get_speed_percent();
     } else if (request->mode == ServiceType::SaveParams) {
-        centerControl.save_params();
+        instance.centerControl->save_params();
     }
 
     else if (request->mode == ServiceType::ReadSettings) {
-        centerControl.read_settings(response);
+        instance.centerControl->read_settings(response);
     } else if (request->mode == ServiceType::WriteSettings) {
-        centerControl.set_wheel_type(request->is_mecanum_wheel);
-        centerControl.set_model_params(request->track_width, request->wheel_width);
-        centerControl.set_left_front_motor_settings_params(request->left_front_motor_pina, request->left_front_motor_pinb, request->left_front_encoder_pina, request->left_front_encoder_pinb, request->left_front_motor_pinpwm,
-                                                           request->left_front_motor_wheel_diameter, request->left_front_motor_pluses_per_revolution, request->left_front_motor_revolutions_per_minute);
-        centerControl.set_left_back_motor_settings_params(request->left_back_motor_pina, request->left_back_motor_pinb, request->left_back_encoder_pina, request->left_back_encoder_pinb, request->left_back_motor_pinpwm,
-                                                          request->left_back_motor_wheel_diameter, request->left_back_motor_pluses_per_revolution, request->left_back_motor_revolutions_per_minute);
-        centerControl.set_right_front_motor_settings_params(request->right_front_motor_pina, request->right_front_motor_pinb, request->right_front_encoder_pina, request->right_front_encoder_pinb, request->right_front_motor_pinpwm,
-                                                            request->right_front_motor_wheel_diameter, request->right_front_motor_pluses_per_revolution, request->right_front_motor_revolutions_per_minute);
-        centerControl.set_right_back_motor_settings_params(request->right_back_motor_pina, request->right_back_motor_pinb, request->right_back_encoder_pina, request->right_back_encoder_pinb, request->right_back_motor_pinpwm,
-                                                           request->right_back_motor_wheel_diameter, request->right_back_motor_pluses_per_revolution, request->right_back_motor_revolutions_per_minute);
-        centerControl.update_target_max_speed();
+        instance.centerControl->set_wheel_type(request->is_mecanum_wheel);
+        instance.centerControl->set_model_params(request->track_width, request->wheel_width);
+        instance.centerControl->set_left_front_motor_settings_params(request->left_front_motor_pina, request->left_front_motor_pinb, request->left_front_encoder_pina, request->left_front_encoder_pinb, request->left_front_motor_pinpwm,
+                                                                     request->left_front_motor_wheel_diameter, request->left_front_motor_pluses_per_revolution, request->left_front_motor_revolutions_per_minute);
+        instance.centerControl->set_left_back_motor_settings_params(request->left_back_motor_pina, request->left_back_motor_pinb, request->left_back_encoder_pina, request->left_back_encoder_pinb, request->left_back_motor_pinpwm,
+                                                                    request->left_back_motor_wheel_diameter, request->left_back_motor_pluses_per_revolution, request->left_back_motor_revolutions_per_minute);
+        instance.centerControl->set_right_front_motor_settings_params(request->right_front_motor_pina, request->right_front_motor_pinb, request->right_front_encoder_pina, request->right_front_encoder_pinb, request->right_front_motor_pinpwm,
+                                                                      request->right_front_motor_wheel_diameter, request->right_front_motor_pluses_per_revolution, request->right_front_motor_revolutions_per_minute);
+        instance.centerControl->set_right_back_motor_settings_params(request->right_back_motor_pina, request->right_back_motor_pinb, request->right_back_encoder_pina, request->right_back_encoder_pinb, request->right_back_motor_pinpwm,
+                                                                     request->right_back_motor_wheel_diameter, request->right_back_motor_pluses_per_revolution, request->right_back_motor_revolutions_per_minute);
+        instance.centerControl->update_target_max_speed();
     } else if (request->mode == ServiceType::SaveSettings) {
-        centerControl.save_settings();
+        instance.centerControl->save_settings();
     }
 
     response->state = request->mode;
     response->id = request->id;
 }
 
-void timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
-    if (microRos.is_connected()) {
+void MicroRos::timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+    if (MicroRos::get_instance().is_connected()) {
         rcl_ret_t ret;
-        // ret = rcl_publish(microRos.get_odom_publisher(), &centerControl.get_odom_msg(), NULL);
+        // ret = rcl_publish(microRos.get_odom_publisher(), &MicroRos::get_instance().centerControl->get_odom_msg(), NULL);
         // if (ret != RCL_RET_OK) {
         //     serial_print("error: pub odom msg failed:" + std::to_string(ret));
         // }
 
-        ret = rcl_publish(microRos.get_motion_status_publisher(), &centerControl.get_motion_status_msg(), NULL);
+        ret = rcl_publish(MicroRos::get_instance().get_motion_status_publisher(), &MicroRos::get_instance().centerControl->get_motion_status_msg(), NULL);
         if (ret != RCL_RET_OK) {
             serial_print("error: pub motion status msg failed:" + std::to_string(ret));
         }
     }
 }
 
-void msg_twist_callback(const void *msg) {
+void MicroRos::msg_twist_callback(const void *msg) {
     const geometry_msgs__msg__Twist *twist_msg = static_cast<const geometry_msgs__msg__Twist *>(msg);
-    centerControl.start_move(*twist_msg);
+    MicroRos::get_instance().centerControl->start_move(*twist_msg);
 }
 
 void _serial_print(const std::string &msg) {
     Serial.println(msg.c_str());
 
-    if (microRos.is_connected()) {
+    if (MicroRos::get_instance().is_connected()) {
         std_msgs__msg__String ros_msg;
         rosidl_runtime_c__String__init(&ros_msg.data);
         rosidl_runtime_c__String__assign(&ros_msg.data, msg.c_str());
 
         rcl_ret_t ret;
-        ret = rcl_publish(microRos.get_serial_msg_publisher(), &ros_msg, NULL);
+        ret = rcl_publish(MicroRos::get_instance().get_serial_msg_publisher(), &ros_msg, NULL);
         if (ret != RCL_RET_OK) {
             Serial.print("error: pub serial msg failed:");
             Serial.println(ret);

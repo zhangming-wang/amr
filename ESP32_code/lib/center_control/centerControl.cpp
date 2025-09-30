@@ -12,9 +12,17 @@ CenterControl::CenterControl() {
     position_loop_ = std::make_shared<PIDControl>("pl");
 
     mutex_ = xSemaphoreCreateMutex();
+    control_queue_ = xQueueCreate(10, sizeof(int));
 }
 
-void CenterControl::init_and_start() {
+CenterControl::~CenterControl() {}
+
+CenterControl &CenterControl::get_instance() {
+    static CenterControl instance; // C++11 保证线程安全初始化
+    return instance;
+}
+
+void CenterControl::init() {
     _load_settings();
     _load_params();
 
@@ -22,22 +30,23 @@ void CenterControl::init_and_start() {
 
     set_milliseconds(milliseconds_);
     set_speed_plan_parms(max_v_, max_acc_, jerk_);
-    start();
+
+    xTaskCreatePinnedToCore(control_loop, "control_loop", 8192, this, 3, NULL, 1);
 }
 
-void CenterControl::restart() {
-    stop();
-    delay(100);
-    start();
-}
-
-void CenterControl::start() {
+void CenterControl::start_task() {
     _start_control_timer();
 }
 
-void CenterControl::stop() {
+void CenterControl::stop_task() {
     stop_move();
     _stop_control_timer();
+}
+
+void CenterControl::restart_task() {
+    stop_task();
+    delay(100);
+    start_task();
 }
 
 void CenterControl::set_model_params(float track_width, float wheel_width) {
@@ -98,6 +107,7 @@ void CenterControl::set_speed_plan_parms(float max_v, float max_acc, float jerk)
     jerk_ = jerk;
 
     speed_percent_ = max_v_ / target_max_v_;
+    max_w_ = max_v_ / (1.0 / track_width_ + 1.0 / wheel_width_);
 
     speedPlan_->set_maxAcc_and_jerk(max_acc_, jerk_);
 }
@@ -135,6 +145,7 @@ void CenterControl::set_speed_percent(float percent) {
         percent = 1;
     speed_percent_ = percent;
     max_v_ = target_max_v_ * speed_percent_;
+    max_w_ = max_v_ / (1.0 / track_width_ + 1.0 / wheel_width_);
 }
 
 float CenterControl::get_speed_percent() {
@@ -155,9 +166,9 @@ uint8_t CenterControl::get_motor_enable_flags() {
 void CenterControl::_start_control_timer() {
     if (!control_timer_) {
         esp_timer_create_args_t timer_args = {
-            .callback = &control_loop,
-            .arg = this,
-            .name = "control_timer"};
+            .callback = &control_timer_callback,
+            .arg = NULL,
+            .name = "control_timer_callback"};
         auto ret = esp_timer_create(&timer_args, &control_timer_);
         if (ret != ESP_OK) {
             serial_print("control timer created failed.");
@@ -215,9 +226,14 @@ void CenterControl::move_absolute_euler_pose(const EulerPose &eulerPose) {
 
 void CenterControl::brake() {
     running_ = false;
+    stop_move();
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
             wheel_speed_deque_.clear();
+            target_wheel_v_.left_back_v = 0;
+            target_wheel_v_.left_front_v = 0;
+            target_wheel_v_.right_back_v = 0;
+            target_wheel_v_.right_front_v = 0;
         }
         xSemaphoreGive(mutex_);
     }
@@ -228,176 +244,268 @@ void CenterControl::brake() {
 }
 
 void CenterControl::stop_move() {
-    auto wheel_speed = WheelSpeed();
-    wheel_speed.left_front_v = 0;
-    wheel_speed.left_back_v = 0;
-    wheel_speed.right_front_v = 0;
-    wheel_speed.right_back_v = 0;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // wheel_speed.left_front_v = 0;
+    // wheel_speed.left_back_v = 0;
+    // wheel_speed.right_front_v = 0;
+    // wheel_speed.right_back_v = 0;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = 0;
+    target_twist_.linear.y = 0;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_front() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = max_v;
-    wheel_speed.left_back_v = max_v;
-    wheel_speed.right_front_v = max_v;
-    wheel_speed.right_back_v = max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = max_v;
+    // wheel_speed.left_back_v = max_v;
+    // wheel_speed.right_front_v = max_v;
+    // wheel_speed.right_back_v = max_v;
+
+    target_twist_.linear.x = 0;
+    target_twist_.linear.y = max_v_;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_back() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = -max_v;
-    wheel_speed.left_back_v = -max_v;
-    wheel_speed.right_front_v = -max_v;
-    wheel_speed.right_back_v = -max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = -max_v;
+    // wheel_speed.left_back_v = -max_v;
+    // wheel_speed.right_front_v = -max_v;
+    // wheel_speed.right_back_v = -max_v;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = 0;
+    target_twist_.linear.y = -max_v_;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_left() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = -max_v;
-    wheel_speed.left_back_v = max_v;
-    wheel_speed.right_front_v = max_v;
-    wheel_speed.right_back_v = -max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = -max_v;
+    // wheel_speed.left_back_v = max_v;
+    // wheel_speed.right_front_v = max_v;
+    // wheel_speed.right_back_v = -max_v;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = -max_v_;
+    target_twist_.linear.y = 0;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_right() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = max_v;
-    wheel_speed.left_back_v = -max_v;
-    wheel_speed.right_front_v = -max_v;
-    wheel_speed.right_back_v = max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = max_v;
+    // wheel_speed.left_back_v = -max_v;
+    // wheel_speed.right_front_v = -max_v;
+    // wheel_speed.right_back_v = max_v;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = max_v_;
+    target_twist_.linear.y = 0;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_left_front() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = 0;
-    wheel_speed.left_back_v = max_v;
-    wheel_speed.right_front_v = max_v;
-    wheel_speed.right_back_v = 0;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = 0;
+    // wheel_speed.left_back_v = max_v;
+    // wheel_speed.right_front_v = max_v;
+    // wheel_speed.right_back_v = 0;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = -max_v_;
+    target_twist_.linear.y = max_v_;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_right_back() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = 0;
-    wheel_speed.left_back_v = -max_v;
-    wheel_speed.right_front_v = -max_v;
-    wheel_speed.right_back_v = 0;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = 0;
+    // wheel_speed.left_back_v = -max_v;
+    // wheel_speed.right_front_v = -max_v;
+    // wheel_speed.right_back_v = 0;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = max_v_;
+    target_twist_.linear.y = -max_v_;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_right_front() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = max_v;
-    wheel_speed.left_back_v = 0;
-    wheel_speed.right_front_v = 0;
-    wheel_speed.right_back_v = max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = max_v;
+    // wheel_speed.left_back_v = 0;
+    // wheel_speed.right_front_v = 0;
+    // wheel_speed.right_back_v = max_v;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = max_v_;
+    target_twist_.linear.y = max_v_;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::move_left_back() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = -max_v;
-    wheel_speed.left_back_v = 0;
-    wheel_speed.right_front_v = 0;
-    wheel_speed.right_back_v = -max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = -max_v;
+    // wheel_speed.left_back_v = 0;
+    // wheel_speed.right_front_v = 0;
+    // wheel_speed.right_back_v = -max_v;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = -max_v_;
+    target_twist_.linear.y = -max_v_;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = 0;
+    start_move(target_twist_);
 }
 
 void CenterControl::turn_left() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = -max_v;
-    wheel_speed.left_back_v = -max_v;
-    wheel_speed.right_front_v = max_v;
-    wheel_speed.right_back_v = max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = -max_v;
+    // wheel_speed.left_back_v = -max_v;
+    // wheel_speed.right_front_v = max_v;
+    // wheel_speed.right_back_v = max_v;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = 0;
+    target_twist_.linear.y = 0;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = -max_w_;
+    start_move(target_twist_);
 }
 
 void CenterControl::turn_right() {
-    auto wheel_speed = WheelSpeed();
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-    wheel_speed.left_front_v = max_v;
-    wheel_speed.left_back_v = max_v;
-    wheel_speed.right_front_v = -max_v;
-    wheel_speed.right_back_v = -max_v;
-    start_move(wheel_speed);
+    // auto wheel_speed = WheelSpeed();
+    // float max_v = 0;
+    // if (is_mecanum_wheel_) {
+    //     max_v = max_v_ * 2 / sqrt(2);
+    // } else {
+    //     max_v = max_v_;
+    // }
+    // wheel_speed.left_front_v = max_v;
+    // wheel_speed.left_back_v = max_v;
+    // wheel_speed.right_front_v = -max_v;
+    // wheel_speed.right_back_v = -max_v;
+    // start_move(wheel_speed);
+
+    target_twist_.linear.x = 0;
+    target_twist_.linear.y = 0;
+    target_twist_.linear.z = 0;
+    target_twist_.angular.x = 0;
+    target_twist_.angular.y = 0;
+    target_twist_.angular.z = max_w_;
+    start_move(target_twist_);
 }
 
 void CenterControl::start_move(const geometry_msgs__msg__Twist &twist) {
-    auto target_wheel_speed = _inverseKinematics(twist);
-    _plan_wheel_speed(target_wheel_speed);
+    // auto target_wheel_speed = _inverseKinematics(twist);
+    // _plan_wheel_speed(target_wheel_speed);
+    target_twist_ = twist;
+    _plan_wheel_speed();
 }
 
 void CenterControl::start_move(WheelSpeed &target_wheel_speed) {
-    _plan_wheel_speed(target_wheel_speed);
+    target_twist_ = _forwardKinematics(target_wheel_speed);
+    _plan_wheel_speed();
 }
 
-void CenterControl::_plan_wheel_speed(WheelSpeed &target_wheel_speed) {
+void CenterControl::_plan_wheel_speed() { // WheelSpeed &target_wheel_speed
     running_ = true;
     std::deque<WheelSpeed> speed_deque;
+
+    auto target_wheel_speed = _inverseKinematics(target_twist_);
 
     _fix_speed(target_wheel_speed.left_front_v);
     _fix_speed(target_wheel_speed.left_back_v);
@@ -497,7 +605,6 @@ void CenterControl::update() {
     time_record_ = esp_timer_get_time();
     dt_ = (time_record_ - last_time_record_) / 1e6;
 
-    // TODO:位置环
     left_front_motor_control_->update(dt_);
     left_back_motor_control_->update(dt_);
     right_front_motor_control_->update(dt_);
@@ -518,15 +625,17 @@ void CenterControl::update() {
 
     current_twist_ = _forwardKinematics(current_wheel_v_);
 
-    current_euler_pose_.x += current_twist_.linear.x * dt_;
-    current_euler_pose_.y += current_twist_.linear.y * dt_;
-    current_euler_pose_.yaw += current_twist_.angular.z * dt_;
+    current_euler_pose_.x += (current_twist_.linear.x + last_twist_.linear.x) / 2.0 * dt_;
+    current_euler_pose_.y += (current_twist_.linear.y + last_twist_.linear.y) / 2.0 * dt_;
+    current_euler_pose_.yaw += (current_twist_.angular.z + last_twist_.angular.z) / 2.0 * dt_;
     while (current_euler_pose_.yaw > PI) {
         current_euler_pose_.yaw -= 2.0 * PI;
     }
     while (current_euler_pose_.yaw < -PI) {
         current_euler_pose_.yaw += 2.0 * PI;
     }
+
+    last_twist_ = current_twist_;
 
     if (running_) {
         if (motor_enable_flags_ & 0x01) {
@@ -554,17 +663,11 @@ void CenterControl::update() {
         right_front_motor_control_->move();
         right_back_motor_control_->move();
     } else {
-        target_wheel_v_.left_back_v = 0;
-        target_wheel_v_.left_front_v = 0;
-        target_wheel_v_.right_back_v = 0;
-        target_wheel_v_.right_front_v = 0;
         left_front_motor_control_->set_speed(0, dt_, false);
         left_back_motor_control_->set_speed(0, dt_, false);
         right_front_motor_control_->set_speed(0, dt_, false);
         right_back_motor_control_->set_speed(0, dt_, false);
     }
-
-    target_twist_ = _forwardKinematics(target_wheel_v_);
 
     last_time_record_ = time_record_;
 
@@ -595,7 +698,7 @@ geometry_msgs__msg__Twist CenterControl::_forwardKinematics(const WheelSpeed &wh
         twist.linear.z = 0;
         twist.angular.x = 0;
         twist.angular.y = 0;
-        twist.angular.z = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) / (1.0 / track_width_ + 1.0 / wheel_width_);
+        twist.angular.z = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) * (track_width_ * wheel_width_) / (track_width_ + wheel_width_);
     }
     return twist;
 }
@@ -603,10 +706,10 @@ geometry_msgs__msg__Twist CenterControl::_forwardKinematics(const WheelSpeed &wh
 WheelSpeed CenterControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
     WheelSpeed wheelSpeed;
     if (is_mecanum_wheel_) {
-        wheelSpeed.left_front_v = (4 * (twist.linear.x - twist.linear.y) / sqrt(2.0)) + (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
-        wheelSpeed.left_back_v = (4 * (-twist.linear.x - twist.linear.y) / sqrt(2.0)) + (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
-        wheelSpeed.right_front_v = (4 * (-twist.linear.x - twist.linear.y) / sqrt(2.0)) - (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
-        wheelSpeed.right_back_v = (4 * (twist.linear.x - twist.linear.y) / sqrt(2.0)) - (2.0 * twist.angular.z * track_width_ * wheel_width_) / ((track_width_ + wheel_width_) * sqrt(2.0));
+        wheelSpeed.left_front_v = sqrt(2.0) * ((twist.linear.x + twist.linear.y) + twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
+        wheelSpeed.left_back_v = sqrt(2.0) * ((-twist.linear.x + twist.linear.y) + twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
+        wheelSpeed.right_front_v = sqrt(2.0) * ((-twist.linear.x + twist.linear.y) - twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
+        wheelSpeed.right_back_v = sqrt(2.0) * ((twist.linear.x + twist.linear.y) - twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
     }
     return wheelSpeed;
 }
@@ -838,7 +941,22 @@ String CenterControl::get_http_data() {
     return json;
 }
 
-void control_loop(void *args) {
+QueueHandle_t &CenterControl::get_control_deque() {
+    return control_queue_;
+}
+
+void CenterControl::control_loop(void *args) {
     auto centerControl = static_cast<CenterControl *>(args);
-    centerControl->update();
+    while (1) {
+        int msg;
+        if (xQueueReceive(CenterControl::get_instance().get_control_deque(), &msg, portMAX_DELAY)) {
+            centerControl->update();
+        }
+    }
+    vTaskDelete(NULL);
+}
+
+void CenterControl::control_timer_callback(void *args) {
+    int trigger = 1;
+    xQueueSendFromISR(CenterControl::get_instance().get_control_deque(), &trigger, NULL);
 }

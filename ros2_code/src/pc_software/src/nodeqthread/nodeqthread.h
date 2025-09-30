@@ -58,6 +58,8 @@ public:
     bool add_motion_params_service(int64_t id, motion_params_service::srv::MotionParamsService::Request::SharedPtr request);
     bool micro_ros_is_online();
 
+    std::atomic<bool> is_pubing_twist = false;
+
 protected:
     void run();
 
@@ -84,6 +86,7 @@ private:
     rclcpp::Client<motion_params_service::srv::MotionParamsService>::SharedPtr motion_params_client_;
 
     std::atomic<bool> micro_ros_is_online_;
+    int try_connect_cnt_ = 0;
 
     void recv_motion_status_msg(const motion_status_msgs::msg::MotionStatus::SharedPtr msg);
     // void recv_odom_msg(const nav_msgs::msg::Odometry::SharedPtr msg);

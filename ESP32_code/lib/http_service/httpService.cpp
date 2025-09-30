@@ -1,9 +1,23 @@
 #include "httpService.h"
 
-HttpService::HttpService(int port) : webServer_(port) {
+HttpService &HttpService::get_instance() {
+    static HttpService httpService;
+    return httpService;
+}
+
+HttpService::HttpService() {
+    centerControl = &CenterControl::get_instance();
 }
 
 HttpService::~HttpService() {
+}
+
+bool HttpService::is_enable_task_run() {
+    return enable_task_run_;
+}
+
+void HttpService::init(int port) {
+    port_ = port;
 }
 
 void HttpService::begin() {
@@ -12,54 +26,54 @@ void HttpService::begin() {
         webServer_.send(200, "text/plain", "connected");
     });
     webServer_.on("/restart", [this]() {
-        centerControl.restart();
+        centerControl->restart_task();
     });
     webServer_.on("/brake", [this]() {
-        centerControl.brake();
+        centerControl->brake();
     });
     webServer_.on("/stop_move", [this]() {
-        centerControl.stop_move();
+        centerControl->stop_move();
     });
     webServer_.on("/move_front", [this]() {
-        centerControl.move_front();
+        centerControl->move_front();
     });
     webServer_.on("/move_back", [this]() {
-        centerControl.move_back();
+        centerControl->move_back();
     });
     webServer_.on("/move_left", [this]() {
-        centerControl.move_left();
+        centerControl->move_left();
     });
     webServer_.on("/move_right", [this]() {
-        centerControl.move_right();
+        centerControl->move_right();
     });
     webServer_.on("/move_left_front", [this]() {
-        centerControl.move_left_front();
+        centerControl->move_left_front();
     });
     webServer_.on("/move_right_front", [this]() {
-        centerControl.move_right_front();
+        centerControl->move_right_front();
     });
     webServer_.on("/move_left_back", [this]() {
-        centerControl.move_left_back();
+        centerControl->move_left_back();
     });
     webServer_.on("/move_right_back", [this]() {
-        centerControl.move_right_back();
+        centerControl->move_right_back();
     });
     webServer_.on("/turn_left", [this]() {
-        centerControl.turn_left();
+        centerControl->turn_left();
     });
     webServer_.on("/turn_right", [this]() {
-        centerControl.turn_right();
+        centerControl->turn_right();
     });
     webServer_.on("/save", [this]() {
-        centerControl.save_params();
-        centerControl.save_settings();
+        centerControl->save_params();
+        centerControl->save_settings();
     });
     webServer_.on("/set_speed_percent", [this]() {
         auto percent = webServer_.arg("value").toFloat();
-        centerControl.set_speed_percent(percent);
+        centerControl->set_speed_percent(percent);
     });
     webServer_.on("/get_data", [this]() {
-        webServer_.send(200, "application/json", centerControl.get_http_data());
+        webServer_.send(200, "application/json", centerControl->get_http_data());
     });
     webServer_.onNotFound([this]() {
         if (webServer_.method() == HTTP_OPTIONS) {
@@ -73,7 +87,7 @@ void HttpService::begin() {
         }
     });
 
-    webServer_.begin();
+    webServer_.begin(port_);
 }
 
 void HttpService::stop() {
@@ -81,15 +95,15 @@ void HttpService::stop() {
 }
 
 void HttpService::start_task() {
-    if (enable_task_run == false) {
-        enable_task_run = true;
-        xTaskCreate(http_serive_task, "http_serive_task", 8192, this, 1, NULL);
+    if (enable_task_run_ == false) {
+        enable_task_run_ = true;
+        xTaskCreatePinnedToCore(HttpService::http_serive_task, "http_serive_task", 8192, this, 1, NULL, 0);
     }
 }
 
 void HttpService::stop_task() {
-    if (enable_task_run) {
-        enable_task_run = false;
+    if (enable_task_run_) {
+        enable_task_run_ = false;
     }
 }
 
@@ -97,10 +111,10 @@ void HttpService::handleClient() {
     webServer_.handleClient();
 }
 
-void http_serive_task(void *args) {
+void HttpService::http_serive_task(void *args) {
     HttpService *httpService = static_cast<HttpService *>(args);
     bool connected = false;
-    while (httpService->enable_task_run) {
+    while (httpService->is_enable_task_run()) {
         if (WiFi.status() == WL_CONNECTED) {
             if (connected == false) {
                 connected = true;
@@ -115,7 +129,7 @@ void http_serive_task(void *args) {
                 serial_print("HTTP Server stopped due to Wi-Fi disconnect");
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(centerControl.get_milliseconds()));
+        vTaskDelay(pdMS_TO_TICKS(httpService->centerControl->get_milliseconds()));
     }
     if (connected) {
         httpService->stop();

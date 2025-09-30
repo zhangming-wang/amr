@@ -9,14 +9,14 @@ NodeQThread::NodeQThread(const std::string &node_name, QObject *parent) : QThrea
     qRegisterMetaType<motion_params_service::srv::MotionParamsService::Response::SharedPtr>("const motion_params_service::srv::MotionParamsService::Response::SharedPtr");
 
     micro_ros_is_online_.store(false);
+    is_pubing_twist.store(false);
 
     rclcpp::QoS reliable_qos(rclcpp::KeepLast(1));
     reliable_qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
-
-    twist_publisher_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", reliable_qos);
-
     rclcpp::QoS best_effort_qos(rclcpp::KeepLast(1));
     best_effort_qos.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+
+    twist_publisher_ = node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", best_effort_qos);
 
     serial_msg_subscription_ = node_->create_subscription<std_msgs::msg::String>("/serial_msg_topic", best_effort_qos, std::bind(&NodeQThread::recv_serial_msg, this, std::placeholders::_1));
     motion_status_subscription_ = node_->create_subscription<motion_status_msgs::msg::MotionStatus>("/motion_status_topic", best_effort_qos, std::bind(&NodeQThread::recv_motion_status_msg, this, std::placeholders::_1));
@@ -31,7 +31,7 @@ bool NodeQThread::micro_ros_is_online() {
 
 void NodeQThread::run() {
     Command command = Command(0, -1, nullptr, nullptr);
-    rclcpp::Rate rate(1000);
+    rclcpp::Rate rate(5000);
 
     const std::chrono::seconds heartbeat_interval(1);               // 心跳间隔1秒
     auto current_heartbeat_time = std::chrono::steady_clock::now(); // 上次次发送心跳的时间
@@ -50,31 +50,34 @@ void NodeQThread::run() {
         }
         if (command.isValid()) {
             _run_command(command);
-        }
-
-        current_heartbeat_time = std::chrono::steady_clock::now();
-        if (current_heartbeat_time - last_heartbeat_time >= heartbeat_interval) {
-            _send_heartbeat_request();
-            last_heartbeat_time = current_heartbeat_time;
+        } else {
+            if (current_heartbeat_time - last_heartbeat_time >= heartbeat_interval) {
+                _send_heartbeat_request();
+                last_heartbeat_time = current_heartbeat_time;
+            }
         }
 
         rate.sleep();
+
+        current_heartbeat_time = std::chrono::steady_clock::now();
     }
 
     micro_ros_is_online_.store(false);
 }
 
 void NodeQThread::_send_heartbeat_request() {
-    motion_params_service::srv::MotionParamsService::Request::SharedPtr request(std::make_shared<motion_params_service::srv::MotionParamsService::Request>());
-    request->mode = ServiceType::HeartBeat;
-    _ask_motion_params_service(request);
+    if (is_pubing_twist.load() == false) {
+        motion_params_service::srv::MotionParamsService::Request::SharedPtr request(std::make_shared<motion_params_service::srv::MotionParamsService::Request>());
+        request->mode = ServiceType::HeartBeat;
+        _ask_motion_params_service(request);
+    }
 }
 
 void NodeQThread::_run_command(const Command &command) { // const Command &command
     if (command.type == CommandType::Topic && command.twist_topic) {
-        emit commandStateChanged(command.id, CommandState::Running);
+        // emit commandStateChanged(command.id, CommandState::Running);
         _publish_twist(command.twist_topic);
-        emit commandStateChanged(command.id, CommandState::Success);
+        // emit commandStateChanged(command.id, CommandState::Success);
     } else if (command.type == CommandType::Service && command.motion_params_request) {
         emit commandStateChanged(command.id, CommandState::Running);
         _ask_motion_params_service(command.motion_params_request);
@@ -84,6 +87,7 @@ void NodeQThread::_run_command(const Command &command) { // const Command &comma
 bool NodeQThread::add_twist(int64_t id, std::shared_ptr<geometry_msgs::msg::Twist> twist) {
     if (micro_ros_is_online()) {
         QMutexLocker locker(&mutex_);
+        command_queue_.clear();
         command_queue_.push_back(Command(id, CommandType::Topic, twist, nullptr));
         return true;
     } else {
@@ -122,12 +126,16 @@ void NodeQThread::_ask_motion_params_service(motion_params_service::srv::MotionP
         auto ret = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(3000));
         if (request->mode == ServiceType::HeartBeat) {
             if (ret == rclcpp::FutureReturnCode::SUCCESS) {
+                try_connect_cnt_ = 0;
                 if (!micro_ros_is_online()) {
                     emit microRosConnected();
                     micro_ros_is_online_.store(true);
                 }
             } else {
-                micro_ros_is_online_.store(false);
+                try_connect_cnt_ += 1;
+                if (try_connect_cnt_ > 3) {
+                    micro_ros_is_online_.store(false);
+                }
             }
         } else {
             if (ret == rclcpp::FutureReturnCode::SUCCESS) {
@@ -138,7 +146,10 @@ void NodeQThread::_ask_motion_params_service(motion_params_service::srv::MotionP
         }
     } else {
         if (request->mode == ServiceType::HeartBeat) {
-            micro_ros_is_online_.store(false);
+            try_connect_cnt_ += 1;
+            if (try_connect_cnt_ > 3) {
+                micro_ros_is_online_.store(false);
+            }
         } else {
             emit commandStateChanged(request->id, CommandState::Fail);
         }
