@@ -9,7 +9,6 @@ NodeQThread::NodeQThread(const std::string &node_name, QObject *parent) : QThrea
     qRegisterMetaType<motion_params_service::srv::MotionParamsService::Response::SharedPtr>("const motion_params_service::srv::MotionParamsService::Response::SharedPtr");
 
     micro_ros_is_online_.store(false);
-    is_pubing_twist.store(false);
 
     rclcpp::QoS reliable_qos(rclcpp::KeepLast(1));
     reliable_qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
@@ -66,11 +65,9 @@ void NodeQThread::run() {
 }
 
 void NodeQThread::_send_heartbeat_request() {
-    if (is_pubing_twist.load() == false) {
-        motion_params_service::srv::MotionParamsService::Request::SharedPtr request(std::make_shared<motion_params_service::srv::MotionParamsService::Request>());
-        request->mode = ServiceType::HeartBeat;
-        _ask_motion_params_service(request);
-    }
+    motion_params_service::srv::MotionParamsService::Request::SharedPtr request(std::make_shared<motion_params_service::srv::MotionParamsService::Request>());
+    request->mode = ServiceType::HeartBeat;
+    _ask_motion_params_service(request);
 }
 
 void NodeQThread::_run_command(const Command &command) { // const Command &command
@@ -133,7 +130,7 @@ void NodeQThread::_ask_motion_params_service(motion_params_service::srv::MotionP
                 }
             } else {
                 try_connect_cnt_ += 1;
-                if (try_connect_cnt_ > 3) {
+                if (try_connect_cnt_ >= 3) {
                     micro_ros_is_online_.store(false);
                 }
             }
@@ -147,7 +144,7 @@ void NodeQThread::_ask_motion_params_service(motion_params_service::srv::MotionP
     } else {
         if (request->mode == ServiceType::HeartBeat) {
             try_connect_cnt_ += 1;
-            if (try_connect_cnt_ > 3) {
+            if (try_connect_cnt_ >= 3) {
                 micro_ros_is_online_.store(false);
             }
         } else {

@@ -58,8 +58,6 @@ public:
     bool add_motion_params_service(int64_t id, motion_params_service::srv::MotionParamsService::Request::SharedPtr request);
     bool micro_ros_is_online();
 
-    std::atomic<bool> is_pubing_twist = false;
-
 protected:
     void run();
 
