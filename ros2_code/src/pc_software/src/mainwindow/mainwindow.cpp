@@ -384,7 +384,7 @@ void MainWindow::on_gamepad_axis_changed() {
     twist->linear.z = 0;
     twist->angular.x = 0;
     twist->angular.y = 0;
-    twist->angular.z = axixRightX_value * ui->doubleSpinBox_max_v->value() / (1.0 / (ui->spinBox_track_width->value() / 1000.0) + 1.0 / (ui->spinBox_track_width->value() / 1000.0));
+    twist->angular.z = -1.0 * axixRightX_value * 2.0 * ui->doubleSpinBox_max_v->value() / ((ui->spinBox_track_width->value() + ui->spinBox_track_width->value()) / 1000.0);
 
     if (fabs(axixLeftX_value) < MIN_VALUE && fabs(axixLeftY_value) < MIN_VALUE && fabs(axixRightX_value) < MIN_VALUE) {
         nodeThread_->is_pubing_twist.store(false);

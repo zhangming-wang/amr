@@ -172,7 +172,6 @@ private:
     void _start_control_timer();
     void _stop_control_timer();
 
-    void _fix_speed(float &v);
     void _plan_wheel_speed(); // WheelSpeed &target_wheel_speed
 
     void update();

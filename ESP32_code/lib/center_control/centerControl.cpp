@@ -107,7 +107,7 @@ void CenterControl::set_speed_plan_parms(float max_v, float max_acc, float jerk)
     jerk_ = jerk;
 
     speed_percent_ = max_v_ / target_max_v_;
-    max_w_ = max_v_ / (1.0 / track_width_ + 1.0 / wheel_width_);
+    max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
 
     speedPlan_->set_maxAcc_and_jerk(max_acc_, jerk_);
 }
@@ -145,7 +145,7 @@ void CenterControl::set_speed_percent(float percent) {
         percent = 1;
     speed_percent_ = percent;
     max_v_ = target_max_v_ * speed_percent_;
-    max_w_ = max_v_ / (1.0 / track_width_ + 1.0 / wheel_width_);
+    max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
 }
 
 float CenterControl::get_speed_percent() {
@@ -462,7 +462,7 @@ void CenterControl::turn_left() {
     target_twist_.linear.z = 0;
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
-    target_twist_.angular.z = -max_w_;
+    target_twist_.angular.z = max_w_;
     start_move(target_twist_);
 }
 
@@ -485,13 +485,11 @@ void CenterControl::turn_right() {
     target_twist_.linear.z = 0;
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
-    target_twist_.angular.z = max_w_;
+    target_twist_.angular.z = -max_w_;
     start_move(target_twist_);
 }
 
 void CenterControl::start_move(const geometry_msgs__msg__Twist &twist) {
-    // auto target_wheel_speed = _inverseKinematics(twist);
-    // _plan_wheel_speed(target_wheel_speed);
     target_twist_ = twist;
     _plan_wheel_speed();
 }
@@ -506,11 +504,6 @@ void CenterControl::_plan_wheel_speed() { // WheelSpeed &target_wheel_speed
     std::deque<WheelSpeed> speed_deque;
 
     auto target_wheel_speed = _inverseKinematics(target_twist_);
-
-    _fix_speed(target_wheel_speed.left_front_v);
-    _fix_speed(target_wheel_speed.left_back_v);
-    _fix_speed(target_wheel_speed.right_front_v);
-    _fix_speed(target_wheel_speed.right_back_v);
 
     if (enable_speed_plan_) {
         float MIN_V_CHANGE = 0.001;
@@ -676,29 +669,15 @@ void CenterControl::update() {
     }
 }
 
-void CenterControl::_fix_speed(float &v) {
-    float max_v = 0;
-    if (is_mecanum_wheel_) {
-        max_v = max_v_ * 2 / sqrt(2);
-    } else {
-        max_v = max_v_;
-    }
-
-    if (v > max_v)
-        v = max_v;
-    else if (v < -1 * max_v)
-        v = -1 * max_v;
-}
-
 geometry_msgs__msg__Twist CenterControl::_forwardKinematics(const WheelSpeed &wheelSpeed) {
     geometry_msgs__msg__Twist twist;
     if (is_mecanum_wheel_) {
-        twist.linear.x = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v - wheelSpeed.left_back_v - wheelSpeed.right_front_v + wheelSpeed.right_back_v);
-        twist.linear.y = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v);
+        twist.linear.x = (wheelSpeed.left_front_v - wheelSpeed.left_back_v - wheelSpeed.right_front_v + wheelSpeed.right_back_v) / 4.0;
+        twist.linear.y = (wheelSpeed.left_front_v + wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v) / 4.0;
         twist.linear.z = 0;
         twist.angular.x = 0;
         twist.angular.y = 0;
-        twist.angular.z = sqrt(2.0) / 8.0 * (wheelSpeed.left_front_v + wheelSpeed.left_back_v - wheelSpeed.right_front_v - wheelSpeed.right_back_v) * (track_width_ * wheel_width_) / (track_width_ + wheel_width_);
+        twist.angular.z = (-wheelSpeed.left_front_v - wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v) / (2.0 * (track_width_ + wheel_width_));
     }
     return twist;
 }
@@ -706,10 +685,19 @@ geometry_msgs__msg__Twist CenterControl::_forwardKinematics(const WheelSpeed &wh
 WheelSpeed CenterControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
     WheelSpeed wheelSpeed;
     if (is_mecanum_wheel_) {
-        wheelSpeed.left_front_v = sqrt(2.0) * ((twist.linear.x + twist.linear.y) + twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
-        wheelSpeed.left_back_v = sqrt(2.0) * ((-twist.linear.x + twist.linear.y) + twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
-        wheelSpeed.right_front_v = sqrt(2.0) * ((-twist.linear.x + twist.linear.y) - twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
-        wheelSpeed.right_back_v = sqrt(2.0) * ((twist.linear.x + twist.linear.y) - twist.angular.z * (1.0 / track_width_ + 1.0 / wheel_width_));
+        wheelSpeed.left_front_v = twist.linear.x + twist.linear.y - twist.angular.z * (track_width_ + wheel_width_) / 2.0;
+        wheelSpeed.left_back_v = -twist.linear.x + twist.linear.y - twist.angular.z * (track_width_ + wheel_width_) / 2.0;
+        wheelSpeed.right_front_v = -twist.linear.x + twist.linear.y + twist.angular.z * (track_width_ + wheel_width_) / 2.0;
+        wheelSpeed.right_back_v = twist.linear.x + twist.linear.y + twist.angular.z * (track_width_ + wheel_width_) / 2.0;
+
+        auto max_v = std::max({fabs(wheelSpeed.left_front_v), fabs(wheelSpeed.left_back_v), fabs(wheelSpeed.right_front_v), fabs(wheelSpeed.right_back_v)});
+        if (max_v > max_v_) {
+            auto scale = max_v_ / max_v;
+            wheelSpeed.left_front_v *= scale;
+            wheelSpeed.left_back_v *= scale;
+            wheelSpeed.right_front_v *= scale;
+            wheelSpeed.right_back_v *= scale;
+        }
     }
     return wheelSpeed;
 }
@@ -884,13 +872,7 @@ void CenterControl::update_target_max_speed() {
     auto right_front_max_wheel_speed = right_front_motor_control_->get_max_speed();
     auto right_back_max_wheel_speed = right_back_motor_control_->get_max_speed();
 
-    auto max_v = std::min({left_front_max_wheel_speed, right_front_max_wheel_speed, left_back_max_wheel_speed, right_back_max_wheel_speed});
-
-    if (is_mecanum_wheel_) {
-        target_max_v_ = max_v * sqrt(2) / 2.0;
-    } else {
-        target_max_v_ = max_v;
-    }
+    target_max_v_ = std::min({left_front_max_wheel_speed, right_front_max_wheel_speed, left_back_max_wheel_speed, right_back_max_wheel_speed});
     speed_percent_ = max_v_ / target_max_v_;
 }
 
