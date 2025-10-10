@@ -30,3 +30,22 @@ enum ServiceType {
     WriteSettings,
     SaveSettings,
 };
+
+namespace CameraService {
+    enum Type {
+        Idle = 0,
+        HeartBeat,
+        Restart,
+
+        Capture,
+        SetEnableSeriesCapture,
+
+        ReadSettings,
+        WriteSettings,
+        SaveSettings,
+
+        ReadConfig,
+        WriteConfig,
+        SaveConfig,
+    };
+};

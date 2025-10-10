@@ -12,9 +12,11 @@
   <depend>rclcpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>tf2</depend>
   <depend>motion_status_msgs</depend>
   <depend>motion_params_service</depend>
+  <depend>camera_settings_service</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

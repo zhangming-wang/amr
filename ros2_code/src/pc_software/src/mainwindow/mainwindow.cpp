@@ -80,6 +80,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     // _readConfigJson();
     nodeThread_->start();
     status_timer_->start();
+
+    camera_widget_ = std::make_shared<CameraWidget>(this);
+    camera_widget_->setWindowFlags(Qt::Window);
+    camera_widget_->show();
 }
 
 MainWindow::~MainWindow() {

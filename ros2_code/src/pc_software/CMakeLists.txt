@@ -20,9 +20,11 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(motion_status_msgs REQUIRED)
 find_package(motion_params_service REQUIRED)
+find_package(camera_settings_service REQUIRED)
 find_package(Qt5 COMPONENTS Widgets Charts PrintSupport Gamepad REQUIRED)
 
 set(SOURCE_FILE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -45,9 +47,11 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp
   geometry_msgs
   nav_msgs
+  sensor_msgs
   tf2
   motion_status_msgs
   motion_params_service
+  camera_settings_service
 )
 
 if(BUILD_TESTING)

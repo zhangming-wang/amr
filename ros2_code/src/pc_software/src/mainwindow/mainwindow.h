@@ -1,4 +1,5 @@
 #pragma once
+#include "../cameraWiget/camerawidget.h"
 #include "../common/enum.h"
 #include "../nodeqthread/nodeqthread.h"
 #include "../qcustomplot/qcustomplot.h"
@@ -85,7 +86,7 @@ private:
     std::shared_ptr<Ui::MainWindow> ui;
     std::shared_ptr<NodeQThread> nodeThread_;
     std::shared_ptr<QCustomPlot> linear_speed_customPlot_, angular_speed_customPlot_, linear_pose_customPlot_, angular_pose_customPlot_; // acc_customPlot_
-
+    std::shared_ptr<CameraWidget> camera_widget_;
     std::shared_ptr<QTimer> status_timer_, cmd_status_timer_;
     std::shared_ptr<QProcess> agent_process_;
     std::shared_ptr<QTextEdit> agent_info_textEdit_, motion_info_text_;
