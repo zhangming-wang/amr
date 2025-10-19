@@ -6,18 +6,18 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/compressed_image.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include <QDebug>
 #include <QMutex>
 #include <QObject>
 #include <QQueue>
 #include <QThread>
 #include <atomic>
-
 class CameraNode : public QThread {
     Q_OBJECT
 public:
     using CameraSettingsSrv = camera_settings_service::srv::CameraSettingsService;
 
-    enum CommadState {
+    enum CommandState {
         Fail = -1,
         Add = 0,
         Running = 1,
@@ -45,6 +45,7 @@ signals:
     void cameraSettingsServiceResponsed(CameraSettingsSrv::Response::SharedPtr);
     void imageMsgReceived(const sensor_msgs::msg::CompressedImage::SharedPtr);
     void commandStateChanged(int64_t, int);
+    void connectedChanged(bool);
 
 private:
     rclcpp::Node::SharedPtr node_;

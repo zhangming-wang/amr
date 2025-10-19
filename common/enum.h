@@ -40,9 +40,9 @@ namespace CameraService {
         Capture,
         SetEnableSeriesCapture,
 
-        ReadSettings,
-        WriteSettings,
-        SaveSettings,
+        ReadParams,
+        WriteParams,
+        SaveParams,
 
         ReadConfig,
         WriteConfig,

@@ -24,7 +24,7 @@ bool connected = false;
 void loop() {
     if (WiFi.status() != WL_CONNECTED) {
         connected = false;
-        Serial.println("WiFi Disconnected, reconnecting...");
+        Serial.printf("WiFi Disconnected status=%d, reconnecting...\n", WiFi.status());
         WiFi.reconnect();
     } else {
         if (connected == false) {

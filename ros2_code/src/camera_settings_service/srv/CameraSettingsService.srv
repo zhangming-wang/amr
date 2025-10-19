@@ -38,7 +38,6 @@ int8 sccb_i2c_port            # SCCB I2C总线端口号（若pin_sccb_sda为-1�
 
 # 摄像头运行时参数（可动态调节）
 
-
 int8 pixformat                # 像素格式（PIXFORMAT_*枚举值转int）
 int8 framesize                # 帧大小（FRAMESIZE_*枚举值转int）
 int8 quality                  # 图像质量（0-63）

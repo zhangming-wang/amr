@@ -40,10 +40,19 @@ void MicroRos::clean() {
     if (camera_settings_service_initialized_) {
         ret = rcl_service_fini(&camera_settings_service_, &node_);
         if (ret != RCL_RET_OK) {
-            Serial.printf("rcl_service_fini motion_params_service error: %d\n", ret);
+            Serial.printf("rcl_service_fini camera_settings_service error: %d\n", ret);
         }
         camera_settings_service_initialized_ = false;
     }
+
+    if (image_publisher_initialized_) {
+        ret = rcl_publisher_fini(&image_publisher_, &node_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("image_publisher:rcl_publisher_fini error: : %d\n", ret);
+        }
+        image_publisher_initialized_ = false;
+    }
+
     if (executor_initialized_) {
         ret = rclc_executor_fini(&executor);
         if (ret != RCL_RET_OK) {
@@ -128,7 +137,7 @@ bool MicroRos::init() {
     }
 
     if (!image_publisher_initialized_) {
-        ret = rclc_publisher_init_default(&image_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, CompressedImage), esp32_camera_image_topic_name); // esp32_camera_image_topic_name
+        ret = rclc_publisher_init_default(&image_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, CompressedImage), esp32_camera_image_topic_name);
         if (ret != RCL_RET_OK) {
             Serial.printf("image_publisher_:rclc_publisher_init_default:%d\n", ret);
             return false;
@@ -136,23 +145,23 @@ bool MicroRos::init() {
         image_publisher_initialized_ = true;
     }
 
-    // if (!camera_settings_service_initialized_) {
-    //     ret = rclc_service_init_default(&camera_settings_service_initialized_, &node_, ROSIDL_GET_SRV_TYPE_SUPPORT(motion_params_service, srv, MotionParamsService), camera_settings_service);
-    //     if (ret != RCL_RET_OK) {
-    //         Serial.printf("rclc_service_init_default motion_params_service:%d\n", ret);
-    //         return false;
-    //     }
-    //     ret = rclc_executor_add_service(&executor, &motion_params_service_, &motion_params_request_, &motion_params_response_, motion_params_service_callback);
-    //     if (ret != RCL_RET_OK) {
-    //         Serial.printf("rclc_executor_add_service motion_params_service:%d\n", ret);
-    //         ret = rcl_service_fini(&camera_settings_service_initialized_, &node_);
-    //         if (ret != RCL_RET_OK) {
-    //             Serial.printf("rcl_service_fini motion_params_service error: %d\n", ret);
-    //         }
-    //         return false;
-    //     }
-    //     camera_settings_service_initialized_ = true;
-    // }
+    if (!camera_settings_service_initialized_) {
+        ret = rclc_service_init_default(&camera_settings_service_, &node_, ROSIDL_GET_SRV_TYPE_SUPPORT(camera_settings_service, srv, CameraSettingsService), esp32_camera_settings_service_name);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("rclc_service_init_default camera_settings_service:%d\n", ret);
+            return false;
+        }
+        ret = rclc_executor_add_service(&executor, &camera_settings_service_, &camera_settings_request_, &camera_settings_response_, camera_settings_service_callback);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("rclc_executor_add_service camera_settings_service:%d\n", ret);
+            ret = rcl_service_fini(&camera_settings_service_, &node_);
+            if (ret != RCL_RET_OK) {
+                Serial.printf("rcl_service_fini camera_settings_service error: %d\n", ret);
+            }
+            return false;
+        }
+        camera_settings_service_initialized_ = true;
+    }
 
     if (enable_series_capture_) {
         if (!_create_timer()) {
@@ -242,6 +251,19 @@ void MicroRos::capture_image() {
         if (ret != RCL_RET_OK) {
             Serial.printf("error: 发布图像失败，错误码: %d ，图像大小: %d\n", ret, image_msg_.data.size);
         }
+
+        // if (wifi_udp_.beginPacket(wifi_IP, wifi_port) == 0) {
+        //     Serial.println("UDP beginPacket failed!");
+        // } else {
+        //     size_t written = wifi_udp_.write(image_->buf, image_->len);
+        //     if (written != image_->len) {
+        //         Serial.println("UDP write incomplete!");
+        //     } else {
+        //         if (wifi_udp_.endPacket() == 0) {
+        //             Serial.println("UDP endPacket failed!");
+        //         }
+        //     }
+        // }
     }
     // Serial.printf("发布图像耗时: %d ms\n", millis() - begin_time);
 
@@ -266,14 +288,14 @@ void MicroRos::reset_timer() {
         }
     } else {
         _destroy_timer();
-        Serial.println("enable_pub_motion_status is false,create timer stopped!");
+        Serial.println("enable_pub_image is false,create timer stopped!");
     }
 }
 
 void MicroRos::start_task() {
     if (enable_task_run_ == false) {
         enable_task_run_ = true;
-        BaseType_t microros_task_create_result = xTaskCreatePinnedToCore(microros_task, "microros_task", 65536, this, 1, NULL, 1);
+        BaseType_t microros_task_create_result = xTaskCreatePinnedToCore(microros_task, "microros_task", 65536, this, 1, NULL, 0);
         if (microros_task_create_result == pdPASS) {
             Serial.println("microros_task created successfully.");
         } else {
@@ -302,6 +324,7 @@ void MicroRos::microros_task(void *args) {
                 continue;
             } else {
                 Serial.println("microros task is running...");
+                // MicroRos::get_instance().cameraControl_->init(false);
                 init_success = true;
             }
         }
@@ -321,4 +344,153 @@ void MicroRos::microros_task(void *args) {
 
 void MicroRos::timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
     MicroRos::get_instance().capture_image();
+}
+
+void MicroRos::camera_settings_service_callback(const void *req, void *res) {
+    const camera_settings_service__srv__CameraSettingsService_Request *request = (const camera_settings_service__srv__CameraSettingsService_Request *)req;
+    camera_settings_service__srv__CameraSettingsService_Response *response = (camera_settings_service__srv__CameraSettingsService_Response *)res;
+
+    MicroRos &instance = MicroRos::get_instance();
+    if (request->mode == CameraService::Type::HeartBeat) {
+        ;
+    } else if (request->mode == CameraService::Type::Restart) {
+        instance.cameraControl_->init(false);
+    } else if (request->mode == CameraService::Type::Capture) {
+        instance.capture_image();
+    } else if (request->mode == CameraService::Type::SetEnableSeriesCapture) {
+        instance.set_enable_series_capture(request->enable_series_capture);
+    }
+
+    else if (request->mode == CameraService::Type::ReadParams) {
+        auto params = instance.cameraControl_->get_params();
+        response->enable_series_capture = instance.enable_series_capture_;
+        response->milliseconds = params.milliseconds;
+        response->pixformat = params.pixformat;
+        response->framesize = params.status.framesize;
+        response->quality = params.status.quality;
+        response->brightness = params.status.brightness;
+        response->contrast = params.status.contrast;
+        response->saturation = params.status.saturation;
+        response->sharpness = params.status.sharpness;
+        response->denoise = params.status.denoise;
+        response->special_effect = params.status.special_effect;
+        response->wb_mode = params.status.wb_mode;
+        response->awb = params.status.awb;
+        response->awb_gain = params.status.awb_gain;
+        response->aec = params.status.aec;
+        response->aec2 = params.status.aec2;
+        response->ae_level = params.status.ae_level;
+        response->aec_value = params.status.aec_value;
+        response->agc = params.status.agc;
+        response->agc_gain = params.status.agc_gain;
+        response->gainceiling = params.status.gainceiling;
+        response->bpc = params.status.bpc;
+        response->wpc = params.status.wpc;
+        response->raw_gma = params.status.raw_gma;
+        response->lenc = params.status.lenc;
+        response->hmirror = params.status.hmirror;
+        response->vflip = params.status.vflip;
+        response->dcw = params.status.dcw;
+        response->colorbar = params.status.colorbar;
+    } else if (request->mode == CameraService::Type::WriteParams) {
+        auto params = instance.cameraControl_->get_params();
+
+        params.milliseconds = request->milliseconds;
+        params.pixformat = static_cast<pixformat_t>(request->pixformat);
+        params.status.framesize = static_cast<framesize_t>(request->framesize);
+        params.status.quality = request->quality;
+        params.status.brightness = request->brightness;
+        params.status.contrast = request->contrast;
+        params.status.saturation = request->saturation;
+        params.status.sharpness = request->sharpness;
+        params.status.denoise = request->denoise;
+        params.status.special_effect = request->special_effect;
+        params.status.wb_mode = request->wb_mode;
+        params.status.awb = request->awb;
+        params.status.awb_gain = request->awb_gain;
+        params.status.aec = request->aec;
+        params.status.aec2 = request->aec2;
+        params.status.ae_level = request->ae_level;
+        params.status.aec_value = request->aec_value;
+        params.status.agc = request->agc;
+        params.status.agc_gain = request->agc_gain;
+        params.status.gainceiling = request->gainceiling;
+        params.status.bpc = request->bpc;
+        params.status.wpc = request->wpc;
+        params.status.raw_gma = request->raw_gma;
+        params.status.lenc = request->lenc;
+        params.status.hmirror = request->hmirror;
+        params.status.vflip = request->vflip;
+        params.status.dcw = request->dcw;
+        params.status.colorbar = request->colorbar;
+
+        instance.cameraControl_->set_params(params);
+        instance.reset_timer();
+    } else if (request->mode == CameraService::Type::SaveParams) {
+        instance.cameraControl_->save_params();
+    }
+
+    else if (request->mode == CameraService::Type::ReadConfig) {
+        auto config = instance.cameraControl_->get_config();
+
+        response->pin_pwdn = config.pin_pwdn;
+        response->pin_reset = config.pin_reset;
+        response->pin_xclk = config.pin_xclk;
+        response->pin_sccb_sda = config.pin_sccb_sda;
+        response->pin_sccb_scl = config.pin_sccb_scl;
+        response->pin_d7 = config.pin_d7;
+        response->pin_d6 = config.pin_d6;
+        response->pin_d5 = config.pin_d5;
+        response->pin_d4 = config.pin_d4;
+        response->pin_d3 = config.pin_d3;
+        response->pin_d2 = config.pin_d2;
+        response->pin_d1 = config.pin_d1;
+        response->pin_d0 = config.pin_d0;
+        response->xclk_freq_hz = config.xclk_freq_hz;
+        response->fb_count = config.fb_count;
+        response->frame_size = config.frame_size;
+        response->pixel_format = config.pixel_format;
+        response->ledc_timer = config.ledc_timer;
+        response->ledc_channel = config.ledc_channel;
+        response->grab_mode = config.grab_mode;
+        response->fb_location = config.fb_location;
+#if CONFIG_CAMERA_CONVERTER_ENABLED
+        response->conv_mode = config.conv_mode;
+#endif
+    } else if (request->mode == CameraService::Type::WriteConfig) {
+        auto config = instance.cameraControl_->get_config();
+
+        config.pin_pwdn = request->pin_pwdn;
+        config.pin_reset = request->pin_reset;
+        config.pin_xclk = request->pin_xclk;
+        config.pin_sccb_sda = request->pin_sccb_sda;
+        config.pin_sccb_scl = request->pin_sccb_scl;
+        config.pin_d7 = request->pin_d7;
+        config.pin_d6 = request->pin_d6;
+        config.pin_d5 = request->pin_d5;
+        config.pin_d4 = request->pin_d4;
+        config.pin_d3 = request->pin_d3;
+        config.pin_d2 = request->pin_d2;
+        config.pin_d1 = request->pin_d1;
+        config.pin_d0 = request->pin_d0;
+        config.xclk_freq_hz = request->xclk_freq_hz;
+        config.fb_count = request->fb_count;
+        config.frame_size = static_cast<framesize_t>(request->frame_size);
+        config.pixel_format = static_cast<pixformat_t>(request->pixel_format);
+        config.ledc_timer = static_cast<ledc_timer_t>(request->ledc_timer);
+        config.ledc_channel = static_cast<ledc_channel_t>(request->ledc_channel);
+        config.grab_mode = static_cast<camera_grab_mode_t>(request->grab_mode);
+        config.fb_location = static_cast<camera_fb_location_t>(request->fb_location);
+#if CONFIG_CAMERA_CONVERTER_ENABLED
+        config.conv_mode = static_cast<camera_conv_mode_t>(request->conv_mode);
+#endif
+        instance._destroy_timer();
+        instance.cameraControl_->set_config(config);
+        instance._create_timer();
+    } else if (request->mode == CameraService::Type::SaveConfig) {
+        instance.cameraControl_->save_config();
+    }
+
+    response->state = request->mode;
+    response->id = request->id;
 }

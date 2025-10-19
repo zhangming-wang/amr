@@ -2,8 +2,9 @@
 
 CameraNode::CameraNode(const std::string &node_name, const std::string &node_nammspace, QObject *parent) : QThread(parent), node_(std::make_shared<rclcpp::Node>(node_name, node_nammspace)) {
     qRegisterMetaType<int64_t>("const int64_t");
-    qRegisterMetaType<CameraSettingsSrv::Response::SharedPtr>("const camera_settings_service::srv::CameraSettingsService::Response::SharedPtr");
-    qRegisterMetaType<CameraSettingsSrv::Response::SharedPtr>("const sensor_msgs::msg::CompressedImage::SharedPtr");
+    qRegisterMetaType<camera_settings_service::srv::CameraSettingsService::Response::SharedPtr>("const camera_settings_service::srv::CameraSettingsService::Response::SharedPtr");
+    qRegisterMetaType<sensor_msgs::msg::CompressedImage::SharedPtr>("const sensor_msgs::msg::CompressedImage::SharedPtr");
+    qRegisterMetaType<CameraSettingsSrv::Response::SharedPtr>("const CameraSettingsSrv::Response::SharedPtr");
 
     connected_.store(false);
 
@@ -105,7 +106,7 @@ void CameraNode::_send_heartbeat_request() {
 
 void CameraNode::_run_command(const Command &command) { // const Command &command
     if (command.request) {
-        emit commandStateChanged(command.id, CommadState::Running);
+        emit commandStateChanged(command.id, CommandState::Running);
         _ask_camera_settings_service(command.request);
     }
 }
@@ -113,25 +114,26 @@ void CameraNode::_run_command(const Command &command) { // const Command &comman
 void CameraNode::_ask_camera_settings_service(CameraSettingsSrv::Request::SharedPtr request) {
     if (camera_settings_client_->service_is_ready()) {
         auto future_result = camera_settings_client_->async_send_request(request);
-        auto ret = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(3000));
+        auto ret = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(1000));
         if (request->mode == CameraService::Type::HeartBeat) {
             if (ret == rclcpp::FutureReturnCode::SUCCESS) {
                 try_connect_cnt_ = 0;
                 if (!connected_.load()) {
-                    emit cameraSettingsServiceResponsed(future_result.get());
                     connected_.store(true);
+                    emit connectedChanged(true);
                 }
             } else {
                 try_connect_cnt_ += 1;
                 if (try_connect_cnt_ >= 3) {
                     connected_.store(false);
+                    emit connectedChanged(false);
                 }
             }
         } else {
             if (ret == rclcpp::FutureReturnCode::SUCCESS) {
                 emit cameraSettingsServiceResponsed(future_result.get());
             } else {
-                emit commandStateChanged(request->id, CommadState::Fail);
+                emit commandStateChanged(request->id, CommandState::Fail);
             }
         }
     } else {
@@ -139,6 +141,7 @@ void CameraNode::_ask_camera_settings_service(CameraSettingsSrv::Request::Shared
             try_connect_cnt_ += 1;
             if (try_connect_cnt_ >= 3) {
                 connected_.store(false);
+                emit connectedChanged(false);
             }
         }
     }

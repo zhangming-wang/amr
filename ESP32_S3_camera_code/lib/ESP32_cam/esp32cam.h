@@ -58,7 +58,6 @@ typedef struct {
     int16_t milliseconds = 40; // 延时毫秒数（用于定时拍照）
     camera_status_t status;
     pixformat_t pixformat; // 像素格式
-
 } camera_params_t;
 
 class ESP32Cam {

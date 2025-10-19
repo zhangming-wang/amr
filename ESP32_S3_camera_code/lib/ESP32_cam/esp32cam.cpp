@@ -217,6 +217,9 @@ void ESP32Cam::_set_params() {
         auto ret = sensor_->set_framesize(sensor_, static_cast<framesize_t>(params_.status.framesize));
         if (ret != 0)
             Serial.printf("Failed to set framesize: %d\n", ret);
+        else {
+            Serial.printf("success to set framesize: %d\n", ret);
+        }
     }
 
     if (params_.status.quality != sensor_->status.quality) {
@@ -439,7 +442,7 @@ void ESP32Cam::load_config() {
     config_.ledc_timer = static_cast<ledc_timer_t>(preferences_.getInt("ledc_timer", LEDC_TIMER_0));
     config_.ledc_channel = static_cast<ledc_channel_t>(preferences_.getInt("ledc_channel", LEDC_CHANNEL_0));
     config_.pixel_format = static_cast<pixformat_t>(preferences_.getInt("pixel_format", PIXFORMAT_JPEG));
-    config_.frame_size = static_cast<framesize_t>(preferences_.getInt("frame_size", FRAMESIZE_HD));
+    config_.frame_size = static_cast<framesize_t>(preferences_.getInt("frame_size", FRAMESIZE_240X240));
     config_.jpeg_quality = preferences_.getInt("jpeg_quality", 15);
 
     if (psramFound()) {

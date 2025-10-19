@@ -14,6 +14,7 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include <WiFi.h>
+#include <WiFiUdp.h>
 #include <micro_ros_platformio.h>
 #include <micro_ros_utilities/string_utilities.h>
 #include <micro_ros_utilities/type_utilities.h>
@@ -26,6 +27,9 @@
 #include <sensor_msgs/msg/compressed_image.h>
 #include <sensor_msgs/msg/image.h>
 #include <std_msgs/msg/int32.h>
+extern "C" {
+#include "camera_settings_service/srv/camera_settings_service.h"
+}
 
 class MicroRos {
 
@@ -67,9 +71,11 @@ private:
     std::string wifi_name_;
     std::string wifi_passward_;
 
-    rcl_publisher_t image_publisher_; //, odom_publisher_
+    rcl_publisher_t image_publisher_;
     rcl_service_t camera_settings_service_;
     rcl_timer_t timer_;
+
+    // WiFiUDP wifi_udp_;
 
     sensor_msgs__msg__CompressedImage image_msg_;
     camera_fb_t *image_ = nullptr;
@@ -85,6 +91,9 @@ private:
     bool enable_series_capture_ = true;
 
     ESP32Cam *cameraControl_ = nullptr;
+
+    camera_settings_service__srv__CameraSettingsService_Request camera_settings_request_;
+    camera_settings_service__srv__CameraSettingsService_Response camera_settings_response_;
 
     bool _create_timer();
     void _destroy_timer();
