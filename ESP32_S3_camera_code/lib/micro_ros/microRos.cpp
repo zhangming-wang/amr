@@ -426,6 +426,37 @@ void MicroRos::camera_settings_service_callback(const void *req, void *res) {
 
         instance.cameraControl_->set_params(params);
         instance.reset_timer();
+
+        params = instance.cameraControl_->get_params();
+        response->enable_series_capture = instance.enable_series_capture_;
+        response->milliseconds = params.milliseconds;
+        response->pixformat = params.pixformat;
+        response->framesize = params.status.framesize;
+        response->quality = params.status.quality;
+        response->brightness = params.status.brightness;
+        response->contrast = params.status.contrast;
+        response->saturation = params.status.saturation;
+        response->sharpness = params.status.sharpness;
+        response->denoise = params.status.denoise;
+        response->special_effect = params.status.special_effect;
+        response->wb_mode = params.status.wb_mode;
+        response->awb = params.status.awb;
+        response->awb_gain = params.status.awb_gain;
+        response->aec = params.status.aec;
+        response->aec2 = params.status.aec2;
+        response->ae_level = params.status.ae_level;
+        response->aec_value = params.status.aec_value;
+        response->agc = params.status.agc;
+        response->agc_gain = params.status.agc_gain;
+        response->gainceiling = params.status.gainceiling;
+        response->bpc = params.status.bpc;
+        response->wpc = params.status.wpc;
+        response->raw_gma = params.status.raw_gma;
+        response->lenc = params.status.lenc;
+        response->hmirror = params.status.hmirror;
+        response->vflip = params.status.vflip;
+        response->dcw = params.status.dcw;
+        response->colorbar = params.status.colorbar;
     } else if (request->mode == CameraService::Type::SaveParams) {
         instance.cameraControl_->save_params();
     }

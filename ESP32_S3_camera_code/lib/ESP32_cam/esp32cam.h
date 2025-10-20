@@ -76,7 +76,7 @@ public:
     camera_fb_t *capture_photo();
     void release_photo(camera_fb_t *fb);
 
-    const camera_params_t &set_params(const camera_params_t &params);
+    void set_params(const camera_params_t &params);
     const camera_params_t &get_params();
     void save_params();
     void load_params();

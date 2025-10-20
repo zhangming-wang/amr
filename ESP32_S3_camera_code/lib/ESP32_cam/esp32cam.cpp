@@ -64,14 +64,12 @@ void ESP32Cam::release_photo(camera_fb_t *fb) {
     }
 }
 
-const camera_params_t &ESP32Cam::set_params(const camera_params_t &params) {
+void ESP32Cam::set_params(const camera_params_t &params) {
     if (!sensor_)
-        return params_; // 确保摄像头已初始化
+        return; // 确保摄像头已初始化
 
     params_ = params;
     _set_params();
-
-    return params_;
 }
 
 const camera_params_t &ESP32Cam::get_params() {
@@ -178,8 +176,10 @@ void ESP32Cam::_set_params() {
     // 1. 基础画质参数
     if (params_.status.brightness != sensor_->status.brightness) {
         auto ret = sensor_->set_brightness(sensor_, params_.status.brightness);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.brightness = sensor_->status.brightness;
             Serial.printf("Failed to set brightness: %d\n", ret);
+        }
     }
 
     if (params_.status.contrast != sensor_->status.contrast) {
@@ -206,148 +206,191 @@ void ESP32Cam::_set_params() {
             Serial.printf("Failed to set denoise: %d\n", ret);
     }
 
-    // 2. 图像格式与尺寸
+    // 图像格式与尺寸
     if (static_cast<pixformat_t>(params_.pixformat) != sensor_->pixformat) {
         auto ret = sensor_->set_pixformat(sensor_, static_cast<pixformat_t>(params_.pixformat));
-        if (ret != 0)
+        if (ret != 0) {
+            params_.pixformat = sensor_->pixformat;
             Serial.printf("Failed to set pixformat: %d\n", ret);
+        }
     }
 
     if (params_.status.framesize != sensor_->status.framesize) {
         auto ret = sensor_->set_framesize(sensor_, static_cast<framesize_t>(params_.status.framesize));
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.framesize = sensor_->status.framesize;
             Serial.printf("Failed to set framesize: %d\n", ret);
-        else {
-            Serial.printf("success to set framesize: %d\n", ret);
+        } else {
+            Serial.println("Success to set framesize");
         }
     }
 
     if (params_.status.quality != sensor_->status.quality) {
         auto ret = sensor_->set_quality(sensor_, params_.status.quality);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.quality = sensor_->status.quality;
             Serial.printf("Failed to set quality: %d\n", ret);
+        }
     }
 
-    // 3. 曝光与增益
+    // 曝光与增益
     if (params_.status.gainceiling != sensor_->status.gainceiling) {
         auto ret = sensor_->set_gainceiling(sensor_, static_cast<gainceiling_t>(params_.status.gainceiling));
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.gainceiling = sensor_->status.gainceiling;
             Serial.printf("Failed to set gainceiling: %d\n", ret);
+        }
     }
 
     if (params_.status.agc != sensor_->status.agc) {
         auto ret = sensor_->set_gain_ctrl(sensor_, params_.status.agc);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.agc = sensor_->status.agc;
             Serial.printf("Failed to set gain_ctrl: %d\n", ret);
+        }
     }
 
     if (params_.status.aec != sensor_->status.aec) {
         auto ret = sensor_->set_exposure_ctrl(sensor_, params_.status.aec);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.aec = sensor_->status.aec;
             Serial.printf("Failed to set exposure_ctrl: %d\n", ret);
+        }
     }
 
     if (params_.status.aec2 != sensor_->status.aec2) {
         auto ret = sensor_->set_aec2(sensor_, params_.status.aec2);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.aec2 = sensor_->status.aec2;
             Serial.printf("Failed to set aec2: %d\n", ret);
+        }
     }
 
     if (params_.status.agc_gain != sensor_->status.agc_gain) {
         auto ret = sensor_->set_agc_gain(sensor_, params_.status.agc_gain);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.agc_gain = sensor_->status.agc_gain;
             Serial.printf("Failed to set agc_gain: %d\n", ret);
+        }
     }
 
     if (params_.status.aec_value != sensor_->status.aec_value) {
         auto ret = sensor_->set_aec_value(sensor_, params_.status.aec_value);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.aec_value = sensor_->status.aec_value;
             Serial.printf("Failed to set aec_value: %d\n", ret);
+        }
     }
 
     if (params_.status.ae_level != sensor_->status.ae_level) {
         auto ret = sensor_->set_ae_level(sensor_, params_.status.ae_level);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.ae_level = sensor_->status.ae_level;
             Serial.printf("Failed to set ae_level: %d\n", ret);
+        }
     }
 
-    // 4. 白平衡与色彩校正
+    // 白平衡与色彩校正
     if (params_.status.awb != sensor_->status.awb) {
         auto ret = sensor_->set_whitebal(sensor_, params_.status.awb);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.awb = sensor_->status.awb;
             Serial.printf("Failed to set whitebal: %d\n", ret);
+        }
     }
 
     if (params_.status.awb_gain != sensor_->status.awb_gain) {
         auto ret = sensor_->set_awb_gain(sensor_, params_.status.awb_gain);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.awb_gain = sensor_->status.awb_gain;
             Serial.printf("Failed to set awb_gain: %d\n", ret);
+        }
     }
 
     if (params_.status.wb_mode != sensor_->status.wb_mode) {
         auto ret = sensor_->set_wb_mode(sensor_, params_.status.wb_mode);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.wb_mode = sensor_->status.wb_mode;
             Serial.printf("Failed to set wb_mode: %d\n", ret);
+        }
     }
 
     if (params_.status.dcw != sensor_->status.dcw) {
         auto ret = sensor_->set_dcw(sensor_, params_.status.dcw);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.dcw = sensor_->status.dcw;
             Serial.printf("Failed to set dcw: %d\n", ret);
+        }
     }
 
     if (params_.status.bpc != sensor_->status.bpc) {
         auto ret = sensor_->set_bpc(sensor_, params_.status.bpc);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.bpc = sensor_->status.bpc;
             Serial.printf("Failed to set bpc: %d\n", ret);
+        }
     }
 
     if (params_.status.wpc != sensor_->status.wpc) {
         auto ret = sensor_->set_wpc(sensor_, params_.status.wpc);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.wpc = sensor_->status.wpc;
             Serial.printf("Failed to set wpc: %d\n", ret);
+        }
     }
 
     if (params_.status.raw_gma != sensor_->status.raw_gma) {
         auto ret = sensor_->set_raw_gma(sensor_, params_.status.raw_gma);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.raw_gma = sensor_->status.raw_gma;
             Serial.printf("Failed to set raw_gma: %d\n", ret);
+        }
     }
 
-    // 5. 图像变换与特效
+    // 图像变换与特效
     if (params_.status.hmirror != sensor_->status.hmirror) {
         auto ret = sensor_->set_hmirror(sensor_, params_.status.hmirror);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.hmirror = sensor_->status.hmirror;
             Serial.printf("Failed to set hmirror: %d\n", ret);
+        }
     }
 
     if (params_.status.vflip != sensor_->status.vflip) {
         auto ret = sensor_->set_vflip(sensor_, params_.status.vflip);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.vflip = sensor_->status.vflip;
             Serial.printf("Failed to set vflip: %d\n", ret);
+        }
     }
 
     if (params_.status.special_effect != sensor_->status.special_effect) {
         auto ret = sensor_->set_special_effect(sensor_, params_.status.special_effect);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.special_effect = sensor_->status.special_effect;
             Serial.printf("Failed to set special_effect: %d\n", ret);
+        }
     }
 
     if (params_.status.colorbar != sensor_->status.colorbar) {
         auto ret = sensor_->set_colorbar(sensor_, params_.status.colorbar);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.colorbar = sensor_->status.colorbar;
             Serial.printf("Failed to set colorbar: %d\n", ret);
+        }
     }
 
-    // 6. 镜头校正
+    // 镜头校正
     if (params_.status.lenc != sensor_->status.lenc) {
         auto ret = sensor_->set_lenc(sensor_, params_.status.lenc);
-        if (ret != 0)
+        if (ret != 0) {
+            params_.status.lenc = sensor_->status.lenc;
             Serial.printf("Failed to set lenc: %d\n", ret);
+        }
     }
 
-    params_.status = sensor_->status; // 更新状态
-    params_.pixformat = sensor_->pixformat;
+    // params_.status = sensor_->status; // 更新状态
+    // params_.pixformat = sensor_->pixformat;
 }
 
 void ESP32Cam::set_config(const camera_config_t &config) {

@@ -10,6 +10,8 @@ CameraWidget::CameraWidget(QWidget *parent)
     pixmapItem_ = ui->graphicsView->scene()->addPixmap(QPixmap());
     pixmapItem_->setTransformationMode(Qt::SmoothTransformation);
 
+    ui->graphicsView->setFixedSize(1280, 720);
+
     connect(&status_timer_, &QTimer::timeout, this, &CameraWidget::on_update_status);
     status_timer_.setInterval(500);
     status_timer_.start();
@@ -25,9 +27,10 @@ CameraWidget::CameraWidget(QWidget *parent)
     connect(ui->pushButton_clear_info, &QPushButton::clicked, this, [this]() { ui->textEdit_info->clear(); });
     connect(ui->checkBox_serial_capture, &QCheckBox::clicked, this, &CameraWidget::setEnableSeriesCapture);
 
-    camera_node_ = std::make_shared<CameraNode>(pc_camera_node_name, pc_camera_node_namespace, this);
+    camera_node_ = std::make_shared<CameraNode>(pc_camera_node_name, pc_camera_node_namespace);
     connect(camera_node_.get(), &CameraNode::imageMsgReceived, this, &CameraWidget::on_recv_image_msg);
     connect(camera_node_.get(), &CameraNode::cameraSettingsServiceResponsed, this, &CameraWidget::on_recv_camera_settings_service_response);
+    connect(camera_node_.get(), &CameraNode::commandStateChanged, this, &CameraWidget::on_command_state_changed);
     connect(camera_node_.get(), &CameraNode::connectedChanged, this, &CameraWidget::on_recv_connected_changed);
     camera_node_->start();
 }
@@ -231,6 +234,38 @@ void CameraWidget::on_recv_camera_settings_service_response(const camera_setting
         ui->comboBox_wpc->setCurrentIndex(response->wpc);
         ui->comboBox_lenc->setCurrentIndex(response->lenc);
         ui->comboBox_raw_gma->setCurrentIndex(response->raw_gma);
+    } else if (response->state == CameraService::Type::WriteParams) {
+        ui->checkBox_serial_capture->setChecked(response->enable_series_capture);
+        ui->pushButton_capture->setEnabled(!response->enable_series_capture);
+        ui->spinBox_milliseconds->setValue(response->milliseconds);
+        ui->spinBox_brightness->setValue(response->brightness);
+        ui->spinBox_sharpness->setValue(response->sharpness);
+        ui->spinBox_contrast->setValue(response->contrast);
+        ui->spinBox_saturation->setValue(response->saturation);
+        ui->spinBox_denoise->setValue(response->denoise);
+        ui->spinBox_ae_level->setValue(response->ae_level);
+        ui->spinBox_agc_gain->setValue(response->agc_gain);
+        ui->spinBox_aec_value->setValue(response->aec_value);
+        ui->spinBox_quality->setValue(response->quality);
+
+        ui->comboBox_pixformat->setCurrentIndex(response->pixformat);
+        ui->comboBox_framesize->setCurrentIndex(response->framesize);
+        ui->comboBox_gainceiling->setCurrentIndex(response->gainceiling);
+        ui->comboBox_special_effect->setCurrentIndex(response->special_effect);
+        ui->comboBox_awb_gain->setCurrentIndex(response->awb_gain);
+        ui->comboBox_wb_mode->setCurrentIndex(response->wb_mode);
+        ui->comboBox_awb->setCurrentIndex(response->awb);
+        ui->comboBox_dcw->setCurrentIndex(response->dcw);
+        ui->comboBox_colorbar->setCurrentIndex(response->colorbar);
+        ui->comboBox_agc->setCurrentIndex(response->agc);
+        ui->comboBox_aec->setCurrentIndex(response->aec);
+        ui->comboBox_aec2->setCurrentIndex(response->aec2);
+        ui->comboBox_hmirror->setCurrentIndex(response->hmirror);
+        ui->comboBox_vflip->setCurrentIndex(response->vflip);
+        ui->comboBox_bpc->setCurrentIndex(response->bpc);
+        ui->comboBox_wpc->setCurrentIndex(response->wpc);
+        ui->comboBox_lenc->setCurrentIndex(response->lenc);
+        ui->comboBox_raw_gma->setCurrentIndex(response->raw_gma);
     }
 }
 
@@ -248,13 +283,6 @@ void CameraWidget::on_recv_connected_changed(bool connected) {
 }
 
 void CameraWidget::on_recv_image_msg(const sensor_msgs::msg::CompressedImage::SharedPtr msg) {
-    // QString frameId = QString::fromStdString(msg->header.frame_id);
-    // QString format = QString::fromStdString(msg->format);
-
-    // // 时间戳处理
-    // qint64 sec = msg->header.stamp.sec;
-    // qint32 nsec = msg->header.stamp.nanosec;
-
     QImage image;
     if (!image.loadFromData(QByteArray(reinterpret_cast<const char *>(msg->data.data()), static_cast<int>(msg->data.size())), nullptr)) {
         qDebug() << "图像解压缩失败！可能是数据损坏或不支持的格式";
@@ -263,8 +291,8 @@ void CameraWidget::on_recv_image_msg(const sensor_msgs::msg::CompressedImage::Sh
 
     pixmapItem_->setPixmap(QPixmap::fromImage(image));
     ui->graphicsView->scene()->setSceneRect(pixmapItem_->boundingRect());
-    ui->graphicsView->setFixedSize(image.width(), image.height());
-    // ui->graphicsView->fitInView(ui->graphicsView->scene()->itemsBoundingRect(), Qt::KeepAspectRatio);
+    // ui->graphicsView->setFixedSize(image.width(), image.height());
+    ui->graphicsView->fitInView(pixmapItem_, Qt::KeepAspectRatio);
 
     fps_vector_->push_back(1000.0 / fps_timer_.restart());
 }

@@ -41,8 +41,6 @@ public:
     void write_params();
     void save_params();
 
-    // private slots:
-
 private:
     Ui::CameraWidget *ui;
     std::shared_ptr<CameraNode> camera_node_ = nullptr;
