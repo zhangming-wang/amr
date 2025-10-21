@@ -1,4 +1,5 @@
 #include "esp32cam.h"
+#include "esp_tools.h"
 #include "microRos.h"
 #include "settings.h"
 #include <Arduino.h>
@@ -7,6 +8,8 @@
 void setup() {
     Serial.begin(115200);
     delay(1000); // 等待串口稳定
+
+    test_ram();
 
     WiFi.begin(wifi_name, wifi_password);
     delay(1000);

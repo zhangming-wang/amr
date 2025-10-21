@@ -1,5 +1,6 @@
 #include "centerControl.h"
 #include "esp_timer.h"
+#include "esp_tools.h"
 #include "httpService.h"
 #include "microRos.h"
 #include "motorControl.h"
@@ -13,6 +14,8 @@ void (*serial_print)(const std::string &) = _serial_print;
 void setup() {
     Serial.begin(115200);
     delay(1000); // 等串口稳定
+
+    test_ram();
 
     WiFi.mode(WIFI_STA);
     WiFi.persistent(false);

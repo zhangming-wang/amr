@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-void test_ram() {
+inline void test_ram() {
     // 使用Arduino框架提供的PSRAM相关函数
     if (ESP.getPsramSize() > 0) {
         Serial.printf("检测到PSRAM，容量: %d KB\n", ESP.getPsramSize() / 1024);
