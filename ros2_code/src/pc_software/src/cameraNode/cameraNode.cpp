@@ -2,9 +2,8 @@
 
 CameraNode::CameraNode(const std::string &node_name, const std::string &node_nammspace, QObject *parent) : QThread(parent), node_(std::make_shared<rclcpp::Node>(node_name, node_nammspace)) {
     qRegisterMetaType<int64_t>("const int64_t");
-    qRegisterMetaType<camera_settings_service::srv::CameraSettingsService::Response::SharedPtr>("const camera_settings_service::srv::CameraSettingsService::Response::SharedPtr");
-    qRegisterMetaType<sensor_msgs::msg::CompressedImage::SharedPtr>("const sensor_msgs::msg::CompressedImage::SharedPtr");
     qRegisterMetaType<CameraSettingsSrv::Response::SharedPtr>("const CameraSettingsSrv::Response::SharedPtr");
+    qRegisterMetaType<sensor_msgs::msg::CompressedImage::SharedPtr>("const sensor_msgs::msg::CompressedImage::SharedPtr");
 
     connected_.store(false);
 
@@ -23,7 +22,6 @@ CameraNode::CameraNode(const std::string &node_name, const std::string &node_nam
         service_name = srv; // 直接使用服务名，让ROS2自动处理根路径
         topic_name = msg;
     } else {
-
         if (ns.front() != '/') { // 确保命名空间以单斜杠开头
             service_name = "/" + ns;
             topic_name = "/" + ns;
@@ -96,6 +94,8 @@ void CameraNode::run() {
         current_heartbeat_time = std::chrono::steady_clock::now();
     }
     connected_.store(false);
+
+    emit nodeClosed();
 }
 
 void CameraNode::_send_heartbeat_request() {

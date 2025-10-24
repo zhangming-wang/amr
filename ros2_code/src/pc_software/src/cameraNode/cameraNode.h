@@ -12,11 +12,12 @@
 #include <QQueue>
 #include <QThread>
 #include <atomic>
+
+using CameraSettingsSrv = camera_settings_service::srv::CameraSettingsService;
+
 class CameraNode : public QThread {
     Q_OBJECT
 public:
-    using CameraSettingsSrv = camera_settings_service::srv::CameraSettingsService;
-
     enum CommandState {
         Fail = -1,
         Add = 0,
@@ -46,6 +47,7 @@ signals:
     void imageMsgReceived(const sensor_msgs::msg::CompressedImage::SharedPtr);
     void commandStateChanged(int64_t, int);
     void connectedChanged(bool);
+    void nodeClosed();
 
 private:
     rclcpp::Node::SharedPtr node_;

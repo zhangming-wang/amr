@@ -23,7 +23,7 @@ find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(motion_status_msgs REQUIRED)
-find_package(motion_params_service REQUIRED)
+find_package(motion_settings_service REQUIRED)
 find_package(camera_settings_service REQUIRED)
 find_package(Qt5 COMPONENTS Widgets Charts PrintSupport Gamepad REQUIRED)
 
@@ -50,7 +50,7 @@ ament_target_dependencies(${PROJECT_NAME}
   sensor_msgs
   tf2
   motion_status_msgs
-  motion_params_service
+  motion_settings_service
   camera_settings_service
 )
 

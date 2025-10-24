@@ -6,7 +6,7 @@ HttpService &HttpService::get_instance() {
 }
 
 HttpService::HttpService() {
-    centerControl = &CenterControl::get_instance();
+    motionControl_ = &MotionControl::get_instance();
 }
 
 HttpService::~HttpService() {
@@ -26,54 +26,54 @@ void HttpService::begin() {
         webServer_.send(200, "text/plain", "connected");
     });
     webServer_.on("/restart", [this]() {
-        centerControl->restart_task();
+        motionControl_->restart_task();
     });
     webServer_.on("/brake", [this]() {
-        centerControl->brake();
+        motionControl_->brake();
     });
     webServer_.on("/stop_move", [this]() {
-        centerControl->stop_move();
+        motionControl_->stop_move();
     });
     webServer_.on("/move_front", [this]() {
-        centerControl->move_front();
+        motionControl_->move_front();
     });
     webServer_.on("/move_back", [this]() {
-        centerControl->move_back();
+        motionControl_->move_back();
     });
     webServer_.on("/move_left", [this]() {
-        centerControl->move_left();
+        motionControl_->move_left();
     });
     webServer_.on("/move_right", [this]() {
-        centerControl->move_right();
+        motionControl_->move_right();
     });
     webServer_.on("/move_left_front", [this]() {
-        centerControl->move_left_front();
+        motionControl_->move_left_front();
     });
     webServer_.on("/move_right_front", [this]() {
-        centerControl->move_right_front();
+        motionControl_->move_right_front();
     });
     webServer_.on("/move_left_back", [this]() {
-        centerControl->move_left_back();
+        motionControl_->move_left_back();
     });
     webServer_.on("/move_right_back", [this]() {
-        centerControl->move_right_back();
+        motionControl_->move_right_back();
     });
     webServer_.on("/turn_left", [this]() {
-        centerControl->turn_left();
+        motionControl_->turn_left();
     });
     webServer_.on("/turn_right", [this]() {
-        centerControl->turn_right();
+        motionControl_->turn_right();
     });
     webServer_.on("/save", [this]() {
-        centerControl->save_params();
-        centerControl->save_settings();
+        motionControl_->save_params();
+        motionControl_->save_config();
     });
     webServer_.on("/set_speed_percent", [this]() {
         auto percent = webServer_.arg("value").toFloat();
-        centerControl->set_speed_percent(percent);
+        motionControl_->set_speed_percent(percent);
     });
     webServer_.on("/get_data", [this]() {
-        webServer_.send(200, "application/json", centerControl->get_http_data());
+        webServer_.send(200, "application/json", motionControl_->get_http_data());
     });
     webServer_.onNotFound([this]() {
         if (webServer_.method() == HTTP_OPTIONS) {
@@ -97,7 +97,7 @@ void HttpService::stop() {
 void HttpService::start_task() {
     if (enable_task_run_ == false) {
         enable_task_run_ = true;
-        xTaskCreatePinnedToCore(HttpService::http_serive_task, "http_serive_task", 8192, this, 1, NULL, 0);
+        xTaskCreatePinnedToCore(HttpService::http_serive_task, "http_serive_task", 8192, this, 0, NULL, 0);
     }
 }
 
@@ -129,7 +129,7 @@ void HttpService::http_serive_task(void *args) {
                 serial_print("HTTP Server stopped due to Wi-Fi disconnect");
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(httpService->centerControl->get_milliseconds()));
+        vTaskDelay(pdMS_TO_TICKS(httpService->motionControl_->get_milliseconds()));
     }
     if (connected) {
         httpService->stop();

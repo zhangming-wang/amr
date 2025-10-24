@@ -1,6 +1,6 @@
 #pragma once
 
-#include "centerControl.h"
+#include "motionControl.h"
 #include "serialPrint.h"
 #include <WebServer.h>
 #include <WiFi.h>
@@ -25,7 +25,7 @@ private:
     bool enable_task_run_ = false;
     int port_ = 0;
 
-    CenterControl *centerControl = nullptr;
+    MotionControl *motionControl_ = nullptr;
 
     void begin();
     void stop();

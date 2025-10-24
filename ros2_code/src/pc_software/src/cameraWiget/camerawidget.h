@@ -41,6 +41,11 @@ public:
     void write_params();
     void save_params();
 
+    void onOpenSettingsChanged(bool open);
+
+signals:
+    void nodeClosed();
+
 private:
     Ui::CameraWidget *ui;
     std::shared_ptr<CameraNode> camera_node_ = nullptr;
@@ -53,11 +58,11 @@ private:
 
     std::shared_ptr<QVector<double>> fps_vector_;
 
-    void _ask_motion_params_service(CameraNode::CameraSettingsSrv::Request::SharedPtr request, QString &cmd_string);
+    void _ask_camera_settings_service(CameraSettingsSrv::Request::SharedPtr request, QString &cmd_string);
     void _update_cmd_status_info(const QString &cmd_string, int state);
 
     void on_recv_image_msg(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
-    void on_recv_camera_settings_service_response(const camera_settings_service::srv::CameraSettingsService::Response::SharedPtr response);
+    void on_recv_camera_settings_service_response(const CameraSettingsSrv::Response::SharedPtr response);
     void on_recv_connected_changed(bool connected);
     void on_command_state_changed(int64_t id, int state);
 

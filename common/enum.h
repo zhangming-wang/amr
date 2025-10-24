@@ -1,35 +1,37 @@
 #pragma once
 
-enum ServiceType {
-    Idle = 0,
-    HeartBeat,
-    Restart,
+namespace MotionService {
+    enum Type {
+        Idle = 0,
+        HeartBeat,
+        Restart,
 
-    Brake,
-    StopMove,
-    MoveFront,
-    MoveBack,
-    MoveLeft,
-    MoveRight,
-    MoveLeftFront,
-    MoveLeftBack,
-    MoveRightFront,
-    MoveRightBack,
-    TurnLeft,
-    TurnRight,
+        Brake,
+        StopMove,
+        MoveFront,
+        MoveBack,
+        MoveLeft,
+        MoveRight,
+        MoveLeftFront,
+        MoveLeftBack,
+        MoveRightFront,
+        MoveRightBack,
+        TurnLeft,
+        TurnRight,
 
-    SetSpeedPercent,
-    SetSpeedPlanState,
-    SetEnablePubMotionStatus,
+        SetSpeedPercent,
+        SetSpeedPlanState,
+        SetEnablePubMotionStatus,
 
-    ReadParams,
-    WriteParams,
-    SaveParams,
+        ReadParams,
+        WriteParams,
+        SaveParams,
 
-    ReadSettings,
-    WriteSettings,
-    SaveSettings,
-};
+        ReadConfig,
+        WriteConfig,
+        SaveConfig,
+    };
+}
 
 namespace CameraService {
     enum Type {

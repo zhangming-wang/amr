@@ -1,12 +1,12 @@
 #include "motor.h"
 
-int Motor::channel_cnt_ = 0;
+// int Motor::channel_cnt_ = 0;
 
 Motor::Motor() {
     init_ = false;
-    channel_id_ = channel_cnt_;
-    channel_cnt_ += 1;
-    ledcSetup(channel_id_, 5000, RESOLUTIONBITS);
+    // channel_id_ = channel_cnt_;
+    // channel_cnt_ += 1;
+    // ledcSetup(channel_id_, 5000, RESOLUTIONBITS);
 }
 
 bool Motor::init_success() {
@@ -28,19 +28,42 @@ void Motor::set_pins(int pin_A, int pin_B, int pin_PWM) {
         }
 
         if (init_) {
-            if (pin_PWM_ > 0) {
-                ledcAttachPin(pin_PWM_, channel_id_);
-            }
+            pwmControl_.attachPin(pin_PWM_);
+            // if (pin_PWM_ > 0) {
+            //     ledcAttachPin(pin_PWM_, channel_id_);
+            // }
             stop();
         }
     }
 }
 
-void Motor::stop() {
+void Motor::move() {
+    if (!init_)
+        return;
+    pwmControl_.write(pwm_);
+}
+
+void Motor::move(int speed_pwm) {
     if (!init_)
         return;
 
-    ledcWrite(channel_id_, 0);
+    set_speed(speed_pwm);
+    pwmControl_.write(pwm_);
+}
+
+void Motor::move(float speed_percent) {
+    if (!init_)
+        return;
+
+    set_speed(speed_percent);
+    pwmControl_.write(pwm_);
+}
+
+void Motor::stop() {
+    if (!init_)
+        return;
+    pwmControl_.write(uint32_t(0));
+    // ledcWrite(channel_id_, 0);
 }
 
 void Motor::brake() {
@@ -71,7 +94,7 @@ void Motor::set_speed(float speed_percent) {
     if (speed_percent > 1)
         speed_percent = 1;
 
-    _set_pwm(uint(speed_percent * pow(2, RESOLUTIONBITS)));
+    pwm_ = uint(speed_percent * pwmControl_.get_max_pwm());
 }
 
 void Motor::set_speed(int pwm) {
@@ -83,15 +106,8 @@ void Motor::set_speed(int pwm) {
     } else {
         _set_direction(true);
     }
-    _set_pwm(fabs(pwm));
-}
 
-void Motor::_set_pwm(int pwm) {
-    if (pwm > pow(2, RESOLUTIONBITS))
-        pwm = pow(2, RESOLUTIONBITS);
-    if (pwm < MINPWM && pwm != 0)
-        pwm = MINPWM;
-    pwm_ = pwm;
+    pwm_ = std::min(uint32_t(fabs(pwm)), pwmControl_.get_max_pwm());
 }
 
 void Motor::_set_direction(bool forward) {
@@ -107,34 +123,11 @@ void Motor::_set_direction(bool forward) {
         if (forward) {
             ledcDetachPin(pin_B_);
             digitalWrite(pin_B_, LOW);
-            ledcAttachPin(pin_A_, channel_id_);
+            pwmControl_.attachPin(pin_A_);
         } else {
             ledcDetachPin(pin_A_);
             digitalWrite(pin_A_, LOW);
-            ledcAttachPin(pin_B_, channel_id_);
+            pwmControl_.attachPin(pin_B_);
         }
     }
-}
-
-void Motor::move() {
-    if (!init_)
-        return;
-
-    ledcWrite(channel_id_, pwm_);
-}
-
-void Motor::move(int speed_pwm) {
-    if (!init_)
-        return;
-
-    set_speed(speed_pwm);
-    ledcWrite(channel_id_, pwm_);
-}
-
-void Motor::move(float speed_percent) {
-    if (!init_)
-        return;
-
-    set_speed(speed_percent);
-    ledcWrite(channel_id_, pwm_);
 }

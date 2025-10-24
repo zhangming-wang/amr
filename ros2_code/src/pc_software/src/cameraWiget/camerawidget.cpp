@@ -3,6 +3,8 @@
 CameraWidget::CameraWidget(QWidget *parent)
     : QWidget(parent), ui(new Ui::CameraWidget) {
     ui->setupUi(this);
+    setAttribute(Qt::WA_DeleteOnClose, false);
+
     ui->graphicsView->setScene(new QGraphicsScene());
 
     fps_vector_ = std::make_shared<QVector<double>>();
@@ -11,10 +13,6 @@ CameraWidget::CameraWidget(QWidget *parent)
     pixmapItem_->setTransformationMode(Qt::SmoothTransformation);
 
     ui->graphicsView->setFixedSize(1280, 720);
-
-    connect(&status_timer_, &QTimer::timeout, this, &CameraWidget::on_update_status);
-    status_timer_.setInterval(500);
-    status_timer_.start();
 
     connect(ui->pushButton_capture, &QPushButton::clicked, this, &CameraWidget::capture_image);
     connect(ui->pushButton_read_config, &QPushButton::clicked, this, &CameraWidget::read_config);
@@ -26,52 +24,67 @@ CameraWidget::CameraWidget(QWidget *parent)
     connect(ui->pushButton_restart, &QPushButton::clicked, this, &CameraWidget::restart);
     connect(ui->pushButton_clear_info, &QPushButton::clicked, this, [this]() { ui->textEdit_info->clear(); });
     connect(ui->checkBox_serial_capture, &QCheckBox::clicked, this, &CameraWidget::setEnableSeriesCapture);
+    connect(ui->checkBox_open_settings, &QCheckBox::clicked, this, &CameraWidget::onOpenSettingsChanged);
 
     camera_node_ = std::make_shared<CameraNode>(pc_camera_node_name, pc_camera_node_namespace);
     connect(camera_node_.get(), &CameraNode::imageMsgReceived, this, &CameraWidget::on_recv_image_msg);
     connect(camera_node_.get(), &CameraNode::cameraSettingsServiceResponsed, this, &CameraWidget::on_recv_camera_settings_service_response);
     connect(camera_node_.get(), &CameraNode::commandStateChanged, this, &CameraWidget::on_command_state_changed);
     connect(camera_node_.get(), &CameraNode::connectedChanged, this, &CameraWidget::on_recv_connected_changed);
+    connect(camera_node_.get(), &CameraNode::nodeClosed, this, &CameraWidget::nodeClosed);
     camera_node_->start();
+
+    connect(&status_timer_, &QTimer::timeout, this, &CameraWidget::on_update_status);
+    status_timer_.setInterval(500);
+    status_timer_.start();
+
+    ui->checkBox_open_settings->setChecked(false);
+    onOpenSettingsChanged(false);
 }
 
 CameraWidget::~CameraWidget() {
     delete ui;
 }
 
+void CameraWidget::onOpenSettingsChanged(bool open) {
+    ui->groupBox_params->setVisible(open);
+    ui->groupBox_config->setVisible(open);
+    ui->groupBox_cmd_info->setVisible(open);
+}
+
 void CameraWidget::restart() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::Restart;
     auto cmd_string = get_cmd_string_prefix() + "重启配置指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::capture_image() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::Capture;
     auto cmd_string = get_cmd_string_prefix() + "拍照指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::setEnableSeriesCapture(bool enable) {
     ui->pushButton_capture->setEnabled(!enable);
 
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::SetEnableSeriesCapture;
     request->enable_series_capture = enable;
     auto cmd_string = get_cmd_string_prefix() + "设置连拍指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::read_config() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::ReadConfig;
     auto cmd_string = get_cmd_string_prefix() + "读取配置指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::write_config() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::WriteConfig;
 
     request->pin_pwdn = ui->spinBox_pin_pwdn->value();
@@ -101,25 +114,25 @@ void CameraWidget::write_config() {
     request->conv_mode = ui->comboBox_conv_mode->currentIndex();
 
     auto cmd_string = get_cmd_string_prefix() + "写入配置指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::save_config() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::SaveConfig;
     auto cmd_string = get_cmd_string_prefix() + "保存配置指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::read_params() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::ReadParams;
     auto cmd_string = get_cmd_string_prefix() + "读取参数指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::write_params() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::WriteParams;
     auto cmd_string = get_cmd_string_prefix() + "写入参数指令";
 
@@ -153,14 +166,14 @@ void CameraWidget::write_params() {
     request->lenc = ui->comboBox_lenc->currentIndex();
     request->raw_gma = ui->comboBox_raw_gma->currentIndex();
 
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::save_params() {
-    CameraNode::CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraNode::CameraSettingsSrv::Request>());
+    CameraSettingsSrv::Request::SharedPtr request(std::make_shared<CameraSettingsSrv::Request>());
     request->mode = CameraService::Type::SaveParams;
     auto cmd_string = get_cmd_string_prefix() + "保存参数指令";
-    _ask_motion_params_service(request, cmd_string);
+    _ask_camera_settings_service(request, cmd_string);
 }
 
 void CameraWidget::on_command_state_changed(int64_t id, int state) {
@@ -173,7 +186,7 @@ void CameraWidget::on_command_state_changed(int64_t id, int state) {
     }
 }
 
-void CameraWidget::on_recv_camera_settings_service_response(const camera_settings_service::srv::CameraSettingsService::Response::SharedPtr response) {
+void CameraWidget::on_recv_camera_settings_service_response(const CameraSettingsSrv::Response::SharedPtr response) {
     on_command_state_changed(response->id, CameraNode::CommandState::Success);
 
     if (response->state == CameraService::Type::ReadConfig) {
@@ -274,11 +287,11 @@ void CameraWidget::on_recv_connected_changed(bool connected) {
         read_config();
         read_params();
         ui->label_status->setStyleSheet(OK_STYLESHEET);
-        ui->label_status->setText("已连接");
+        ui->label_status->setText("相机节点已连接");
     } else {
         pixmapItem_->setPixmap(QPixmap::fromImage(QImage()));
         ui->label_status->setStyleSheet(ERROR_STYLESHEET);
-        ui->label_status->setText("未连接");
+        ui->label_status->setText("相机节点未连接");
     }
 }
 
@@ -291,8 +304,10 @@ void CameraWidget::on_recv_image_msg(const sensor_msgs::msg::CompressedImage::Sh
 
     pixmapItem_->setPixmap(QPixmap::fromImage(image));
     ui->graphicsView->scene()->setSceneRect(pixmapItem_->boundingRect());
-    // ui->graphicsView->setFixedSize(image.width(), image.height());
-    ui->graphicsView->fitInView(pixmapItem_, Qt::KeepAspectRatio);
+    if (ui->graphicsView->width() != image.width() || ui->graphicsView->height() != image.height()) {
+        ui->graphicsView->setFixedSize(image.width(), image.height());
+        ui->graphicsView->fitInView(pixmapItem_, Qt::KeepAspectRatio);
+    }
 
     fps_vector_->push_back(1000.0 / fps_timer_.restart());
 }
@@ -307,7 +322,7 @@ void CameraWidget::on_update_status() {
     ui->label_fps->setText("帧率:" + QString::number(average_fps, 10, 2));
 }
 
-void CameraWidget::_ask_motion_params_service(CameraNode::CameraSettingsSrv::Request::SharedPtr request, QString &cmd_string) {
+void CameraWidget::_ask_camera_settings_service(CameraSettingsSrv::Request::SharedPtr request, QString &cmd_string) {
     QThread::msleep(1);
     auto id = QDateTime::currentMSecsSinceEpoch();
     commpand_map_.insert(id, cmd_string);
