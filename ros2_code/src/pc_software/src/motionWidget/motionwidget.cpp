@@ -17,13 +17,11 @@ MotionWidget::MotionWidget(QWidget *parent)
     connect(ui->pushButton_restart, &QPushButton::clicked, this, &MotionWidget::restart);
     connect(ui->pushButton_brake, &QPushButton::clicked, this, &MotionWidget::brake);
     connect(ui->pushButton_stop_move, &QPushButton::clicked, this, &MotionWidget::stop_move);
-    connect(ui->pushButton_stop_move_0, &QPushButton::clicked, this, &MotionWidget::stop_move);
     connect(ui->pushButton_set_speed, &QPushButton::clicked, this, &MotionWidget::set_speed);
     connect(ui->pushButton_move_front, &QPushButton::clicked, this, &MotionWidget::move_front);
     connect(ui->pushButton_move_back, &QPushButton::clicked, this, &MotionWidget::move_back);
     connect(ui->pushButton_move_left, &QPushButton::clicked, this, &MotionWidget::move_left);
     connect(ui->pushButton_move_right, &QPushButton::clicked, this, &MotionWidget::move_right);
-    connect(ui->pushButton_move_front, &QPushButton::clicked, this, &MotionWidget::move_front);
     connect(ui->pushButton_move_left_front, &QPushButton::clicked, this, &MotionWidget::move_left_front);
     connect(ui->pushButton_move_left_back, &QPushButton::clicked, this, &MotionWidget::move_left_back);
     connect(ui->pushButton_move_right_front, &QPushButton::clicked, this, &MotionWidget::move_right_front);

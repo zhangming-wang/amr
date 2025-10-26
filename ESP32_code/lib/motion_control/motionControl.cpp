@@ -225,8 +225,6 @@ void MotionControl::move_absolute_euler_pose(const EulerPose &eulerPose) {
 }
 
 void MotionControl::brake() {
-    running_ = false;
-    stop_move();
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
             wheel_speed_deque_.clear();
@@ -237,6 +235,7 @@ void MotionControl::brake() {
         }
         xSemaphoreGive(mutex_);
     }
+    running_ = false;
     left_front_motor_control_->brake();
     left_back_motor_control_->brake();
     right_front_motor_control_->brake();
@@ -651,16 +650,16 @@ void MotionControl::update() {
         } else {
             right_back_motor_control_->set_speed(0, dt_, false);
         }
-        left_front_motor_control_->move();
-        left_back_motor_control_->move();
-        right_front_motor_control_->move();
-        right_back_motor_control_->move();
     } else {
         left_front_motor_control_->set_speed(0, dt_, false);
         left_back_motor_control_->set_speed(0, dt_, false);
         right_front_motor_control_->set_speed(0, dt_, false);
         right_back_motor_control_->set_speed(0, dt_, false);
     }
+    left_front_motor_control_->move();
+    left_back_motor_control_->move();
+    right_front_motor_control_->move();
+    right_back_motor_control_->move();
 
     last_time_record_ = time_record_;
 

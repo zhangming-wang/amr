@@ -6,11 +6,11 @@ PWMControl::PWMControl() {
     _init();
 }
 
-PWMControl::PWMControl(int pin_pwm, uint8_t resolution_bits, uint32_t requency) {
-    requency_ = requency;
+PWMControl::PWMControl(int pin_pwm, uint8_t resolution_bits, uint32_t frequency) {
+    requency_ = frequency;
     resolution_bits_ = resolution_bits;
-    attachPin(pin_pwm);
     _init();
+    attachPin(pin_pwm);
 }
 
 uint32_t PWMControl::get_max_pwm() {
@@ -37,6 +37,7 @@ bool PWMControl::attachPin(int pin_pwm) {
         return false;
     }
 }
+
 bool PWMControl::write(uint32_t pwm) {
     return _write(pwm);
 }

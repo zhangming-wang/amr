@@ -148,6 +148,7 @@ void MotorControl::set_speed(float target_v, float dt, bool pid_adjust) {
         pid_value_ = target_v_ / max_v_;
         pidControl_->reset();
     }
+
     motor_->set_speed(pid_value_);
 }
 

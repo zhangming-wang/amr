@@ -15,7 +15,9 @@ void (*serial_print)(const std::string &) = _serial_print;
 
 void setup() {
     Serial.begin(115200);
-    delay(1000); // 等串口稳定
+    while (!Serial) { // 等待主机连接到 CDC 端口
+        delay(10);
+    }
 
     test_ram();
 
@@ -67,12 +69,12 @@ bool connected = false;
 void loop() {
     if (WiFi.status() != WL_CONNECTED) {
         connected = false;
-        serial_print("WiFi Disconnected, reconnecting...");
+        Serial.println("WiFi Disconnected, reconnecting...");
         WiFi.reconnect();
     } else {
         if (connected == false) {
             connected = true;
-            serial_print("WiFi connect success!");
+            Serial.println("WiFi connect success!");
         }
     }
     delay(500);

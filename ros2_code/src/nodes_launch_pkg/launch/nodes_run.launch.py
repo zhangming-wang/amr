@@ -46,7 +46,7 @@ def generate_launch_description():
     pc_software = Node(
         package="pc_software",
         executable="pc_software",
-        name="pc_software",
+        # name="pc_software",
         output="screen",
     )
 
