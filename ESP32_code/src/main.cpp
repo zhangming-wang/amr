@@ -21,17 +21,24 @@ void setup() {
 
     test_ram();
 
-    WiFi.mode(WIFI_STA);
+    auto ret = WiFi.mode(WIFI_STA);
     WiFi.persistent(false);
 
-    IPAddress ESP32_IP = IPAddress(), ESP32_gateway = IPAddress(), ESP32_subnet = IPAddress();
-    ESP32_IP.fromString(esp32_ip);
-    ESP32_gateway.fromString(esp32_gateway);
-    ESP32_subnet.fromString(esp32_subnet);
+    // IPAddress ESP32_IP = IPAddress(), ESP32_gateway = IPAddress(), ESP32_subnet = IPAddress();
+    // ESP32_IP.fromString(esp32_ip);
+    // ESP32_gateway.fromString(esp32_gateway);
+    // ESP32_subnet.fromString(esp32_subnet);
+    // WiFi.config(ESP32_IP, ESP32_gateway, ESP32_subnet);
 
-    WiFi.config(ESP32_IP, ESP32_gateway, ESP32_subnet);
+    WiFi.config(0U, 0U, 0U);
     WiFi.begin(wifi_name, wifi_password);
-    delay(1000);
+    Serial.printf("\nConnecting to WiFi...");
+    unsigned long start = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - start < 30000) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println();
 
 #if defined(esp32_wroom_motion) || defined(esp32_s3_motion)
     MotionControl &motionControl = MotionControl::get_instance();
@@ -74,6 +81,12 @@ void loop() {
     } else {
         if (connected == false) {
             connected = true;
+            Serial.println("===== WiFi Info =====");
+            Serial.printf("IP      : %s\n", WiFi.localIP().toString().c_str());
+            Serial.printf("RSSI    : %d dBm\n", WiFi.RSSI());
+            Serial.printf("MAC     : %s\n", WiFi.macAddress().c_str());
+            Serial.printf("SSID    : %s\n", WiFi.SSID().c_str());
+            Serial.println("=====================");
             Serial.println("WiFi connect success!");
         }
     }

@@ -10,9 +10,9 @@ static constexpr const int tcp_client_port = 8889;
 
 static constexpr const int ydlidar_baudrate = 115200;
 
-static constexpr const char *esp32_ip = "192.168.1.190";
-static constexpr const char *esp32_gateway = "192.168.1.1";
-static constexpr const char *esp32_subnet = "255.255.255.0";
+// static constexpr const char *esp32_ip = "192.168.1.100";
+// static constexpr const char *esp32_gateway = "192.168.1.1";
+// static constexpr const char *esp32_subnet = "255.255.255.0";
 
 static constexpr const char *esp32_camera_node_name = "esp32_camera_node";
 static constexpr const char *esp32_camera_node_namespace = "esp32";

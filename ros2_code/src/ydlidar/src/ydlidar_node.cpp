@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     node->get_parameter("range_min", f_optvalue);
     laser.setlidaropt(LidarPropMinRange, &f_optvalue, sizeof(float));
     /// unit: Hz
-    f_optvalue = 10.f;
+    f_optvalue = 30.f;
     node->declare_parameter("frequency", f_optvalue);
     node->get_parameter("frequency", f_optvalue);
     laser.setlidaropt(LidarPropScanFrequency, &f_optvalue, sizeof(float));
@@ -174,87 +174,91 @@ int main(int argc, char *argv[]) {
 
     auto start_service = node->create_service<std_srvs::srv::Empty>("start_scan", start_scan_service);
 
-    rclcpp::WallRate loop_rate(10);
+    rclcpp::WallRate loop_rate(30);
 
     bool initialized = false, is_turnOn = false;
 
     while (rclcpp::ok()) {
-        if (!initialized) {
-            initialized = laser.initialize();
-        }
+        try {
+            if (!initialized) {
+                initialized = laser.initialize();
+            }
 
-        if (!is_turnOn && initialized) {
-            is_turnOn = laser.turnOn();
-        }
+            if (!is_turnOn && initialized) {
+                is_turnOn = laser.turnOn();
+            }
 
-        if (initialized && is_turnOn) {
-            LaserScan scan; //
+            if (initialized && is_turnOn) {
+                LaserScan scan; //
 
-            if (laser.doProcessSimple(scan)) {
+                if (laser.doProcessSimple(scan)) {
 
-                auto scan_msg = std::make_shared<sensor_msgs::msg::LaserScan>();
-                auto pc_msg = std::make_shared<sensor_msgs::msg::PointCloud>();
+                    auto scan_msg = std::make_shared<sensor_msgs::msg::LaserScan>();
+                    auto pc_msg = std::make_shared<sensor_msgs::msg::PointCloud>();
 
-                scan_msg->header.stamp.sec = RCL_NS_TO_S(scan.stamp);
-                scan_msg->header.stamp.nanosec = scan.stamp - RCL_S_TO_NS(scan_msg->header.stamp.sec);
-                scan_msg->header.frame_id = frame_id;
-                pc_msg->header = scan_msg->header;
-                scan_msg->angle_min = scan.config.min_angle;
-                scan_msg->angle_max = scan.config.max_angle;
-                scan_msg->angle_increment = scan.config.angle_increment;
-                scan_msg->scan_time = scan.config.scan_time;
-                scan_msg->time_increment = scan.config.time_increment;
-                scan_msg->range_min = scan.config.min_range;
-                scan_msg->range_max = scan.config.max_range;
+                    scan_msg->header.stamp.sec = RCL_NS_TO_S(scan.stamp);
+                    scan_msg->header.stamp.nanosec = scan.stamp - RCL_S_TO_NS(scan_msg->header.stamp.sec);
+                    scan_msg->header.frame_id = frame_id;
+                    pc_msg->header = scan_msg->header;
+                    scan_msg->angle_min = scan.config.min_angle;
+                    scan_msg->angle_max = scan.config.max_angle;
+                    scan_msg->angle_increment = scan.config.angle_increment;
+                    scan_msg->scan_time = scan.config.scan_time;
+                    scan_msg->time_increment = scan.config.time_increment;
+                    scan_msg->range_min = scan.config.min_range;
+                    scan_msg->range_max = scan.config.max_range;
 
-                int size = (scan.config.max_angle - scan.config.min_angle) / scan.config.angle_increment + 1;
-                scan_msg->ranges.resize(size);
-                scan_msg->intensities.resize(size);
+                    int size = (scan.config.max_angle - scan.config.min_angle) / scan.config.angle_increment + 1;
+                    scan_msg->ranges.resize(size);
+                    scan_msg->intensities.resize(size);
 
-                pc_msg->channels.resize(2);
-                int idx_intensity = 0;
-                pc_msg->channels[idx_intensity].name = "intensities";
-                int idx_timestamp = 1;
-                pc_msg->channels[idx_timestamp].name = "stamps";
+                    pc_msg->channels.resize(2);
+                    int idx_intensity = 0;
+                    pc_msg->channels[idx_intensity].name = "intensities";
+                    int idx_timestamp = 1;
+                    pc_msg->channels[idx_timestamp].name = "stamps";
 
-                for (size_t i = 0; i < scan.points.size(); i++) {
-                    int index = std::ceil((scan.points[i].angle - scan.config.min_angle) / scan.config.angle_increment);
-                    if (index >= 0 && index < size) {
-                        if (scan.points[i].range >= scan.config.min_range) {
-                            scan_msg->ranges[index] = scan.points[i].range;
-                            scan_msg->intensities[index] = scan.points[i].intensity;
+                    for (size_t i = 0; i < scan.points.size(); i++) {
+                        int index = std::ceil((scan.points[i].angle - scan.config.min_angle) / scan.config.angle_increment);
+                        if (index >= 0 && index < size) {
+                            if (scan.points[i].range >= scan.config.min_range) {
+                                scan_msg->ranges[index] = scan.points[i].range;
+                                scan_msg->intensities[index] = scan.points[i].intensity;
+                            }
+                        }
+
+                        if (scan.points[i].range >= scan.config.min_range &&
+                            scan.points[i].range <= scan.config.max_range) {
+                            geometry_msgs::msg::Point32 point;
+                            point.x = scan.points[i].range * cos(scan.points[i].angle);
+                            point.y = scan.points[i].range * sin(scan.points[i].angle);
+                            point.z = 0.0;
+                            pc_msg->points.push_back(point);
+                            pc_msg->channels[idx_intensity].values.push_back(scan.points[i].intensity);
+                            pc_msg->channels[idx_timestamp].values.push_back(i * scan.config.time_increment);
                         }
                     }
 
-                    if (scan.points[i].range >= scan.config.min_range &&
-                        scan.points[i].range <= scan.config.max_range) {
-                        geometry_msgs::msg::Point32 point;
-                        point.x = scan.points[i].range * cos(scan.points[i].angle);
-                        point.y = scan.points[i].range * sin(scan.points[i].angle);
-                        point.z = 0.0;
-                        pc_msg->points.push_back(point);
-                        pc_msg->channels[idx_intensity].values.push_back(scan.points[i].intensity);
-                        pc_msg->channels[idx_timestamp].values.push_back(i * scan.config.time_increment);
-                    }
+                    laser_pub->publish(*scan_msg);
+                    pc_pub->publish(*pc_msg);
+                } else {
+                    RCLCPP_ERROR(node->get_logger(), "Failed to get scan");
+                    initialized = false;
+                    is_turnOn = false;
+                    // laser.turnOff();
+                    // laser.disconnecting();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 }
-
-                laser_pub->publish(*scan_msg);
-                pc_pub->publish(*pc_msg);
-                // RCLCPP_INFO(node->get_logger(), "success to get scan");
+                rclcpp::spin_some(node);
+                // loop_rate.sleep();
             } else {
-                RCLCPP_ERROR(node->get_logger(), "Failed to get scan");
-                initialized = false;
-                is_turnOn = false;
-                laser.turnOff();
-                laser.disconnecting();
+                RCLCPP_ERROR(node->get_logger(), "%s\n", laser.DescribeError());
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
-            rclcpp::spin_some(node);
-            loop_rate.sleep();
-        } else {
-            RCLCPP_ERROR(node->get_logger(), "%s\n", laser.DescribeError());
-            // 休眠 500 毫秒
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        } catch (...) {
+            initialized = false;
+            is_turnOn = false;
+            RCLCPP_ERROR(node->get_logger(), "Exception caught in main loop");
         }
     }
 
