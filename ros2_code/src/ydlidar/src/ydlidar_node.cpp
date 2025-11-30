@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     node->get_parameter("range_min", f_optvalue);
     laser.setlidaropt(LidarPropMinRange, &f_optvalue, sizeof(float));
     /// unit: Hz
-    f_optvalue = 30.f;
+    f_optvalue = 10.f;
     node->declare_parameter("frequency", f_optvalue);
     node->get_parameter("frequency", f_optvalue);
     laser.setlidaropt(LidarPropScanFrequency, &f_optvalue, sizeof(float));
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
 
     auto start_service = node->create_service<std_srvs::srv::Empty>("start_scan", start_scan_service);
 
-    rclcpp::WallRate loop_rate(30);
+    rclcpp::WallRate loop_rate(10);
 
     bool initialized = false, is_turnOn = false;
 
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 }
                 rclcpp::spin_some(node);
-                // loop_rate.sleep();
+                loop_rate.sleep();
             } else {
                 RCLCPP_ERROR(node->get_logger(), "%s\n", laser.DescribeError());
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));

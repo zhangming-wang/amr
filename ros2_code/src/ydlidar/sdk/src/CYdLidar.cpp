@@ -481,7 +481,7 @@ bool CYdLidar::isScanning() const {
 bool CYdLidar::doProcessSimple(LaserScan &outscan) {
     // 判断是否已启动扫描
     if (!checkHardware()) {
-        // delay(200 / m_ScanFrequency);
+        delay(200 / m_ScanFrequency);
         m_AllNode = 0;
         m_FristNodeTime = getTime();
         return false;
