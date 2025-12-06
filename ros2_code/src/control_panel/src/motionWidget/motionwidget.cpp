@@ -47,8 +47,7 @@ MotionWidget::MotionWidget(QWidget *parent)
     connect(ui->horizontalSlider_speed_percent, &QSlider::sliderReleased, this, &MotionWidget::set_speed_percent);
 
     connect(ui->checkBox_enable_pub_motion_status, &QCheckBox::stateChanged, this, &MotionWidget::set_enable_pub_motion_status);
-    connect(ui->checkBox_show_plot, &QCheckBox::stateChanged, this, &MotionWidget::onPlotShowCHanged);
-    connect(ui->checkBox_open_settings, &QCheckBox::stateChanged, this, &MotionWidget::onsettingsShowCHanged);
+    connect(ui->checkBox_open_settings, &QCheckBox::stateChanged, this, &MotionWidget::on_settings_show_cHanged);
 
     connect(ui->checkBox_enable_speed_plan, &QCheckBox::stateChanged, this, &MotionWidget::set_speed_plan_state);
 
@@ -69,16 +68,14 @@ MotionWidget::MotionWidget(QWidget *parent)
     ui->radioButton_cartesian_coordinates->click();
 
     on_update_status();
+    on_connect_changed(false);
     // _update_odom_label();
     // on_graph_visible_changed();
     ui->tabWidget_motion->setCurrentIndex(0);
     ui->tabWidget_settings->setCurrentIndex(0);
-
-    ui->checkBox_show_plot->setChecked(false);
-    onPlotShowCHanged(false);
-
     ui->checkBox_open_settings->setChecked(false);
-    onsettingsShowCHanged(false);
+    ui->widget_plot->setVisible(false);
+    ui->tabWidget_settings->setVisible(false);
 
     // _readConfigJson();
     motionNode_->start();
@@ -89,11 +86,7 @@ MotionWidget::~MotionWidget() {
     delete ui;
 }
 
-void MotionWidget::onPlotShowCHanged(bool show) {
-    ui->widget_plot->setVisible(show);
-}
-
-void MotionWidget::onsettingsShowCHanged(bool show) {
+void MotionWidget::on_settings_show_cHanged(bool show) {
     ui->tabWidget_settings->setVisible(show);
 }
 
@@ -258,7 +251,7 @@ QSplitter *MotionWidget::_initTextEdit() {
 }
 
 void MotionWidget::_initGamepad() {
-    gamepad_ = std::make_shared<QGamepad>(0);
+    gamepad_ = std::make_shared<QGamepad>(-1);
 
     connect(gamepad_.get(), &QGamepad::buttonGuideChanged, this, &MotionWidget::brake);
     connect(gamepad_.get(), &QGamepad::buttonXChanged, this, &MotionWidget::on_gamepad_button_clicked);
@@ -779,6 +772,18 @@ void MotionWidget::on_recv_motion_settings_service_response(motion_settings_serv
         ui->spinBox_right_back_encoder_pin0->setValue(response->right_back_encoder_pina);
         ui->spinBox_right_back_encoder_pin1->setValue(response->right_back_encoder_pinb);
     }
+
+    if (ui->checkBox_enable_pub_motion_status->isChecked()) {
+        ui->groupBox_plot->setVisible(true);
+        ui->widget_plot->setVisible(true);
+        ui->label_speed_msg->setVisible(true);
+        ui->label_pose_msg->setVisible(true);
+    } else {
+        ui->groupBox_plot->setVisible(false);
+        ui->widget_plot->setVisible(false);
+        ui->label_speed_msg->setVisible(false);
+        ui->label_pose_msg->setVisible(false);
+    }
 }
 
 void MotionWidget::on_command_state_changed(int64_t id, int state) {
@@ -808,12 +813,25 @@ void MotionWidget::on_update_status() {
     if (!gamepad_->isConnected()) {
         ui->label_gamepad_status->setText(" 手柄未连接");
         ui->label_gamepad_status->setStyleSheet(ERROR_STYLESHEET);
-        QList<int> gamepadIds = QGamepadManager::instance()->connectedGamepads();
-        if (gamepadIds.size() > 0) {
-            gamepad_->setDeviceId(gamepadIds[0]);
+
+        QList<int> validIds;
+        QGamepadManager *manager = QGamepadManager::instance();
+        QList<int> allIds = manager->connectedGamepads();
+
+        for (int id : allIds) {
+            QGamepad tempPad(id);
+            QString deviceName = tempPad.name();
+            // 过滤掉键鼠设备（根据设备名称关键词）
+            if (!deviceName.contains("Keyboard", Qt::CaseInsensitive) &&
+                !deviceName.contains("Mouse", Qt::CaseInsensitive) &&
+                !deviceName.contains("HID", Qt::CaseInsensitive) && // 部分键鼠标注为 HID 设备
+                !deviceName.isEmpty()) {
+                gamepad_->setDeviceId(id);
+                break;
+            }
         }
     } else {
-        ui->label_gamepad_status->setText(" 手柄已连接");
+        ui->label_gamepad_status->setText(" 手柄已连接: " + gamepad_->name() + " (ID:" + QString::number(gamepad_->deviceId()) + ")");
         ui->label_gamepad_status->setStyleSheet(OK_STYLESHEET);
     }
 }

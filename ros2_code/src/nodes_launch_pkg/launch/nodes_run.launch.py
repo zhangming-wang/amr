@@ -11,12 +11,7 @@ import os
 def generate_launch_description():
     share_dir = get_package_share_directory("nodes_launch_pkg")
 
-    params_declare = DeclareLaunchArgument(
-        "params_file",
-        default_value=os.path.join(share_dir, "params", "params.yaml"),
-        description="FPath to the ROS2 parameters file to use.",
-    )
-    parameter_file = LaunchConfiguration("params_file")
+    params_file_path = os.path.join(share_dir, "params", "params.yaml")
 
     micro_ros_agent = Node(
         package="micro_ros_agent",
@@ -31,7 +26,7 @@ def generate_launch_description():
         executable="tcpserver",
         name="tcpserver",
         output="screen",
-        parameters=[parameter_file],
+        parameters=[params_file_path],
     )
 
     ydlidar_node = Node(
@@ -40,22 +35,20 @@ def generate_launch_description():
         name="ydlidar_node",
         output="screen",
         emulate_tty=True,
-        parameters=[parameter_file],
+        parameters=[params_file_path],
     )
 
-    pc_software = Node(
-        package="pc_software",
-        executable="pc_software",
-        # name="pc_software",
+    control_panel = Node(
+        package="control_panel",
+        executable="control_panel",
         output="screen",
     )
 
     return LaunchDescription(
         [
-            params_declare,
             micro_ros_agent,
-            tcpserver_node,
-            ydlidar_node,
-            pc_software,
+            # tcpserver_node,
+            # ydlidar_node,
+            control_panel,
         ]
     )

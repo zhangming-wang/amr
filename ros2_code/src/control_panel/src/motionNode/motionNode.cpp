@@ -152,7 +152,7 @@ void MotionNode::_ask_motion_settings_service(MotionSettingsSrv::Request::Shared
         //                                           });
 
         auto future_result = motion_settings_client_->async_send_request(request);
-        auto ret = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(1000));
+        auto ret = rclcpp::spin_until_future_complete(node_, future_result, std::chrono::milliseconds(3000));
         if (request->mode == MotionService::Type::HeartBeat) {
             if (ret == rclcpp::FutureReturnCode::SUCCESS) {
                 try_connect_cnt_ = 0;

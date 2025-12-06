@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(pc_software)
+project(control_panel)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

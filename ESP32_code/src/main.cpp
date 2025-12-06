@@ -21,7 +21,7 @@ void setup() {
 
     test_ram();
 
-    auto ret = WiFi.mode(WIFI_STA);
+    WiFi.mode(WIFI_STA); // 仅启用 STA 模式，大幅降低射频资源占用
     WiFi.persistent(false);
 
     // IPAddress ESP32_IP = IPAddress(), ESP32_gateway = IPAddress(), ESP32_subnet = IPAddress();
@@ -29,29 +29,20 @@ void setup() {
     // ESP32_gateway.fromString(esp32_gateway);
     // ESP32_subnet.fromString(esp32_subnet);
     // WiFi.config(ESP32_IP, ESP32_gateway, ESP32_subnet);
-
-    WiFi.config(0U, 0U, 0U);
-    WiFi.begin(wifi_name, wifi_password);
-    Serial.printf("\nConnecting to WiFi...");
-    unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - start < 30000) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println();
+    // WiFi.config(0U, 0U, 0U);
 
 #if defined(esp32_wroom_motion) || defined(esp32_s3_motion)
     MotionControl &motionControl = MotionControl::get_instance();
     MotionNode &motionNode = MotionNode::get_instance();
-    HttpService &httpService = HttpService::get_instance();
+    // HttpService &httpService = HttpService::get_instance();
 
     motionControl.init();
     motionNode.init(esp32_motion_node_name, esp32_motion_node_namespace, wifi_name, wifi_password, wifi_IP, micro_ros_port);
-    httpService.init(http_port);
+    // httpService.init(http_port);
 
     motionControl.start_task();
     motionNode.start_task();
-    httpService.start_task();
+    // httpService.start_task();
 
 #elif defined(esp32_wroom_camera) || defined(esp32_s3_camera)
     CameraControl &cameraControl = CameraControl::get_instance();
@@ -76,8 +67,15 @@ bool connected = false;
 void loop() {
     if (WiFi.status() != WL_CONNECTED) {
         connected = false;
-        Serial.println("WiFi Disconnected, reconnecting...");
-        WiFi.reconnect();
+
+        WiFi.begin(wifi_name, wifi_password);
+        Serial.printf("\nConnecting to WiFi...");
+        unsigned long start = millis();
+        while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+            delay(500);
+            Serial.print(".");
+        }
+        Serial.println();
     } else {
         if (connected == false) {
             connected = true;
@@ -90,5 +88,5 @@ void loop() {
             Serial.println("WiFi connect success!");
         }
     }
-    delay(500);
+    delay(1000);
 }

@@ -32,3 +32,5 @@ static constexpr const char *pc_motion_node_name = "pc_motion_node";
 static constexpr const char *pc_motion_node_namespace = "pc";
 
 static constexpr const char *pc_motion_cmd_vel_topic_name = "/cmd_vel";
+
+static constexpr const char *esp32_bluetooth_slave_name = "esp32_bluetooth_slave";

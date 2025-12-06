@@ -85,9 +85,7 @@ public:
     void on_update_status();
 
     void on_connect_changed(bool connect);
-
-    void onPlotShowCHanged(bool show);
-    void onsettingsShowCHanged(bool show);
+    void on_settings_show_cHanged(bool show);
 
 signals:
     void nodeClosed();

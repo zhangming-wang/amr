@@ -98,26 +98,6 @@
         <widget class="QWidget" name="widget" native="true">
          <layout class="QHBoxLayout" name="horizontalLayout_55">
           <item>
-           <widget class="QCheckBox" name="checkBox_enable_pub_motion_status">
-            <property name="text">
-             <string>调试模式</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
            <widget class="QCheckBox" name="checkBox_enable_left_front_motor">
             <property name="text">
              <string>左上电机</string>
@@ -2982,6 +2962,13 @@
          </property>
         </spacer>
        </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox_enable_pub_motion_status">
+         <property name="text">
+          <string>调试模式</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -3916,19 +3903,6 @@
        <layout class="QVBoxLayout" name="verticalLayout_14">
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_19">
-          <item>
-           <widget class="QCheckBox" name="checkBox_show_plot">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>显示曲线</string>
-            </property>
-           </widget>
-          </item>
           <item>
            <widget class="QCheckBox" name="checkBox_dynamic_follow">
             <property name="sizePolicy">
