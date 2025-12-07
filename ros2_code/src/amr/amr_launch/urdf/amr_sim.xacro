@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="amr_sim">
+
+    <xacro:property name="base_link" value="base_link" />
+    <xacro:property name="lidar_link" value="lidar_frame" />
+    <xacro:property name="camera_link" value="camera_frame" />
+    <xacro:property name="imu_link" value="imu_frame" />
+
+    <xacro:property name="left_wheel" value="left_wheel" />
+    <xacro:property name="right_wheel" value="right_wheel" />
+    <xacro:property name="front_castor" value="front_castor" />
+    <xacro:property name="back_castor" value="back_castor" />
+
+    <xacro:include filename="$(find amr_launch)/urdf/base.xacro" />
+    <xacro:include filename="$(find amr_launch)/urdf/wheel.xacro" />
+    <xacro:include filename="$(find amr_launch)/urdf/castor.xacro" />
+    <xacro:include filename="$(find amr_launch)/urdf/lidar.xacro" />
+    <xacro:include filename="$(find amr_launch)/urdf/camera.xacro" />
+    <xacro:include filename="$(find amr_launch)/urdf/imu.xacro" />
+
+    <xacro:base name="${base_link}" joint_xyz="0 0 ${wheel_radius}" />
+    <xacro:lidar name="${lidar_link}" joint_xyz="-${base_width/4} 0 ${lidar_height/2}" parent_name="${base_link}" />
+    <xacro:camera name="${camera_link}" joint_xyz="${base_length/2-camera_support_width/2} 0 ${camera_support_height/2}" parent_name="${base_link}" />
+    <xacro:imu name="${imu_link}" joint_xyz="0 0 ${imu_height/2+base_height/2}" parent_name="${base_link}" />
+
+    <xacro:wheel name="${left_wheel}" joint_xyz="0 ${base_width/2+wheel_width/2} 0" fdir1_value="1 1 1" parent_name="${base_link}" />
+    <xacro:wheel name="${right_wheel}" joint_xyz="0 -${base_width/2+wheel_width/2} 0" fdir1_value="1 1 1" parent_name="${base_link}" />
+    <xacro:castor name="${front_castor}" joint_xyz="${base_length/2-castor_radius} 0 -${castor_radius}" parent_name="${base_link}" />
+    <xacro:castor name="${back_castor}" joint_xyz="-${base_length/2-castor_radius} 0 -${castor_radius}" parent_name="${base_link}" />
+
+    <xacro:include filename="$(find amr_launch)/urdf/gazebo_sensors_plugins.xacro" />
+    <xacro:gazebo_sensors_plugins camera_link="${camera_link}" lidar_link="${lidar_link}" imu_link="${imu_link}" />
+
+    <ros2_control name="ros2_controllers" type="system">
+        <hardware>
+            <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </hardware>
+
+        <joint name="left_wheel_joint">
+            <command_interface name="velocity" />
+            <state_interface name="velocity" />
+            <state_interface name="position" />
+        </joint>
+        <joint name="right_wheel_joint">
+            <command_interface name="velocity" />
+            <state_interface name="velocity" />
+            <state_interface name="position" />
+        </joint>
+    </ros2_control>
+
+    <gazebo>
+        <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <parameters>$(find amr_launch)/config/ros2_controllers_sim.yaml</parameters>
+        </plugin>
+    </gazebo>
+
+</robot>

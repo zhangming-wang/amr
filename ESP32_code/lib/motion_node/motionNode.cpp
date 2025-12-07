@@ -41,13 +41,21 @@ void MotionNode::clean() {
         }
         motion_settings_service_initialized_ = false;
     }
-    if (cmd_vel_subscription_initialized_) {
-        ret = rcl_subscription_fini(&cmd_vel_subscription_, &node_);
+    if (motion_cmd_vel_subscription_initialized_) {
+        ret = rcl_subscription_fini(&motion_cmd_vel_subscription_, &node_);
         if (ret != RCL_RET_OK) {
-            serial_print("rcl_subscription_fini error: " + std::to_string(ret));
+            serial_print("rcl_motion_cmd_vel_subscription_fini error: " + std::to_string(ret));
         }
-        cmd_vel_subscription_initialized_ = false;
+        motion_cmd_vel_subscription_initialized_ = false;
     }
+    if (control_cmd_vel_subscription_initialized_) {
+        ret = rcl_subscription_fini(&control_cmd_vel_subscription_, &node_);
+        if (ret != RCL_RET_OK) {
+            serial_print("rcl_control_cmd_vel_subscription_fini error: " + std::to_string(ret));
+        }
+        control_cmd_vel_subscription_initialized_ = false;
+    }
+
     if (motion_status_publisher_initialized_) {
         ret = rcl_publisher_fini(&motion_status_publisher_, &node_);
         if (ret != RCL_RET_OK) {
@@ -152,29 +160,53 @@ bool MotionNode::init() {
         executor_initialized_ = true;
     }
 
-    if (!cmd_vel_subscription_initialized_) {
+    if (!motion_cmd_vel_subscription_initialized_) {
         rmw_qos_profile_t my_qos = rmw_qos_profile_default;
         my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
         my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;           // 保存最后 N 条
         my_qos.depth = 1;                                            // 队列长度
         my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;      // 临时消息
 
-        ret = rclc_subscription_init(&cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), pc_motion_cmd_vel_topic_name, &my_qos);
+        ret = rclc_subscription_init(&motion_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name).c_str(), &my_qos);
         if (ret != RCL_RET_OK) {
-            serial_print("rclc_subscription_init_default:" + std::to_string(ret));
+            serial_print("rclc_motion_cmd_vel_subscription_init_default:" + std::to_string(ret));
             return false;
         } else {
-            ret = rclc_executor_add_subscription(&executor, &cmd_vel_subscription_, &msg_cmd_vel, msg_twist_callback, ON_NEW_DATA);
+            ret = rclc_executor_add_subscription(&executor, &motion_cmd_vel_subscription_, &msg_cmd_vel, msg_twist_callback, ON_NEW_DATA);
             if (ret != RCL_RET_OK) {
                 serial_print("rclc_executor_add_subscription:" + std::to_string(ret));
-                ret = rcl_subscription_fini(&cmd_vel_subscription_, &node_);
+                ret = rcl_subscription_fini(&motion_cmd_vel_subscription_, &node_);
                 if (ret != RCL_RET_OK) {
-                    serial_print("rcl_subscription_fini error: " + std::to_string(ret));
+                    serial_print("rcl_motion_cmd_vel_subscription_fini error: " + std::to_string(ret));
                 }
                 return false;
             }
         }
-        cmd_vel_subscription_initialized_ = true;
+        motion_cmd_vel_subscription_initialized_ = true;
+    }
+    if (!control_cmd_vel_subscription_initialized_) {
+        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
+        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
+        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;        // 保存最后 N 条
+        my_qos.depth = 10;                                        // 队列长度
+        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;   // 临时消息
+
+        ret = rclc_subscription_init(&control_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel", &my_qos);
+        if (ret != RCL_RET_OK) {
+            serial_print("rclc_control_cmd_vel_subscription_init_default:" + std::to_string(ret));
+            return false;
+        } else {
+            ret = rclc_executor_add_subscription(&executor, &control_cmd_vel_subscription_, &msg_cmd_vel, msg_twist_callback, ON_NEW_DATA);
+            if (ret != RCL_RET_OK) {
+                serial_print("rclc_executor_add_control_cmd_vel_subscription:" + std::to_string(ret));
+                ret = rcl_subscription_fini(&control_cmd_vel_subscription_, &node_);
+                if (ret != RCL_RET_OK) {
+                    serial_print("rcl_control_cmd_vel_subscription_fini error: " + std::to_string(ret));
+                }
+                return false;
+            }
+        }
+        control_cmd_vel_subscription_initialized_ = true;
     }
 
     // if (!odom_publisher_initialized_) {

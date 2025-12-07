@@ -4,6 +4,7 @@
 #include "geometry_msgs/msg/twist.h"
 #include "motionControl.h"
 #include "nav_msgs/msg/odometry.h"
+#include "tools.h"
 extern "C" {
 #include "motion_settings_service/srv/motion_settings_service.h"
 #include "motion_status_msgs/msg/motion_status.h"
@@ -56,7 +57,7 @@ private:
     std::string wifi_name_;
     std::string wifi_passward_;
 
-    rcl_subscription_t cmd_vel_subscription_;
+    rcl_subscription_t motion_cmd_vel_subscription_, control_cmd_vel_subscription_;
     rcl_publisher_t motion_status_publisher_, serial_msg_publisher_; //, odom_publisher_
     rcl_service_t motion_settings_service_;
     rcl_timer_t timer_;
@@ -69,7 +70,8 @@ private:
     bool executor_initialized_ = false;
     bool timer_initialized_ = false;
     bool motion_settings_service_initialized_ = false;
-    bool cmd_vel_subscription_initialized_ = false;
+    bool motion_cmd_vel_subscription_initialized_ = false;
+    bool control_cmd_vel_subscription_initialized_ = false;
     bool motion_status_publisher_initialized_ = false;
     bool serial_msg_publisher_initialized_ = false; //, odom_publisher_initialized_ = false
 
