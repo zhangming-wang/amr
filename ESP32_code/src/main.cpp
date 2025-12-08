@@ -52,10 +52,10 @@ void setup() {
     cameraNode.init(esp32_camera_node_name, esp32_camera_node_namespace, wifi_name, wifi_password, wifi_IP, micro_ros_port);
     cameraNode.start_task();
 
-#elif defined(esp32_wroom_ydlidarX2)
-    YdlidarX2 &ydlidarX2 = YdlidarX2::get_instance();
-    ydlidarX2.init(wifi_IP, tcp_client_port, 14, 25, -1, ydlidar_baudrate);
-    ydlidarX2.start_task();
+    // #elif defined(esp32_wroom_ydlidarX2)
+    //     YdlidarX2 &ydlidarX2 = YdlidarX2::get_instance();
+    //     ydlidarX2.init(wifi_IP, tcp_client_port, 14, 25, -1, ydlidar_baudrate);
+    //     ydlidarX2.start_task();
 
 #else
     Serial.println("env is invalid!")

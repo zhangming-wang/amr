@@ -3,7 +3,7 @@
 ## 克隆仓库
 
 在当前目录打开终端执行
-- ```git clone https://github.com/micro-ROS/micro_ros_setup.git```
+- ```git clone -b humble https://github.com/micro-ROS/micro_ros_setup.git```
 - ```colcon build```
 - ```source install/setup.bash```
 

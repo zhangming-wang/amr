@@ -48,9 +48,6 @@ build/
 debug/
 log/
 install/
-micro_ros_msgs/
-micro-ROS-Agent/
 firmware/
-micro_ros_setup/
 my_build/
 

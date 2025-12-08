@@ -1,0 +1,21 @@
+[submodule "ESP32_code/lib/ESP32Encoder"]
+	path = ESP32_code/lib/ESP32Encoder
+	url = https://github.com/madhephaestus/ESP32Encoder
+[submodule "ESP32_code/lib/ESP32Servo"]
+	path = ESP32_code/lib/ESP32Servo
+	url = https://github.com/madhephaestus/ESP32Servo
+[submodule "ESP32_code/lib/esp32-camera"]
+	path = ESP32_code/lib/esp32-camera
+	url = https://github.com/espressif/esp32-camera
+[submodule "ESP32_code/lib/micro_ros_platformio"]
+	path = ESP32_code/lib/micro_ros_platformio
+	url = https://github.com/micro-ROS/micro_ros_platformio
+[submodule "micro_ros_code/micro_ros_setup"]
+	path = micro_ros_code/micro_ros_setup
+	url = https://github.com/micro-ROS/micro_ros_setup
+[submodule "ros2_code/src/micro-ROS-Agent"]
+	path = ros2_code/src/micro-ROS-Agent
+	url = https://github.com/micro-ROS/micro-ROS-Agent
+[submodule "ros2_code/src/micro_ros_msgs"]
+	path = ros2_code/src/micro_ros_msgs
+	url = https://github.com/micro-ROS/micro_ros_msgs
