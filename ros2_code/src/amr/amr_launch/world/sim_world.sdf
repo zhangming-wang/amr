@@ -214,17 +214,17 @@
       <self_collide>false</self_collide>
     </model>
     <include>
-      <uri>file:///home/linux/.ignition/fuel/fuel.gazebosim.org/openrobotics/models/cutout%20wall/2</uri>
+      <uri>file:///home/dev/.ignition/fuel/fuel.ignitionrobotics.org/openrobotics/models/cutout%20wall/2</uri>
       <name>cutout_wall</name>
       <pose>2.1486 5.30822 0 0 -0 1.5708</pose>
     </include>
     <include>
-      <uri>file:///home/linux/.ignition/fuel/fuel.gazebosim.org/openrobotics/models/cutout%20wall/2</uri>
+      <uri>file:///home/dev/.ignition/fuel/fuel.ignitionrobotics.org/openrobotics/models/cutout%20wall/2</uri>
       <name>cutout_wall_1</name>
       <pose>-4.52367 5.32293 0 0 -0 1.5708</pose>
     </include>
     <include>
-      <uri>file:///home/linux/.ignition/fuel/fuel.gazebosim.org/openrobotics/models/cutout%20wall/2</uri>
+      <uri>file:///home/dev/.ignition/fuel/fuel.ignitionrobotics.org/openrobotics/models/cutout%20wall/2</uri>
       <name>cutout_wall_0</name>
       <pose>-1.3434 0.220085 0 0 -0 0</pose>
     </include>
@@ -325,7 +325,7 @@
       <self_collide>false</self_collide>
     </model>
     <include>
-      <uri>file:///home/linux/.ignition/fuel/fuel.gazebosim.org/openrobotics/models/cutout%20wall/2</uri>
+      <uri>file:///home/dev/.ignition/fuel/fuel.ignitionrobotics.org/openrobotics/models/cutout%20wall/2</uri>
       <name>cutout_wall_0_1</name>
       <pose>-0.681604 4.96204 0 0 -0 0</pose>
     </include>

@@ -16,10 +16,10 @@ def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
 
     urdf_path = os.path.join(pkg_share, "urdf", "amr_sim.xacro")
-    gazebo_world_path = os.path.join(pkg_share, "world", "nav_linux.sdf")
+    gazebo_world_path = os.path.join(pkg_share, "world", "sim_world.sdf")
     rviz_config_path = os.path.join(pkg_share, "config", "display_settings.rviz")
     gazebo_bridge_config_path = os.path.join(pkg_share, "config", "gazebo_bridge.yaml")
-    controller_config_path = os.path.join(pkg_share, "config", "ros2_controllers.yaml")
+    controller_config_path = os.path.join(pkg_share, "config", "ros2_controllers_sim.yaml")
 
     rviz_nodes = [
         Node(
