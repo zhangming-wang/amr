@@ -1,23 +1,16 @@
 #include "mpu6050Control.h"
 
+static MPU6050Control &get_instance() {
+    static MPU6050Control instance;
+    return instance;
+}
+
 MPU6050Control::MPU6050Control() {
 }
 
-void MPU6050Control::start_task() {
-    if (enable_task_run == false) {
-        enable_task_run = true;
-        xTaskCreate(mpu_read_task, "mpu_read_task", 8192, this, 1, NULL);
-    }
-}
-
-void MPU6050Control::stop_task() {
-    if (enable_task_run) {
-        enable_task_run = false;
-    }
-}
-
-void MPU6050Control::init() {
-    if (isDmpHandle()) {
+void MPU6050Control::init(bool eanble_dmp) {
+    isDmpHandle_ = eanble_dmp;
+    if (isDmpHandle_) {
         init_success_ = _dmp_init();
     } else {
         init_success_ = _manual_init();
@@ -29,32 +22,6 @@ void MPU6050Control::set_pins(int pin_SDA, int pin_SCL) {
         pin_SDA_ = pin_SDA;
         pin_SCL_ = pin_SCL;
     }
-}
-
-int MPU6050Control::get_milliseconds() {
-    return milliseconds_;
-}
-
-void MPU6050Control::set_milliseconds(int milliseconds) {
-    milliseconds_ = milliseconds;
-}
-
-void MPU6050Control::set_offset() {
-    pitch_offset_ = pitch_;
-    yaw_offset_ = yaw_;
-    roll_offset_ = roll_;
-
-    preferences_.begin("mpu", false);
-    preferences_.putShort("pitchOffset", pitch_offset_);
-    preferences_.putShort("yawOffset", yaw_offset_);
-    preferences_.putShort("rollOffset", roll_offset_);
-    preferences_.end();
-
-    serial_print("保存mpu偏差值完成");
-}
-
-void MPU6050Control::setDmpHandle(bool isDmpHandle) {
-    isDmpHandle_ = isDmpHandle;
 }
 
 bool MPU6050Control::_manual_init() {
@@ -128,11 +95,8 @@ void MPU6050Control::start_calibration() {
     yGyroOffset_ = mpu_.getYGyroOffset();
     zGyroOffset_ = mpu_.getZGyroOffset();
 
-    pitch_offset_ = 0;
-    yaw_offset_ = 0;
-    roll_offset_ = 0;
-
     preferences_.begin("mpu", false);
+    preferences_.clear();
     preferences_.putShort("xAccffset", xAccelOffset_);
     preferences_.putShort("yAccOffset", yAccelOffset_);
     preferences_.putShort("zAccOffset", zAccelOffset_);
@@ -140,9 +104,6 @@ void MPU6050Control::start_calibration() {
     preferences_.putShort("yGyroOffset", yGyroOffset_);
     preferences_.putShort("zGyroOffset", zGyroOffset_);
 
-    preferences_.putShort("pitchOffset", pitch_offset_);
-    preferences_.putShort("yawOffset", yaw_offset_);
-    preferences_.putShort("rollOffset", roll_offset_);
     preferences_.end();
 
     serial_print("保存mpu校准值完成");
@@ -160,10 +121,6 @@ void MPU6050Control::_loadCalibration() {
     xGyroOffset_ = preferences_.getShort("xGyroOffset", 0);
     yGyroOffset_ = preferences_.getShort("yGyroOffset", 0);
     zGyroOffset_ = preferences_.getShort("zGyroOffset", 0);
-
-    pitch_offset_ = preferences_.getShort("pitchOffset", 0);
-    yaw_offset_ = preferences_.getShort("yawOffset", 0);
-    roll_offset_ = preferences_.getShort("rollOffset", 0);
     preferences_.end();
 
     mpu_.setXAccelOffset(xAccelOffset_);
@@ -260,46 +217,21 @@ void MPU6050Control::_manual_read() {
     roll_ = ALPHA * roll_ + (1 - ALPHA) * atan2(ay, az) * 180.0 / M_PI;
 }
 
-void MPU6050Control::get_offset(int16_t &xAccelOffset, int16_t &yAccelOffset, int16_t &zAccelOffset, int16_t &xGyroOffset, int16_t &yGyroOffset, int16_t &zGyroOffset) {
-    xAccelOffset = xAccelOffset_;
-    yAccelOffset = yAccelOffset_;
-    zAccelOffset = zAccelOffset_;
-    xGyroOffset = xGyroOffset_;
-    yGyroOffset = yGyroOffset_;
-    zGyroOffset = zGyroOffset_;
-}
 void MPU6050Control::get_motion_data(float &yaw, float &pitch, float &roll, float &gyroX, float &gyroY, float &gyroZ) {
-    if (isDmpHandle_) {
-        yaw = yaw_ - yaw_offset_;
-        pitch = pitch_ - pitch_offset_;
-        roll = roll_ - roll_offset_;
-    }
+    yaw = yaw_;
+    pitch = pitch_;
+    roll = roll_;
     gyroX = gyroX_;
     gyroY = gyroY_;
     gyroZ = gyroZ_;
 }
 
-void MPU6050Control::get_axisY_data(float &pitch, float &gyroY) {
-    pitch = pitch_ - pitch_offset_;
-    gyroY = gyroY_;
-}
-
 void MPU6050Control::update() {
     if (init_success_) {
-        if (isDmpHandle()) {
+        if (isDmpHandle_) {
             _dmp_read();
         } else {
             _manual_read();
         }
     }
-}
-
-void mpu_read_task(void *args) {
-    MPU6050Control *mpuControl = static_cast<MPU6050Control *>(args);
-    mpuControl->init();
-    while (mpuControl->enable_task_run) {
-        mpuControl->update();
-        vTaskDelay(pdMS_TO_TICKS(mpuControl->get_milliseconds()));
-    }
-    vTaskDelete(NULL);
 }

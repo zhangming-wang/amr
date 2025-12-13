@@ -15,6 +15,7 @@ extern "C" {
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "mpu6050Control.h"
 #include <Arduino.h>
 #include <Preferences.h>
 #include <deque>
@@ -55,9 +56,8 @@ public:
     MotionControl &operator=(const MotionControl &) = delete;
 
     void init();
-    void start_task();
-    void stop_task();
-    void restart_task();
+    void move();
+    void update(float dt);
 
     void start_move(WheelSpeed &target_wheel_speed);
     void start_move(const geometry_msgs__msg__Twist &twist);
@@ -78,9 +78,11 @@ public:
     void move_absolute_euler_pose(const EulerPose &eulerPose);
     void move_relative_euler_pose(const EulerPose &eulerPose);
 
-    String get_http_data();
-
     void update_target_max_speed();
+
+    void calculate();
+    nav_msgs__msg__Odometry &get_odom_msg();
+    motion_status_msgs__msg__MotionStatus &get_motion_status_msg();
 
     void set_motor_enable_flags(uint8_t flags);
     uint8_t get_motor_enable_flags();
@@ -122,8 +124,6 @@ public:
     void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
     void save_params();
 
-    motion_status_msgs__msg__MotionStatus &get_motion_status_msg();
-
 private:
     //---------需要保存配置---------
     float track_width_ = 10, wheel_width_ = 0;
@@ -142,7 +142,6 @@ private:
     volatile bool running_ = false, enable_speed_plan_ = false;
 
     float dt_ = 0, position_loop_dt_ = 0, speed_loop_dt_ = 0;
-    int64_t time_record_ = 0, last_time_record_ = 0;
 
     EulerPose current_euler_pose_, target_euler_pose_;
 
@@ -157,11 +156,8 @@ private:
     std::shared_ptr<PIDControl> position_loop_, line_speed_loop_, angle_speed_loop_;
     std::shared_ptr<SpeedPlan> speedPlan_;
 
-    esp_timer_handle_t control_timer_ = nullptr;
-    SemaphoreHandle_t mutex_; // 互斥量句柄
-    QueueHandle_t control_queue_;
-
     motion_status_msgs__msg__MotionStatus motion_status_msg_;
+    nav_msgs__msg__Odometry odom_msg_;
 
     geometry_msgs__msg__Twist _forwardKinematics(const WheelSpeed &wheelSpeed);
     WheelSpeed _inverseKinematics(const geometry_msgs__msg__Twist &twist);
@@ -169,16 +165,7 @@ private:
     void _load_params();
     void _load_config();
 
-    void _start_control_timer();
-    void _stop_control_timer();
-
     void _plan_wheel_speed(); // WheelSpeed &target_wheel_speed
-
-    void update();
-    QueueHandle_t &get_control_deque();
-
-    static void control_loop(void *args);
-    static void control_timer_callback(void *args);
 
     // void reset();
 };

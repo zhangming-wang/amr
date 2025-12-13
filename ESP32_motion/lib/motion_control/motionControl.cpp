@@ -10,9 +10,6 @@ MotionControl::MotionControl() {
     line_speed_loop_ = std::make_shared<PIDControl>("lsl");
     angle_speed_loop_ = std::make_shared<PIDControl>("asl");
     position_loop_ = std::make_shared<PIDControl>("pl");
-
-    mutex_ = xSemaphoreCreateMutex();
-    control_queue_ = xQueueCreate(10, sizeof(int));
 }
 
 MotionControl::~MotionControl() {}
@@ -30,23 +27,6 @@ void MotionControl::init() {
 
     set_milliseconds(milliseconds_);
     set_speed_plan_parms(max_v_, max_acc_, jerk_);
-
-    xTaskCreatePinnedToCore(control_loop, "control_loop", 8192, this, 0, NULL, 1);
-}
-
-void MotionControl::start_task() {
-    _start_control_timer();
-}
-
-void MotionControl::stop_task() {
-    stop_move();
-    _stop_control_timer();
-}
-
-void MotionControl::restart_task() {
-    stop_task();
-    delay(100);
-    start_task();
 }
 
 void MotionControl::set_model_params(float track_width, float wheel_width) {
@@ -163,41 +143,6 @@ uint8_t MotionControl::get_motor_enable_flags() {
     return motor_enable_flags_;
 }
 
-void MotionControl::_start_control_timer() {
-    if (!control_timer_) {
-        esp_timer_create_args_t timer_args = {
-            .callback = &control_timer_callback,
-            .arg = NULL,
-            .name = "control_timer_callback"};
-        auto ret = esp_timer_create(&timer_args, &control_timer_);
-        if (ret != ESP_OK) {
-            serial_print("control timer created failed.");
-            Serial.print("Timer creation failed:");
-            Serial.println(ret);
-            control_timer_ = nullptr;
-            return;
-        } else {
-            serial_print("control timer created success!");
-        }
-    }
-    if (!esp_timer_is_active(control_timer_)) {
-        uint64_t period = milliseconds_ * 1000;
-        auto ret = esp_timer_start_periodic(control_timer_, period);
-        if (ret != ESP_OK) {
-            serial_print("control timer start failed: " + ret);
-        } else {
-            serial_print("control timer start success!");
-        }
-    }
-}
-
-void MotionControl::_stop_control_timer() {
-    stop_move();
-    if (control_timer_ && esp_timer_is_active(control_timer_)) {
-        esp_timer_stop(control_timer_);
-    }
-}
-
 void MotionControl::move_relative_euler_pose(const EulerPose &eulerPose) {
     target_euler_pose_.x = current_euler_pose_.x + eulerPose.x;
     target_euler_pose_.y = current_euler_pose_.y + eulerPose.y;
@@ -243,13 +188,6 @@ void MotionControl::brake() {
 }
 
 void MotionControl::stop_move() {
-    // auto wheel_speed = WheelSpeed();
-    // wheel_speed.left_front_v = 0;
-    // wheel_speed.left_back_v = 0;
-    // wheel_speed.right_front_v = 0;
-    // wheel_speed.right_back_v = 0;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = 0;
     target_twist_.linear.y = 0;
     target_twist_.linear.z = 0;
@@ -260,18 +198,6 @@ void MotionControl::stop_move() {
 }
 
 void MotionControl::move_front() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = max_v;
-    // wheel_speed.left_back_v = max_v;
-    // wheel_speed.right_front_v = max_v;
-    // wheel_speed.right_back_v = max_v;
-
     target_twist_.linear.x = 0;
     target_twist_.linear.y = max_v_;
     target_twist_.linear.z = 0;
@@ -282,19 +208,6 @@ void MotionControl::move_front() {
 }
 
 void MotionControl::move_back() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = -max_v;
-    // wheel_speed.left_back_v = -max_v;
-    // wheel_speed.right_front_v = -max_v;
-    // wheel_speed.right_back_v = -max_v;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = 0;
     target_twist_.linear.y = -max_v_;
     target_twist_.linear.z = 0;
@@ -305,19 +218,6 @@ void MotionControl::move_back() {
 }
 
 void MotionControl::move_left() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = -max_v;
-    // wheel_speed.left_back_v = max_v;
-    // wheel_speed.right_front_v = max_v;
-    // wheel_speed.right_back_v = -max_v;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = -max_v_;
     target_twist_.linear.y = 0;
     target_twist_.linear.z = 0;
@@ -328,19 +228,6 @@ void MotionControl::move_left() {
 }
 
 void MotionControl::move_right() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = max_v;
-    // wheel_speed.left_back_v = -max_v;
-    // wheel_speed.right_front_v = -max_v;
-    // wheel_speed.right_back_v = max_v;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = max_v_;
     target_twist_.linear.y = 0;
     target_twist_.linear.z = 0;
@@ -351,19 +238,6 @@ void MotionControl::move_right() {
 }
 
 void MotionControl::move_left_front() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = 0;
-    // wheel_speed.left_back_v = max_v;
-    // wheel_speed.right_front_v = max_v;
-    // wheel_speed.right_back_v = 0;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = -max_v_;
     target_twist_.linear.y = max_v_;
     target_twist_.linear.z = 0;
@@ -374,19 +248,6 @@ void MotionControl::move_left_front() {
 }
 
 void MotionControl::move_right_back() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = 0;
-    // wheel_speed.left_back_v = -max_v;
-    // wheel_speed.right_front_v = -max_v;
-    // wheel_speed.right_back_v = 0;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = max_v_;
     target_twist_.linear.y = -max_v_;
     target_twist_.linear.z = 0;
@@ -397,19 +258,6 @@ void MotionControl::move_right_back() {
 }
 
 void MotionControl::move_right_front() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = max_v;
-    // wheel_speed.left_back_v = 0;
-    // wheel_speed.right_front_v = 0;
-    // wheel_speed.right_back_v = max_v;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = max_v_;
     target_twist_.linear.y = max_v_;
     target_twist_.linear.z = 0;
@@ -420,19 +268,6 @@ void MotionControl::move_right_front() {
 }
 
 void MotionControl::move_left_back() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = -max_v;
-    // wheel_speed.left_back_v = 0;
-    // wheel_speed.right_front_v = 0;
-    // wheel_speed.right_back_v = -max_v;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = -max_v_;
     target_twist_.linear.y = -max_v_;
     target_twist_.linear.z = 0;
@@ -443,19 +278,6 @@ void MotionControl::move_left_back() {
 }
 
 void MotionControl::turn_left() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = -max_v;
-    // wheel_speed.left_back_v = -max_v;
-    // wheel_speed.right_front_v = max_v;
-    // wheel_speed.right_back_v = max_v;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = 0;
     target_twist_.linear.y = 0;
     target_twist_.linear.z = 0;
@@ -466,19 +288,6 @@ void MotionControl::turn_left() {
 }
 
 void MotionControl::turn_right() {
-    // auto wheel_speed = WheelSpeed();
-    // float max_v = 0;
-    // if (is_mecanum_wheel_) {
-    //     max_v = max_v_ * 2 / sqrt(2);
-    // } else {
-    //     max_v = max_v_;
-    // }
-    // wheel_speed.left_front_v = max_v;
-    // wheel_speed.left_back_v = max_v;
-    // wheel_speed.right_front_v = -max_v;
-    // wheel_speed.right_back_v = -max_v;
-    // start_move(wheel_speed);
-
     target_twist_.linear.x = 0;
     target_twist_.linear.y = 0;
     target_twist_.linear.z = 0;
@@ -539,7 +348,7 @@ void MotionControl::_plan_wheel_speed() { // WheelSpeed &target_wheel_speed
                 changed_v = changed_right_back_v;
             }
 
-            std::deque<float> single_wheel_speed_deque = speedPlan_->plan(planned_current_v, planned_target_v, dt_);
+            std::deque<float> single_wheel_speed_deque = speedPlan_->plan(planned_current_v, planned_target_v, milliseconds_ / 1000.0f);
             for (auto value : single_wheel_speed_deque) {
                 auto speed_bi = (value - planned_current_v) / changed_v;
                 if (fabs(changed_left_front_v) < MIN_V_CHANGE) {
@@ -589,19 +398,7 @@ void MotionControl::_plan_wheel_speed() { // WheelSpeed &target_wheel_speed
 //     angle_speed_loop_->reset();
 // }
 
-void MotionControl::update() {
-    if (milliseconds_ <= 0) {
-        return;
-    }
-
-    time_record_ = esp_timer_get_time();
-    dt_ = (time_record_ - last_time_record_) / 1e6;
-
-    left_front_motor_control_->update(dt_);
-    left_back_motor_control_->update(dt_);
-    right_front_motor_control_->update(dt_);
-    right_back_motor_control_->update(dt_);
-
+void MotionControl::move() {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
             target_wheel_v_ = wheel_speed_deque_.front();
@@ -609,25 +406,6 @@ void MotionControl::update() {
         }
         xSemaphoreGive(mutex_);
     }
-
-    current_wheel_v_.left_back_v = left_front_motor_control_->get_current_speed();
-    current_wheel_v_.left_front_v = left_back_motor_control_->get_current_speed();
-    current_wheel_v_.right_back_v = right_front_motor_control_->get_current_speed();
-    current_wheel_v_.right_front_v = right_back_motor_control_->get_current_speed();
-
-    current_twist_ = _forwardKinematics(current_wheel_v_);
-
-    current_euler_pose_.x += (current_twist_.linear.x + last_twist_.linear.x) / 2.0 * dt_;
-    current_euler_pose_.y += (current_twist_.linear.y + last_twist_.linear.y) / 2.0 * dt_;
-    current_euler_pose_.yaw += (current_twist_.angular.z + last_twist_.angular.z) / 2.0 * dt_;
-    while (current_euler_pose_.yaw > PI) {
-        current_euler_pose_.yaw -= 2.0 * PI;
-    }
-    while (current_euler_pose_.yaw < -PI) {
-        current_euler_pose_.yaw += 2.0 * PI;
-    }
-
-    last_twist_ = current_twist_;
 
     if (running_) {
         if (motor_enable_flags_ & 0x01) {
@@ -660,12 +438,69 @@ void MotionControl::update() {
     left_back_motor_control_->move();
     right_front_motor_control_->move();
     right_back_motor_control_->move();
+}
 
-    last_time_record_ = time_record_;
+void MotionControl::update(float dt) {
+    dt_ = dt;
+    left_front_motor_control_->update(dt_);
+    left_back_motor_control_->update(dt_);
+    right_front_motor_control_->update(dt_);
+    right_back_motor_control_->update(dt_);
+}
 
-    if (esp_timer_get_time() - time_record_ >= milliseconds_ * 1000) {
-        serial_print("控制处理超时(ms): " + std::to_string((esp_timer_get_time() - time_record_) / 1000.0));
+nav_msgs__msg__Odometry &MotionControl::get_odom_msg() {
+    current_wheel_v_.left_back_v = left_front_motor_control_->get_current_speed();
+    current_wheel_v_.left_front_v = left_back_motor_control_->get_current_speed();
+    current_wheel_v_.right_back_v = right_front_motor_control_->get_current_speed();
+    current_wheel_v_.right_front_v = right_back_motor_control_->get_current_speed();
+
+    current_twist_ = _forwardKinematics(current_wheel_v_);
+
+    current_euler_pose_.x += (current_twist_.linear.x + last_twist_.linear.x) / 2.0 * dt_;
+    current_euler_pose_.y += (current_twist_.linear.y + last_twist_.linear.y) / 2.0 * dt_;
+    current_euler_pose_.yaw += (current_twist_.angular.z + last_twist_.angular.z) / 2.0 * dt_;
+    while (current_euler_pose_.yaw > PI) {
+        current_euler_pose_.yaw -= 2.0 * PI;
     }
+    while (current_euler_pose_.yaw < -PI) {
+        current_euler_pose_.yaw += 2.0 * PI;
+    }
+
+    last_twist_ = current_twist_;
+
+    return odom_msg_;
+}
+
+motion_status_msgs__msg__MotionStatus &MotionControl::get_motion_status_msg() {
+    motion_status_msg_.left_front_current_v = left_front_motor_control_->get_current_speed();
+    motion_status_msg_.left_front_target_v = left_front_motor_control_->get_target_speed();
+    motion_status_msg_.left_back_current_v = left_back_motor_control_->get_current_speed();
+    motion_status_msg_.left_back_target_v = left_back_motor_control_->get_target_speed();
+
+    motion_status_msg_.right_front_current_v = right_front_motor_control_->get_current_speed();
+    motion_status_msg_.right_front_target_v = right_front_motor_control_->get_target_speed();
+    motion_status_msg_.right_back_current_v = right_back_motor_control_->get_current_speed();
+    motion_status_msg_.right_back_target_v = right_back_motor_control_->get_target_speed();
+
+    motion_status_msg_.twist_current_linear_x = current_twist_.linear.x;
+    motion_status_msg_.twist_target_linear_x = target_twist_.linear.x;
+
+    motion_status_msg_.twist_current_linear_y = current_twist_.linear.y;
+    motion_status_msg_.twist_target_linear_y = target_twist_.linear.y;
+
+    motion_status_msg_.twist_current_angular_z = current_twist_.angular.z;
+    motion_status_msg_.twist_target_angular_z = target_twist_.angular.z;
+
+    motion_status_msg_.twist_current_euler_pose_x = current_euler_pose_.x;
+    motion_status_msg_.twist_target_euler_pose_x = target_euler_pose_.x;
+
+    motion_status_msg_.twist_current_euler_pose_y = current_euler_pose_.y;
+    motion_status_msg_.twist_target_euler_pose_y = target_euler_pose_.y;
+
+    motion_status_msg_.twist_current_euler_pose_yaw = current_euler_pose_.yaw;
+    motion_status_msg_.twist_target_euler_pose_yaw = target_euler_pose_.yaw;
+
+    return motion_status_msg_;
 }
 
 geometry_msgs__msg__Twist MotionControl::_forwardKinematics(const WheelSpeed &wheelSpeed) {
@@ -677,6 +512,13 @@ geometry_msgs__msg__Twist MotionControl::_forwardKinematics(const WheelSpeed &wh
         twist.angular.x = 0;
         twist.angular.y = 0;
         twist.angular.z = (-wheelSpeed.left_front_v - wheelSpeed.left_back_v + wheelSpeed.right_front_v + wheelSpeed.right_back_v) / (2.0 * (track_width_ + wheel_width_));
+    } else {
+        double v_left = (wheelSpeed.left_front_v + wheelSpeed.left_back_v) / 2.0;
+        double v_right = (wheelSpeed.right_front_v + wheelSpeed.right_back_v) / 2.0;
+
+        twist.linear.x = (v_left + v_right) / 2.0;
+        twist.linear.y = 0.0; // 非麦克纳姆没有侧向速度
+        twist.angular.z = (v_right - v_left) / track_width_;
     }
     return twist;
 }
@@ -689,6 +531,29 @@ WheelSpeed MotionControl::_inverseKinematics(const geometry_msgs__msg__Twist &tw
         wheelSpeed.right_front_v = -twist.linear.x + twist.linear.y + twist.angular.z * (track_width_ + wheel_width_) / 2.0;
         wheelSpeed.right_back_v = twist.linear.x + twist.linear.y + twist.angular.z * (track_width_ + wheel_width_) / 2.0;
 
+        auto max_v = std::max({fabs(wheelSpeed.left_front_v), fabs(wheelSpeed.left_back_v), fabs(wheelSpeed.right_front_v), fabs(wheelSpeed.right_back_v)});
+        if (max_v > max_v_) {
+            auto scale = max_v_ / max_v;
+            wheelSpeed.left_front_v *= scale;
+            wheelSpeed.left_back_v *= scale;
+            wheelSpeed.right_front_v *= scale;
+            wheelSpeed.right_back_v *= scale;
+        }
+    } else {
+        double v = twist.linear.x;  // 前进线速度
+        double w = twist.angular.z; // 角速度（绕 z 轴）
+
+        // 左右轮速度
+        double v_left = v - w * track_width_ / 2.0;
+        double v_right = v + w * track_width_ / 2.0;
+
+        // 赋值给四个轮子（左右分别相等）
+        wheelSpeed.left_front_v = v_left;
+        wheelSpeed.left_back_v = v_left;
+        wheelSpeed.right_front_v = v_right;
+        wheelSpeed.right_back_v = v_right;
+
+        // 限幅（跟麦克纳姆分支同样处理）
         auto max_v = std::max({fabs(wheelSpeed.left_front_v), fabs(wheelSpeed.left_back_v), fabs(wheelSpeed.right_front_v), fabs(wheelSpeed.right_back_v)});
         if (max_v > max_v_) {
             auto scale = max_v_ / max_v;
@@ -873,71 +738,4 @@ void MotionControl::update_target_max_speed() {
 
     target_max_v_ = std::min({left_front_max_wheel_speed, right_front_max_wheel_speed, left_back_max_wheel_speed, right_back_max_wheel_speed});
     speed_percent_ = max_v_ / target_max_v_;
-}
-
-motion_status_msgs__msg__MotionStatus &MotionControl::get_motion_status_msg() {
-    motion_status_msg_.left_front_current_v = left_front_motor_control_->get_current_speed();
-    motion_status_msg_.left_front_target_v = left_front_motor_control_->get_target_speed();
-    motion_status_msg_.left_back_current_v = left_back_motor_control_->get_current_speed();
-    motion_status_msg_.left_back_target_v = left_back_motor_control_->get_target_speed();
-
-    motion_status_msg_.right_front_current_v = right_front_motor_control_->get_current_speed();
-    motion_status_msg_.right_front_target_v = right_front_motor_control_->get_target_speed();
-    motion_status_msg_.right_back_current_v = right_back_motor_control_->get_current_speed();
-    motion_status_msg_.right_back_target_v = right_back_motor_control_->get_target_speed();
-
-    motion_status_msg_.twist_current_linear_x = current_twist_.linear.x;
-    motion_status_msg_.twist_target_linear_x = target_twist_.linear.x;
-
-    motion_status_msg_.twist_current_linear_y = current_twist_.linear.y;
-    motion_status_msg_.twist_target_linear_y = target_twist_.linear.y;
-
-    motion_status_msg_.twist_current_angular_z = current_twist_.angular.z;
-    motion_status_msg_.twist_target_angular_z = target_twist_.angular.z;
-
-    motion_status_msg_.twist_current_euler_pose_x = current_euler_pose_.x;
-    motion_status_msg_.twist_target_euler_pose_x = target_euler_pose_.x;
-
-    motion_status_msg_.twist_current_euler_pose_y = current_euler_pose_.y;
-    motion_status_msg_.twist_target_euler_pose_y = target_euler_pose_.y;
-
-    motion_status_msg_.twist_current_euler_pose_yaw = current_euler_pose_.yaw;
-    motion_status_msg_.twist_target_euler_pose_yaw = target_euler_pose_.yaw;
-
-    return motion_status_msg_;
-}
-
-String MotionControl::get_http_data() {
-    float yaw = 0, pitch = 0, roll = 0, gyro_x = 0, gyro_y = 0, gyro_z = 0;
-    String json = "{";
-    json += "\"speed_percent\":" + String(speed_percent_, 3) + ",";
-    json += "\"twist_linear_x\":" + String(current_twist_.linear.x, 3) + ",";
-    json += "\"twist_linear_y\":" + String(current_twist_.linear.y, 3) + ",";
-    json += "\"twist_angular_z\":" + String(current_twist_.angular.z, 3) + ",";
-    json += "\"euler_pose_x\":" + String(current_euler_pose_.x, 3) + ",";
-    json += "\"euler_pose_y\":" + String(current_euler_pose_.y, 3) + ",";
-    json += "\"euler_pose_yaw\":" + String(current_euler_pose_.yaw, 3);
-    json += "}";
-
-    return json;
-}
-
-QueueHandle_t &MotionControl::get_control_deque() {
-    return control_queue_;
-}
-
-void MotionControl::control_loop(void *args) {
-    auto control = static_cast<MotionControl *>(args);
-    while (1) {
-        int msg;
-        if (xQueueReceive(control->get_control_deque(), &msg, portMAX_DELAY)) {
-            control->update();
-        }
-    }
-    vTaskDelete(NULL);
-}
-
-void MotionControl::control_timer_callback(void *args) {
-    int trigger = 1;
-    xQueueSendFromISR(MotionControl::get_instance().get_control_deque(), &trigger, NULL);
 }

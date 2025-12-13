@@ -1,6 +1,5 @@
 #pragma once
 
-#include "serialPrint.h"
 #include <Arduino.h>
 #include <ESP32Encoder.h>
 

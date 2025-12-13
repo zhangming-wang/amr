@@ -70,7 +70,7 @@ void YdlidarX2::sendDataLoop(void *args) {
             }
         } else {
             lidar->sendData();
-            // vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
     }
     vTaskDelete(NULL);

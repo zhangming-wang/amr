@@ -5,8 +5,8 @@ static constexpr const char *wifi_password = "403123456";
 static constexpr const char *wifi_IP = "192.168.1.101";
 
 static constexpr const int micro_ros_port = 8888;
-static constexpr const int tcp_client_port = 8889;
 
+static constexpr const int ydlidar_tcp_client_port = 8889;
 static constexpr const int ydlidar_baudrate = 115200;
 
 static constexpr const char *pc_camera_node_name = "pc_camera_node";
