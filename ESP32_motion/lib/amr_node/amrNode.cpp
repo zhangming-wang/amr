@@ -1,38 +1,189 @@
 #include "amrNode.h"
 
-void (*serial_print)(const std::string &) = _serial_print;
+void (*serial_print)(const std::string &) = AMRNode::_serial_print;
 
 AMRNode::AMRNode() {
-    allocator_ = rcl_get_default_allocator();
-    motionControl_ = &MotionControl::get_instance();
-    mpu6050Control_ = &mpu6050Control_::get_instance();
-}
-AMRNode::~AMRNode() {}
-
-AMRNode &AMRNode::get_instance() {
-    static AMRNode instance;
-    return instance;
-}
-
-void AMRNode::init(const std::string &node_name, const std::string &node_namespace, const std::string &wifi_name, const std::string &wifi_passward, const std::string &ip, const uint16_t port) {
-    node_name_ = node_name;
-    node_namespace_ = node_namespace;
-    wifi_name_ = wifi_name;
-    wifi_passward_ = wifi_passward;
-    ip_ = ip;
-    port_ = port;
-
+    task_name_ = "amr_node_task";
+    core_id_ = 0;
+    priority_ = 3;
     IPAddress agent_ip;
-    agent_ip.fromString(ip.c_str());
+    agent_ip.fromString(wifi_IP.c_str());
     locator_.address = agent_ip;
-    locator_.port = port;
+    locator_.port = micro_ros_port;
+    allocator_ = rcl_get_default_allocator();
+
+    rcl_ret_t ret = rcl_clock_init(RCL_STEADY_TIME, &clock_);
+    if (ret != RCL_RET_OK) {
+        serial_print("rcl_clock_init error: " + std::to_string(ret));
+    }
+
+    motionControl_ = &MotionControl::instance();
+    mpu6050Control_ = &MPU6050Control::instance();
 }
 
-bool AMRNode::is_connected() {
-    return connected;
+bool AMRNode::init_micro_ros() {
+    clean_micro_ros();
+    int num_handles = 4;
+    rcl_ret_t ret;
+
+    if (WiFi.status() != WL_CONNECTED) {
+        return false;
+    }
+
+    auto status = rmw_uros_set_custom_transport(
+        false,
+        (void *)&locator_,
+        platformio_transport_open,
+        platformio_transport_close,
+        platformio_transport_write,
+        platformio_transport_read);
+
+    if (status != 0) {
+        serial_print("rmw_uros_set_custom_transport:" + std::to_string(status));
+        return false;
+    }
+
+    // set_microros_wifi_transports(const_cast<char *>(wifi_name_.c_str()), const_cast<char *>(wifi_passward_.c_str()), agent_ip, port_);
+
+    if (!support_initialized_) {
+        ret = rclc_support_init(&support_, 0, NULL, &allocator_);
+        if (ret != RCL_RET_OK) {
+            serial_print("rclc_support_init:" + std::to_string(ret));
+            return false;
+        }
+        support_initialized_ = true;
+    }
+
+    while (!rmw_uros_epoch_synchronized()) {
+        rmw_uros_sync_session(1000);
+        delay(10);
+    }
+
+    if (!node_initialized_) {
+        node_ = rcl_get_zero_initialized_node();
+        ret = rclc_node_init_default(&node_, esp32_motion_node_name.c_str(), esp32_motion_node_namespace.c_str(), &support_);
+        if (ret != RCL_RET_OK) {
+            serial_print("rcl_get_zero_initialized_node:" + std::to_string(ret));
+            return false;
+        }
+        node_initialized_ = true;
+    }
+
+    if (!executor_initialized_) {
+        ret = rclc_executor_init(&executor_, &support_.context, num_handles, &allocator_);
+        if (ret != RCL_RET_OK) {
+            serial_print("rclc_executor_init:" + std::to_string(ret));
+            return false;
+        }
+        executor_initialized_ = true;
+    }
+
+    if (!motion_cmd_vel_subscription_initialized_) {
+        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
+        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
+        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;           // 保存最后 N 条
+        my_qos.depth = 1;                                            // 队列长度
+        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;      // 临时消息
+
+        ret = rclc_subscription_init(&motion_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name).c_str(), &my_qos);
+        if (ret != RCL_RET_OK) {
+            serial_print("rclc_motion_cmd_vel_subscription_init_default:" + std::to_string(ret));
+            return false;
+        } else {
+            ret = rclc_executor_add_subscription(&executor_, &motion_cmd_vel_subscription_, &msg_cmd_vel, msg_twist_callback, ON_NEW_DATA);
+            if (ret != RCL_RET_OK) {
+                serial_print("rclc_executor_add_subscription:" + std::to_string(ret));
+                ret = rcl_subscription_fini(&motion_cmd_vel_subscription_, &node_);
+                if (ret != RCL_RET_OK) {
+                    serial_print("rcl_motion_cmd_vel_subscription_fini error: " + std::to_string(ret));
+                }
+                return false;
+            }
+        }
+        motion_cmd_vel_subscription_initialized_ = true;
+    }
+    if (!control_cmd_vel_subscription_initialized_) {
+        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
+        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
+        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;        // 保存最后 N 条
+        my_qos.depth = 10;                                        // 队列长度
+        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;   // 临时消息
+
+        ret = rclc_subscription_init(&control_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel", &my_qos);
+        if (ret != RCL_RET_OK) {
+            serial_print("rclc_control_cmd_vel_subscription_init_default:" + std::to_string(ret));
+            return false;
+        } else {
+            ret = rclc_executor_add_subscription(&executor_, &control_cmd_vel_subscription_, &msg_cmd_vel, msg_twist_callback, ON_NEW_DATA);
+            if (ret != RCL_RET_OK) {
+                serial_print("rclc_executor_add_control_cmd_vel_subscription:" + std::to_string(ret));
+                ret = rcl_subscription_fini(&control_cmd_vel_subscription_, &node_);
+                if (ret != RCL_RET_OK) {
+                    serial_print("rcl_control_cmd_vel_subscription_fini error: " + std::to_string(ret));
+                }
+                return false;
+            }
+        }
+        control_cmd_vel_subscription_initialized_ = true;
+    }
+
+    if (!odom_publisher_initialized_) {
+        ret = rclc_publisher_init_default(&odom_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "/odom"); //
+        if (ret != RCL_RET_OK) {
+            serial_print("odom_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
+            return false;
+        }
+        odom_publisher_initialized_ = true;
+    }
+    if (!imu_publisher_initialized_) {
+        ret = rclc_publisher_init_default(&imu_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu"); //
+        if (ret != RCL_RET_OK) {
+            serial_print("imu_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
+            return false;
+        }
+        imu_publisher_initialized_ = true;
+    }
+
+    if (!motion_status_publisher_initialized_) {
+        ret = rclc_publisher_init_best_effort(&motion_status_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(motion_status_msgs, msg, MotionStatus), esp32_motion_status_topic_name); //
+        if (ret != RCL_RET_OK) {
+            serial_print("motion_status_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
+            return false;
+        }
+        motion_status_publisher_initialized_ = true;
+    }
+
+    if (!serial_msg_publisher_initialized_) {
+        ret = rclc_publisher_init_best_effort(&serial_msg_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), esp32_motion_serial_msg_topic_name); //
+        if (ret != RCL_RET_OK) {
+            serial_print("serial_msg_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
+            return false;
+        }
+        serial_msg_publisher_initialized_ = true;
+    }
+
+    if (!motion_settings_service_initialized_) {
+        ret = rclc_service_init_default(&motion_settings_service_, &node_, ROSIDL_GET_SRV_TYPE_SUPPORT(motion_settings_service, srv, MotionSettingsService), esp32_motion_settings_service_name);
+        if (ret != RCL_RET_OK) {
+            serial_print("rclc_service_init_default motion_settings_service:" + std::to_string(ret));
+            return false;
+        }
+        ret = rclc_executor_add_service(&executor_, &motion_settings_service_, &motion_settings_request_, &motion_settings_response_, motion_settings_service_callback);
+        if (ret != RCL_RET_OK) {
+            serial_print("rclc_executor_add_service motion_settings_service:" + std::to_string(ret));
+            ret = rcl_service_fini(&motion_settings_service_, &node_);
+            if (ret != RCL_RET_OK) {
+                serial_print("rcl_service_fini motion_settings_service error: " + std::to_string(ret));
+            }
+            return false;
+        }
+        motion_settings_service_initialized_ = true;
+    }
+
+    return true;
 }
 
-void AMRNode::clean() {
+void AMRNode::clean_micro_ros() {
     rcl_ret_t ret;
 
     if (motion_settings_service_initialized_) {
@@ -71,6 +222,14 @@ void AMRNode::clean() {
         }
         odom_publisher_initialized_ = false;
     }
+    if (imu_publisher_initialized_) {
+        ret = rcl_publisher_fini(&imu_publisher_, &node_);
+        if (ret != RCL_RET_OK) {
+            serial_print("imu_publisher:rcl_publisher_fini error: " + std::to_string(ret));
+        }
+        imu_publisher_initialized_ = false;
+    }
+
     if (serial_msg_publisher_initialized_) {
         ret = rcl_publisher_fini(&serial_msg_publisher_, &node_);
         if (ret != RCL_RET_OK) {
@@ -79,7 +238,7 @@ void AMRNode::clean() {
         serial_msg_publisher_initialized_ = false;
     }
     if (executor_initialized_) {
-        ret = rclc_executor_fini(&executor);
+        ret = rclc_executor_fini(&executor_);
         if (ret != RCL_RET_OK) {
             serial_print("executor_initialized_ error: " + std::to_string(ret));
         }
@@ -101,183 +260,12 @@ void AMRNode::clean() {
     }
 }
 
-bool AMRNode::init() {
-    clean();
-    int num_handles = 4;
-    bool init_success = true;
-    IPAddress agent_ip;
-    rcl_ret_t ret;
-    agent_ip.fromString(ip_.c_str());
-
-    if (WiFi.status() != WL_CONNECTED) {
-        return false;
-    }
-
-    auto status = rmw_uros_set_custom_transport(
-        false,
-        (void *)&locator_,
-        platformio_transport_open,
-        platformio_transport_close,
-        platformio_transport_write,
-        platformio_transport_read);
-
-    if (status != 0) {
-        serial_print("rmw_uros_set_custom_transport:" + std::to_string(status));
-        return false;
-    }
-
-    // set_microros_wifi_transports(const_cast<char *>(wifi_name_.c_str()), const_cast<char *>(wifi_passward_.c_str()), agent_ip, port_);
-
-    if (!support_initialized_) {
-        ret = rclc_support_init(&support_, 0, NULL, &allocator_);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_support_init:" + std::to_string(ret));
-            return false;
-        }
-        support_initialized_ = true;
-    }
-
-    while (!rmw_uros_epoch_synchronized()) {
-        rmw_uros_sync_session(1000);
-        delay(10);
-    }
-
-    if (!node_initialized_) {
-        node_ = rcl_get_zero_initialized_node();
-        ret = rclc_node_init_default(&node_, node_name_.c_str(), node_namespace_.c_str(), &support_);
-        if (ret != RCL_RET_OK) {
-            serial_print("rcl_get_zero_initialized_node:" + std::to_string(ret));
-            return false;
-        }
-        node_initialized_ = true;
-    }
-
-    if (!executor_initialized_) {
-        ret = rclc_executor_init(&executor, &support_.context, num_handles, &allocator_);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_executor_init:" + std::to_string(ret));
-            return false;
-        }
-        executor_initialized_ = true;
-    }
-
-    if (!motion_cmd_vel_subscription_initialized_) {
-        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
-        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
-        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;           // 保存最后 N 条
-        my_qos.depth = 1;                                            // 队列长度
-        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;      // 临时消息
-
-        ret = rclc_subscription_init(&motion_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name).c_str(), &my_qos);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_motion_cmd_vel_subscription_init_default:" + std::to_string(ret));
-            return false;
-        } else {
-            ret = rclc_executor_add_subscription(&executor, &motion_cmd_vel_subscription_, &msg_cmd_vel, msg_twist_callback, ON_NEW_DATA);
-            if (ret != RCL_RET_OK) {
-                serial_print("rclc_executor_add_subscription:" + std::to_string(ret));
-                ret = rcl_subscription_fini(&motion_cmd_vel_subscription_, &node_);
-                if (ret != RCL_RET_OK) {
-                    serial_print("rcl_motion_cmd_vel_subscription_fini error: " + std::to_string(ret));
-                }
-                return false;
-            }
-        }
-        motion_cmd_vel_subscription_initialized_ = true;
-    }
-    if (!control_cmd_vel_subscription_initialized_) {
-        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
-        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
-        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;        // 保存最后 N 条
-        my_qos.depth = 10;                                        // 队列长度
-        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;   // 临时消息
-
-        ret = rclc_subscription_init(&control_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel", &my_qos);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_control_cmd_vel_subscription_init_default:" + std::to_string(ret));
-            return false;
-        } else {
-            ret = rclc_executor_add_subscription(&executor, &control_cmd_vel_subscription_, &msg_cmd_vel, msg_twist_callback, ON_NEW_DATA);
-            if (ret != RCL_RET_OK) {
-                serial_print("rclc_executor_add_control_cmd_vel_subscription:" + std::to_string(ret));
-                ret = rcl_subscription_fini(&control_cmd_vel_subscription_, &node_);
-                if (ret != RCL_RET_OK) {
-                    serial_print("rcl_control_cmd_vel_subscription_fini error: " + std::to_string(ret));
-                }
-                return false;
-            }
-        }
-        control_cmd_vel_subscription_initialized_ = true;
-    }
-
-    if (!odom_publisher_initialized_) {
-        ret = rclc_publisher_init_default(&odom_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "/odom"); //
-        if (ret != RCL_RET_OK) {
-            serial_print("odom_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
-            return false;
-        }
-        odom_publisher_initialized_ = true;
-    }
-
-    if (!motion_status_publisher_initialized_) {
-        ret = rclc_publisher_init_best_effort(&motion_status_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(motion_status_msgs, msg, MotionStatus), esp32_motion_status_topic_name); //
-        if (ret != RCL_RET_OK) {
-            serial_print("motion_status_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
-            return false;
-        }
-        motion_status_publisher_initialized_ = true;
-    }
-
-    if (!serial_msg_publisher_initialized_) {
-        ret = rclc_publisher_init_best_effort(&serial_msg_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), esp32_motion_serial_msg_topic_name); //
-        if (ret != RCL_RET_OK) {
-            serial_print("serial_msg_publisher_:rclc_publisher_init_default:" + std::to_string(ret));
-            return false;
-        }
-        serial_msg_publisher_initialized_ = true;
-    }
-
-    if (!motion_settings_service_initialized_) {
-        ret = rclc_service_init_default(&motion_settings_service_, &node_, ROSIDL_GET_SRV_TYPE_SUPPORT(motion_settings_service, srv, MotionSettingsService), esp32_motion_settings_service_name);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_service_init_default motion_settings_service:" + std::to_string(ret));
-            return false;
-        }
-        ret = rclc_executor_add_service(&executor, &motion_settings_service_, &motion_settings_request_, &motion_settings_response_, motion_settings_service_callback);
-        if (ret != RCL_RET_OK) {
-            serial_print("rclc_executor_add_service motion_settings_service:" + std::to_string(ret));
-            ret = rcl_service_fini(&motion_settings_service_, &node_);
-            if (ret != RCL_RET_OK) {
-                serial_print("rcl_service_fini motion_settings_service error: " + std::to_string(ret));
-            }
-            return false;
-        }
-        motion_settings_service_initialized_ = true;
-    }
-
-    return true;
-}
-
 void AMRNode::set_enable_pub_motion_status(bool status) {
     enable_pub_motion_status_ = status;
 }
 
 bool AMRNode::get_enable_pub_motion_status() {
     return enable_pub_motion_status_;
-}
-
-void AMRNode::start_task() {
-    if (enable_task_run_ == false) {
-        enable_task_run_ = true;
-        xTaskCreatePinnedToCore(motion_node_task, "motion_node_task", 8192, this, 0, NULL, 0);
-    }
-}
-
-void AMRNode::stop_task() {
-    enable_task_run_ = false;
-}
-bool AMRNode::is_enable_task_run() {
-    return enable_task_run_;
 }
 
 rcl_publisher_t *AMRNode::get_motion_status_publisher() {
@@ -292,42 +280,35 @@ rcl_publisher_t *AMRNode::get_serial_msg_publisher() {
     return &serial_msg_publisher_;
 }
 
-void AMRNode::motion_node_task(void *args) {
-    AMRNode *microRos = static_cast<AMRNode *>(args);
-    bool init_success = false;
-    microRos->connected = false;
-    while (microRos->is_enable_task_run()) {
-        if (!init_success) {
-            if (!microRos->init()) {
-                serial_print("motion node init failed, try again...");
-                vTaskDelay(pdMS_TO_TICKS(500));
-                continue;
-            } else {
-                serial_print("motion node task is running...");
-                init_success = true;
-            }
-        }
-
-        rclc_executor_spin_some(&microRos->executor, RCL_MS_TO_NS(AMRNode::get_instance().motionControl_->get_milliseconds()));
-        if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
-            microRos->connected = false;
-            serial_print("motion node is disconnected, reconnecting...");
-            init_success = false;
+void AMRNode::update() {
+    if (!connected_) {
+        if (!init_micro_ros()) {
+            serial_print("motion node init failed, try again...");
             vTaskDelay(pdMS_TO_TICKS(500));
+            break;
         } else {
-            microRos->connected = true;
-            vTaskDelay(pdMS_TO_TICKS(AMRNode::get_instance().motionControl_->get_milliseconds()));
+            serial_print("motion node task is running...");
+            connected_ = true;
         }
     }
-    microRos->clean();
-    vTaskDelete(NULL);
+
+    rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(motionControl_->get_milliseconds()));
+    if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
+        serial_print("motion node is disconnected, reconnecting...");
+        connected_ = false;
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
+void AMRNode::sleep() {
+    vTaskDelay(pdMS_TO_TICKS(motionControl_->get_milliseconds()));
 }
 
 void AMRNode::motion_settings_service_callback(const void *req, void *res) {
     const motion_settings_service__srv__MotionSettingsService_Request *request = (const motion_settings_service__srv__MotionSettingsService_Request *)req;
     motion_settings_service__srv__MotionSettingsService_Response *response = (motion_settings_service__srv__MotionSettingsService_Response *)res;
 
-    AMRNode &instance = AMRNode::get_instance();
+    AMRNode &instance = AMRNode::instance();
 
     if (request->mode == MotionService::Type::HeartBeat) {
         ;
@@ -357,6 +338,10 @@ void AMRNode::motion_settings_service_callback(const void *req, void *res) {
         instance.motionControl_->turn_left();
     } else if (request->mode == MotionService::Type::TurnRight) {
         instance.motionControl_->turn_right();
+    }
+
+    else if (request->mode == MotionService::Type::CalibrateIMU) {
+        instance.mpu6050Control_->start_calibration();
     }
 
     else if (request->mode == MotionService::Type::SetSpeedPercent) {
@@ -425,25 +410,37 @@ void AMRNode::motion_settings_service_callback(const void *req, void *res) {
 
 void AMRNode::msg_twist_callback(const void *msg) {
     const geometry_msgs__msg__Twist *twist_msg = static_cast<const geometry_msgs__msg__Twist *>(msg);
-    AMRNode::get_instance().motionControl_->start_move(*twist_msg);
+    AMRNode::instance().motionControl_->set_twist(*twist_msg);
 }
 
 void AMRNode::publish_msgs() {
+    rcl_time_point_value_t now_ns;
+    rcl_clock_get_now(&clock_, &now_ns);
+
+    auto odom_msg = motionControl_->get_odom_msg();
+    auto imu_msg = mpu6050Control_->get_imu_msg();
+
+    odom_msg.header.stamp.sec = now_ns / 1000000000;
+    odom_msg.header.stamp.nanosec = now_ns % 1000000000;
+    imu_msg.header.stamp.sec = now_ns / 1000000000;
+    imu_msg.header.stamp.nanosec = now_ns % 1000000000;
+
     rcl_ret_t ret;
-    ret = rcl_publish(get_odom_publisher(), &motionControl_->get_odom_msg(), NULL);
+
+    ret = rcl_publish(&odom_publisher_, &odom_msg, NULL);
     if (ret != RCL_RET_OK) {
         Serial.print("error: pub odom msg failed:");
         Serial.println(ret);
     }
 
-    ret = rcl_publish(get_imu_publisher(), &mpu6050Control_->get_imu_msg(), NULL);
+    ret = rcl_publish(&imu_publisher_, &imu_msg, NULL);
     if (ret != RCL_RET_OK) {
         Serial.print("error: pub imu msg failed:");
         Serial.println(ret);
     }
 
     if (enable_pub_motion_status_) {
-        ret = rcl_publish(get_motion_status_publisher(), &motionControl_->get_motion_status_msg(), NULL);
+        ret = rcl_publish(&motion_status_publisher_, &motionControl_->get_motion_status_msg(), NULL);
         if (ret != RCL_RET_OK) {
             Serial.print("error: pub motion status msg failed:");
             Serial.println(ret);
@@ -451,16 +448,16 @@ void AMRNode::publish_msgs() {
     }
 }
 
-void _serial_print(const std::string &msg) {
+void AMRNode::_serial_print(const std::string &msg) {
     Serial.println(msg.c_str());
 
-    if (AMRNode::get_instance().is_connected()) {
+    if (AMRNode::instance().connected()) {
         std_msgs__msg__String ros_msg;
         rosidl_runtime_c__String__init(&ros_msg.data);
         rosidl_runtime_c__String__assign(&ros_msg.data, msg.c_str());
 
         rcl_ret_t ret;
-        ret = rcl_publish(AMRNode::get_instance().get_serial_msg_publisher(), &ros_msg, NULL);
+        ret = rcl_publish(AMRNode::instance().serial_msg_publisher_, &ros_msg, NULL);
         if (ret != RCL_RET_OK) {
             Serial.print("error: pub serial msg failed:");
             Serial.println(ret);

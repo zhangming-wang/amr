@@ -4,8 +4,8 @@
 #include "motor.h"
 #include "pidControl.h"
 #include <Preferences.h>
+#include <cstdint>
 #include <deque>
-#include <iostream>
 #include <memory>
 
 #include "freertos/FreeRTOS.h"

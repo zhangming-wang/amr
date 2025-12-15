@@ -6,48 +6,33 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include <Wire.h>
-#include <iostream>
+#include <atomic>
+#include <cstdint>
 #include <micro_ros_platformio.h>
 #include <sensor_msgs/msg/imu.h>
 
-class MotionControlNode {
+class MPU6050Control : public BaseTaskSingleton<MPU6050Control> {
+
+    friend class Singleton<MPU6050Control>;
+
 public:
-    void publishImu(const Mpu6050Control &imu);
-
-private:
-    sensor_msgs::msg::Imu imu_msg_;
-};
-class MPU6050Control {
-
-private:
     MPU6050Control();
-    ~MPU6050Control();
-
-public:
-    MPU6050Control(const MPU6050Control &) = delete;
-    MPU6050Control &operator=(const MPU6050Control &) = delete;
-
-    static MPU6050Control &get_instance();
-    void init(bool eanble_dmp = true);
+    void update() override;
+    void calculate();
 
     void set_pins(int pin_SDA, int pin_SCL);
 
-    bool isDmpHandle();
-
     void start_calibration();
 
-    void get_motion_data(float &yaw, float &pitch, float &roll, float &gyroX, float &gyroY, float &gyroZ);
-    void get_axisY_data(float &pitch, float &gyroY);
-
-    void update();
-    void calculate();
-    sensor_msgs__msg__Imu *get_imu_msg();
+    sensor_msgs__msg__Imu &get_imu_msg();
 
 private:
     int pin_SDA_ = -1, pin_SCL_ = -1;
 
-    bool isDmpHandle_ = true;
+    bool is_dmp_handle_ = true;
     bool init_success_ = false;
+
+    std::atomic<bool> is_calibrating_ = false;
 
     Preferences preferences_;
 
@@ -77,6 +62,7 @@ private:
     sensor_msgs__msg__Imu imu_msg_;
 
     void _loadCalibration();
+    void _start_calibration_task();
 
     bool _manual_init();
     bool _dmp_init();

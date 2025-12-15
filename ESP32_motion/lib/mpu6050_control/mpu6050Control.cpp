@@ -1,19 +1,22 @@
 #include "mpu6050Control.h"
 
-static MPU6050Control &get_instance() {
-    static MPU6050Control instance;
-    return instance;
-}
-
 MPU6050Control::MPU6050Control() {
-}
-
-void MPU6050Control::init(bool eanble_dmp) {
-    isDmpHandle_ = eanble_dmp;
-    if (isDmpHandle_) {
+    if (is_dmp_handle_) {
         init_success_ = _dmp_init();
     } else {
         init_success_ = _manual_init();
+    }
+
+    rosidl_runtime_c__String__assign(&imu_msg_.header.frame_id, "imu_link");
+}
+
+void MPU6050Control::update() {
+    if (init_success_ && !is_calibrating_.load()) {
+        if (is_dmp_handle_) {
+            _dmp_read();
+        } else {
+            _manual_read();
+        }
     }
 }
 
@@ -79,8 +82,24 @@ void MPU6050Control::start_calibration() {
         return;
     }
 
+    xTaskCreate(
+        [](void *param) {
+            MPU6050Control *self = static_cast<MPU6050Control *>(param);
+            self->_start_calibration_task();
+            vTaskDelete(NULL);
+        },
+        "mpu6050_calibration_task",
+        4096,
+        this,
+        1,
+        NULL);
+}
+
+void MPU6050Control::_start_calibration_task() {
     serial_print("校准中，请保持模块静止...");
-    delay(100);
+
+    is_calibrating_.store(true);
+    delay(500); // 确保在调用此函数时模块已稳定
 
     mpu_.resetFIFO();          // 🧹 清空 FIFO
     mpu_.setDMPEnabled(false); // ❌ 暂时关闭 DMP
@@ -106,10 +125,12 @@ void MPU6050Control::start_calibration() {
 
     preferences_.end();
 
-    serial_print("保存mpu校准值完成");
-
     mpu_.setDMPEnabled(true); // ✅ 最后再重新开启 DMP
     mpu_.resetFIFO();         // 🧹 再次清空，防止旧数据残留
+
+    serial_print("校准完成!");
+
+    is_calibrating_.store(false);
 }
 
 void MPU6050Control::_loadCalibration() {
@@ -137,10 +158,6 @@ void MPU6050Control::_loadCalibration() {
     } else {
         serial_print("加载mpu校准值完成");
     }
-}
-
-bool MPU6050Control::isDmpHandle() {
-    return isDmpHandle_;
 }
 
 void MPU6050Control::_dmp_read() {
@@ -217,21 +234,42 @@ void MPU6050Control::_manual_read() {
     roll_ = ALPHA * roll_ + (1 - ALPHA) * atan2(ay, az) * 180.0 / M_PI;
 }
 
-void MPU6050Control::get_motion_data(float &yaw, float &pitch, float &roll, float &gyroX, float &gyroY, float &gyroZ) {
-    yaw = yaw_;
-    pitch = pitch_;
-    roll = roll_;
-    gyroX = gyroX_;
-    gyroY = gyroY_;
-    gyroZ = gyroZ_;
+sensor_msgs__msg__Imu &MPU6050Control::get_imu_msg() {
+    return imu_msg_;
 }
 
-void MPU6050Control::update() {
-    if (init_success_) {
-        if (isDmpHandle_) {
-            _dmp_read();
-        } else {
-            _manual_read();
-        }
-    }
+void MPU6050Control::calculate() {
+    double cy = cos(yaw_ * 0.5);
+    double sy = sin(yaw_ * 0.5);
+    double cp = cos(pitch_ * 0.5);
+    double sp = sin(pitch_ * 0.5);
+    double cr = cos(roll_ * 0.5);
+    double sr = sin(roll_ * 0.5);
+
+    imu_msg_.orientation.w = cr * cp * cy + sr * sp * sy;
+    imu_msg_.orientation.x = sr * cp * cy - cr * sp * sy;
+    imu_msg_.orientation.y = cr * sp * cy + sr * cp * sy;
+    imu_msg_.orientation.z = cr * cp * sy - sr * sp * cy;
+
+    imu_msg_.orientation_covariance[0] = 0.0025;
+    imu_msg_.orientation_covariance[4] = 0.0025;
+    imu_msg_.orientation_covariance[8] = 0.0025;
+
+    imu_msg_.angular_velocity.x = DEG2RAD(gyroX_);
+    imu_msg_.angular_velocity.y = DEG2RAD(gyroY_);
+    imu_msg_.angular_velocity.z = DEG2RAD(gyroZ_);
+
+    // imu_msg_.angular_velocity.x = gyroX_;
+    // imu_msg_.angular_velocity.y = gyroY_;
+    // imu_msg_.angular_velocity.z = gyroZ_;
+
+    imu_msg_.angular_velocity_covariance[0] = 0.02;
+    imu_msg_.angular_velocity_covariance[4] = 0.02;
+    imu_msg_.angular_velocity_covariance[8] = 0.02;
+
+    imu_msg_.linear_acceleration.x = 0.0;
+    imu_msg_.linear_acceleration.y = 0.0;
+    imu_msg_.linear_acceleration.z = 0.0;
+
+    imu_msg_.linear_acceleration_covariance[0] = -1.0;
 }

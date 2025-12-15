@@ -5,7 +5,7 @@
 #include "pwmControl.h"
 #include <Arduino.h>
 #include <ESP32Encoder.h>
-#include <iostream>
+#include <cstdint>
 
 class Motor {
 public:

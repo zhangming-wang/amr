@@ -13,15 +13,7 @@ void setup() {
     ydlidarX2->init(wifi_IP, tcp_client_port, D7, ydlidar_baudrate);
 
     WiFi.mode(WIFI_STA);
-    WiFi.begin(wifi_name, wifi_password);
-
-    Serial.printf("\nConnecting to WiFi...");
-    unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - start < 30000) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println();
+    WiFi.persistent(false);
 }
 
 bool connected = false;
@@ -29,9 +21,14 @@ bool connected = false;
 void loop() {
     if (WiFi.status() != WL_CONNECTED) {
         connected = false;
-        Serial.println("WiFi Disconnected, reconnecting...");
-        WiFi.reconnect();
-        delay(500);
+        WiFi.begin(wifi_name, wifi_password);
+        Serial.printf("\nConnecting to WiFi...");
+        unsigned long start = millis();
+        while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+            delay(500);
+            Serial.print(".");
+        }
+        Serial.println();
     } else {
         if (connected == false) {
             connected = true;

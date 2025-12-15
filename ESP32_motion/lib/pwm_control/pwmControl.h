@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <iostream>
+#include <cstdint>
 
 class PWMControl {
 public:

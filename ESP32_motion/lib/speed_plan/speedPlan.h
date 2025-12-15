@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cstdint>
 #include <deque>
-#include <iostream>
 #include <math.h>
 
 class SpeedPlan {

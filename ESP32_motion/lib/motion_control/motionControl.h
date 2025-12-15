@@ -10,6 +10,7 @@ extern "C" {
 #include "motion_settings_service/srv/motion_settings_service.h"
 #include "motion_status_msgs/msg/motion_status.h"
 }
+#include "baseTask.h"
 #include "enum.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -19,6 +20,7 @@ extern "C" {
 #include <Arduino.h>
 #include <Preferences.h>
 #include <deque>
+#include <geometry_msgs/msg/quaternion.h>
 #include <geometry_msgs/msg/twist.h>
 #include <map>
 #include <memory>
@@ -43,24 +45,21 @@ struct EulerPose {
     float yaw = 0;
 };
 
-class MotionControl {
+class MotionControl : public BaseTaskSingleton<MotionControl> {
 
-private:
+    friend class Singleton<MotionControl>;
+
+protected:
     MotionControl();
-    ~MotionControl();
 
 public:
-    static MotionControl &get_instance();
+    void init_task() override;
+    void clean_task() override;
+    void update() override;
+    void sleep() override { vTaskDelay(pdMS_TO_TICKS(milliseconds_)); }
+    void calculate();
 
-    MotionControl(const MotionControl &) = delete;
-    MotionControl &operator=(const MotionControl &) = delete;
-
-    void init();
     void move();
-    void update(float dt);
-
-    void start_move(WheelSpeed &target_wheel_speed);
-    void start_move(const geometry_msgs__msg__Twist &twist);
     void stop_move();
     void brake();
 
@@ -75,12 +74,14 @@ public:
     void turn_left();
     void turn_right();
 
+    void set_twist(const geometry_msgs__msg__Twist &twist);
+    void set_wheels_speed(WheelSpeed &target_wheel_speed);
+
     void move_absolute_euler_pose(const EulerPose &eulerPose);
     void move_relative_euler_pose(const EulerPose &eulerPose);
 
     void update_target_max_speed();
 
-    void calculate();
     nav_msgs__msg__Odometry &get_odom_msg();
     motion_status_msgs__msg__MotionStatus &get_motion_status_msg();
 
@@ -126,7 +127,7 @@ public:
 
 private:
     //---------需要保存配置---------
-    float track_width_ = 10, wheel_width_ = 0;
+    float track_width_ = 10, wheel_width_ = 10;
 
     //---------需要保存参数---------
     volatile int milliseconds_ = 10, position_loop_period_cnt_ = 2, speed_loop_period_cnt_ = 5;
@@ -146,7 +147,7 @@ private:
     EulerPose current_euler_pose_, target_euler_pose_;
 
     WheelSpeed current_wheel_v_, target_wheel_v_;
-    geometry_msgs__msg__Twist last_twist_, current_twist_, target_twist_;
+    geometry_msgs__msg__Twist current_twist_, target_twist_;
 
     std::deque<WheelSpeed> wheel_speed_deque_;
 
@@ -165,7 +166,5 @@ private:
     void _load_params();
     void _load_config();
 
-    void _plan_wheel_speed(); // WheelSpeed &target_wheel_speed
-
-    // void reset();
+    void _plan_wheel_speed();
 };

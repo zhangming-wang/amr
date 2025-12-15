@@ -1,21 +1,35 @@
 #include "ydlidarX2.h"
 
-YdlidarX2::YdlidarX2() {}
-
-YdlidarX2::~YdlidarX2() {}
-
-YdlidarX2 &YdlidarX2::get_instance() {
-    static YdlidarX2 instance;
-    return instance;
+YdlidarX2::YdlidarX2() {
+    task_name_ = "ydlidar_x2_task";
+    core_id_ = 0;
+    priority_ = 3;
+    host_ = wifi_IP;
+    port_ = ydlidar_tcp_client_port;
+    pin_pwm_ = 14;
+    pin_tx_ = 25;
+    pin_rx_ = -1;
+    baudrate_ = ydlidar_baudrate;
 }
 
-void YdlidarX2::init(const std::string &host, int port, int pin_pwm, int pin_tx, int pin_rx, unsigned long baudrate) {
-    host_ = host;
-    port_ = port;
-    pin_pwm_ = pin_pwm;
-    pin_tx_ = pin_tx;
-    pin_rx_ = pin_rx;
-    baudrate_ = baudrate;
+void YdlidarX2::update() {
+    if (!client_.connected()) {
+        auto ret = client_.connect(host_.c_str(), port_);
+        if (!ret) {
+            Serial.println("雷达 wifi client 连接失败!");
+            vTaskDelay(pdMS_TO_TICKS(500));
+        } else {
+            Serial.println("雷达 wifi client 连接成功!");
+        }
+    } else {
+        sendData();
+    }
+}
+
+void YdlidarX2::init_task() {
+    pwmControl_.attachPin(pin_pwm_);
+    motorOn();
+    Serial2.begin(baudrate_, SERIAL_8N1, pin_tx_, pin_rx_);
 }
 
 void YdlidarX2::start_task() {
@@ -27,12 +41,9 @@ void YdlidarX2::start_task() {
     }
 }
 
-void YdlidarX2::stop_task() {
-    if (enable_task_run) {
-        enable_task_run = false;
-        motorOff();
-        Serial2.end();
-    }
+void YdlidarX2::clean_task() {
+    motorOff();
+    Serial2.end();
 }
 
 void YdlidarX2::motorOn(float speed_percent) {
@@ -55,25 +66,6 @@ void YdlidarX2::writeData(uint8_t *buffer, int len) {
     if (pin_rx_ > 0) {
         Serial2.write(buffer, len);
     }
-}
-
-void YdlidarX2::sendDataLoop(void *args) {
-    auto lidar = static_cast<YdlidarX2 *>(args);
-    while (lidar->enable_task_run) {
-        if (!lidar->client_.connected()) {
-            auto ret = lidar->client_.connect(lidar->host_.c_str(), lidar->port_);
-            if (!ret) {
-                Serial.println("雷达 wifi client 连接失败!");
-                vTaskDelay(pdMS_TO_TICKS(500));
-            } else {
-                Serial.println("雷达 wifi client 连接成功!");
-            }
-        } else {
-            lidar->sendData();
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
-    }
-    vTaskDelete(NULL);
 }
 
 void YdlidarX2::sendData() {

@@ -10,23 +10,9 @@ MotionControl::MotionControl() {
     line_speed_loop_ = std::make_shared<PIDControl>("lsl");
     angle_speed_loop_ = std::make_shared<PIDControl>("asl");
     position_loop_ = std::make_shared<PIDControl>("pl");
-}
 
-MotionControl::~MotionControl() {}
-
-MotionControl &MotionControl::get_instance() {
-    static MotionControl instance; // C++11 保证线程安全初始化
-    return instance;
-}
-
-void MotionControl::init() {
-    _load_config();
-    _load_params();
-
-    update_target_max_speed();
-
-    set_milliseconds(milliseconds_);
-    set_speed_plan_parms(max_v_, max_acc_, jerk_);
+    rosidl_runtime_c__String__assign(&odom_msg_.header.frame_id, "odom");          // 参考坐标系
+    rosidl_runtime_c__String__assign(&odom_msg_.child_frame_id, "base_footprint"); // 机器人底盘
 }
 
 void MotionControl::set_model_params(float track_width, float wheel_width) {
@@ -97,13 +83,7 @@ void MotionControl::set_wheel_type(bool is_mecanum_wheel) {
 }
 
 void MotionControl::set_milliseconds(int milliseconds) {
-    int milliseconds_tmp = milliseconds_;
     milliseconds_ = milliseconds;
-
-    if (esp_timer_is_active(control_timer_) && milliseconds_tmp != milliseconds_) {
-        _stop_control_timer();
-    }
-    _start_control_timer();
 }
 
 int MotionControl::get_milliseconds() {
@@ -194,7 +174,7 @@ void MotionControl::stop_move() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_front() {
@@ -204,7 +184,7 @@ void MotionControl::move_front() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_back() {
@@ -214,7 +194,7 @@ void MotionControl::move_back() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_left() {
@@ -224,7 +204,7 @@ void MotionControl::move_left() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_right() {
@@ -234,7 +214,7 @@ void MotionControl::move_right() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_left_front() {
@@ -244,7 +224,7 @@ void MotionControl::move_left_front() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_right_back() {
@@ -254,7 +234,7 @@ void MotionControl::move_right_back() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_right_front() {
@@ -264,7 +244,7 @@ void MotionControl::move_right_front() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::move_left_back() {
@@ -274,7 +254,7 @@ void MotionControl::move_left_back() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = 0;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::turn_left() {
@@ -284,7 +264,7 @@ void MotionControl::turn_left() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = max_w_;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
 void MotionControl::turn_right() {
@@ -294,15 +274,15 @@ void MotionControl::turn_right() {
     target_twist_.angular.x = 0;
     target_twist_.angular.y = 0;
     target_twist_.angular.z = -max_w_;
-    start_move(target_twist_);
+    set_twist(target_twist_);
 }
 
-void MotionControl::start_move(const geometry_msgs__msg__Twist &twist) {
+void MotionControl::set_twist(const geometry_msgs__msg__Twist &twist) {
     target_twist_ = twist;
     _plan_wheel_speed();
 }
 
-void MotionControl::start_move(WheelSpeed &target_wheel_speed) {
+void MotionControl::set_wheels_speed(WheelSpeed &target_wheel_speed) {
     target_twist_ = _forwardKinematics(target_wheel_speed);
     _plan_wheel_speed();
 }
@@ -383,21 +363,6 @@ void MotionControl::_plan_wheel_speed() { // WheelSpeed &target_wheel_speed
     }
 }
 
-// void MotionControl::reset() {
-//     period_cnt_ = 0;
-//     speed_loop_dt_ = 0;
-
-//     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
-//         wheel_speed_deque_.clear();
-//         wheel_speed_deque_.push_back(WheelSpeed());
-//         xSemaphoreGive(mutex_);
-//     }
-
-//     position_loop_->reset();
-//     line_speed_loop_->reset();
-//     angle_speed_loop_->reset();
-// }
-
 void MotionControl::move() {
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
@@ -434,53 +399,109 @@ void MotionControl::move() {
         right_front_motor_control_->set_speed(0, dt_, false);
         right_back_motor_control_->set_speed(0, dt_, false);
     }
+
     left_front_motor_control_->move();
     left_back_motor_control_->move();
     right_front_motor_control_->move();
     right_back_motor_control_->move();
 }
 
-void MotionControl::update(float dt) {
-    dt_ = dt;
+void MotionControl::init_task() {
+    _load_config();
+    _load_params();
+
+    update_target_max_speed();
+
+    set_milliseconds(milliseconds_);
+    set_speed_plan_parms(max_v_, max_acc_, jerk_);
+}
+
+void MotionControl::update() {
+    static unsigned long last_time = 0, current_time = 0;
+    current_time = millis();
+    dt_ = (current_time - last_time) / 1000.0;
+    last_time = current_time;
+
     left_front_motor_control_->update(dt_);
     left_back_motor_control_->update(dt_);
     right_front_motor_control_->update(dt_);
     right_back_motor_control_->update(dt_);
 }
 
-nav_msgs__msg__Odometry &MotionControl::get_odom_msg() {
-    current_wheel_v_.left_back_v = left_front_motor_control_->get_current_speed();
-    current_wheel_v_.left_front_v = left_back_motor_control_->get_current_speed();
-    current_wheel_v_.right_back_v = right_front_motor_control_->get_current_speed();
-    current_wheel_v_.right_front_v = right_back_motor_control_->get_current_speed();
+void MotionControl::clean_task() {
+    brake();
+}
+
+void MotionControl::calculate() {
+    double lf = left_front_motor_control_->get_distance_change();
+    double lb = left_back_motor_control_->get_distance_change();
+    double rf = right_front_motor_control_->get_distance_change();
+    double rb = right_back_motor_control_->get_distance_change();
+
+    if (is_mecanum_wheel_) {
+        double dx = (lf + lb + rf + rb) / 4.0;
+        double dy = (-lf + lb - rf + rb) / 4.0;
+        double dtheta = (-lf + lb + rf - rb) / (4.0 * (track_width_ + wheel_width_));
+
+        double cos_yaw = cos(current_euler_pose_.yaw);
+        double sin_yaw = sin(current_euler_pose_.yaw);
+
+        current_euler_pose_.x += cos_yaw * dx - sin_yaw * dy;
+        current_euler_pose_.y += sin_yaw * dx + cos_yaw * dy;
+        current_euler_pose_.yaw += dtheta;
+    } else {
+        double dl = 0.5 * (lf + lb);
+        double dr = 0.5 * (rf + rb);
+
+        double d_center = 0.5 * (dl + dr);
+        double dtheta = (dr - dl) / track_width_;
+        double yaw_mid = current_euler_pose_.yaw + 0.5 * dtheta;
+
+        current_euler_pose_.x += d_center * cos(yaw_mid);
+        current_euler_pose_.y += d_center * sin(yaw_mid);
+        current_euler_pose_.yaw += dtheta;
+    }
+
+    current_euler_pose_.yaw = atan2(sin(current_euler_pose_.yaw), cos(current_euler_pose_.yaw));
+
+    current_wheel_v_.left_front_v = left_front_motor_control_->get_current_speed();
+    current_wheel_v_.left_back_v = left_back_motor_control_->get_current_speed();
+    current_wheel_v_.right_front_v = right_front_motor_control_->get_current_speed();
+    current_wheel_v_.right_back_v = right_back_motor_control_->get_current_speed();
 
     current_twist_ = _forwardKinematics(current_wheel_v_);
 
-    current_euler_pose_.x += (current_twist_.linear.x + last_twist_.linear.x) / 2.0 * dt_;
-    current_euler_pose_.y += (current_twist_.linear.y + last_twist_.linear.y) / 2.0 * dt_;
-    current_euler_pose_.yaw += (current_twist_.angular.z + last_twist_.angular.z) / 2.0 * dt_;
-    while (current_euler_pose_.yaw > PI) {
-        current_euler_pose_.yaw -= 2.0 * PI;
-    }
-    while (current_euler_pose_.yaw < -PI) {
-        current_euler_pose_.yaw += 2.0 * PI;
-    }
+    odom_msg_.header.stamp = get_current_ros_time();
+    odom_msg_.pose.pose.position.x = current_euler_pose_.x;
+    odom_msg_.pose.pose.position.y = current_euler_pose_.y;
+    odom_msg_.pose.pose.position.z = 0.0;
 
-    last_twist_ = current_twist_;
+    geometry_msgs__msg__Quaternion quaternion;
 
-    return odom_msg_;
-}
+    double cy = cos(current_euler_pose_.yaw * 0.5);
+    double sy = sin(current_euler_pose_.yaw * 0.5);
+    double cp = cos(current_euler_pose_.pitch * 0.5);
+    double sp = sin(current_euler_pose_.pitch * 0.5);
+    double cr = cos(current_euler_pose_.roll * 0.5);
+    double sr = sin(current_euler_pose_.roll * 0.5);
 
-motion_status_msgs__msg__MotionStatus &MotionControl::get_motion_status_msg() {
-    motion_status_msg_.left_front_current_v = left_front_motor_control_->get_current_speed();
-    motion_status_msg_.left_front_target_v = left_front_motor_control_->get_target_speed();
-    motion_status_msg_.left_back_current_v = left_back_motor_control_->get_current_speed();
-    motion_status_msg_.left_back_target_v = left_back_motor_control_->get_target_speed();
+    quaternion.w = cr * cp * cy + sr * sp * sy;
+    quaternion.x = sr * cp * cy - cr * sp * sy;
+    quaternion.y = cr * sp * cy + sr * cp * sy;
+    quaternion.z = cr * cp * sy - sr * sp * cy;
 
-    motion_status_msg_.right_front_current_v = right_front_motor_control_->get_current_speed();
-    motion_status_msg_.right_front_target_v = right_front_motor_control_->get_target_speed();
-    motion_status_msg_.right_back_current_v = right_back_motor_control_->get_current_speed();
-    motion_status_msg_.right_back_target_v = right_back_motor_control_->get_target_speed();
+    odom_msg_.pose.pose.orientation = quaternion;
+    odom_msg_.twist.twist = current_twist_;
+
+    motion_status_msg_.left_front_current_v = current_wheel_v_.left_front_v;
+    motion_status_msg_.left_front_target_v = target_wheel_v_.left_front_v;
+    motion_status_msg_.left_back_current_v = current_wheel_v_.left_back_v;
+    motion_status_msg_.left_back_target_v = target_wheel_v_.left_back_v;
+
+    motion_status_msg_.right_front_current_v = current_wheel_v_.right_front_v;
+    motion_status_msg_.right_front_target_v = target_wheel_v_.right_front_v;
+    motion_status_msg_.right_back_current_v = current_wheel_v_.right_back_v;
+    motion_status_msg_.right_back_target_v = target_wheel_v_.right_back_v;
 
     motion_status_msg_.twist_current_linear_x = current_twist_.linear.x;
     motion_status_msg_.twist_target_linear_x = target_twist_.linear.x;
@@ -499,7 +520,13 @@ motion_status_msgs__msg__MotionStatus &MotionControl::get_motion_status_msg() {
 
     motion_status_msg_.twist_current_euler_pose_yaw = current_euler_pose_.yaw;
     motion_status_msg_.twist_target_euler_pose_yaw = target_euler_pose_.yaw;
+}
 
+nav_msgs__msg__Odometry &MotionControl::get_odom_msg() {
+    return odom_msg_;
+}
+
+motion_status_msgs__msg__MotionStatus &MotionControl::get_motion_status_msg() {
     return motion_status_msg_;
 }
 

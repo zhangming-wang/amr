@@ -9,8 +9,8 @@
 
 class YdlidarX2 {
 private:
-    YdlidarX2();
-    ~YdlidarX2();
+    YdlidarX2() = default;
+    ~YdlidarX2() = default;
 
 public:
     YdlidarX2(const YdlidarX2 &) = delete;

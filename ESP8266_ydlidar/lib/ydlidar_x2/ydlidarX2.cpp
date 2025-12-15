@@ -1,9 +1,5 @@
 #include "ydlidarX2.h"
 
-YdlidarX2::YdlidarX2() {}
-
-YdlidarX2::~YdlidarX2() {}
-
 YdlidarX2 &YdlidarX2::get_instance() {
     static YdlidarX2 instance;
     return instance;
