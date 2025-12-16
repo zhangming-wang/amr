@@ -1,25 +1,25 @@
 #pragma once
-#include "amrNode.h"
 #include "baseTask.h"
 #include "motionControl.h"
+#include "motionNode.h"
 #include "mpu6050Control.h"
 #include "singleton.h"
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 
-class AMRControl : public BaseTaskSingleton<AMRControl> {
+class MasterTask : public BaseTaskSingleton<MasterTask> {
 
-    friend class Singleton<AMRControl>;
+    friend class Singleton<MasterTask>;
+
+protected:
+    MasterTask();
+    void sleep() override { vTaskDelay(pdMS_TO_TICKS(motionControl_->get_milliseconds())); }
 
 public:
     void update() override;
 
-protected:
-    AMRControl();
-    void sleep() override { vTaskDelay(pdMS_TO_TICKS(motionControl_->get_milliseconds())); }
-
 private:
     MotionControl *motionControl_ = nullptr;
-    AMRNode *amrNode_ = nullptr;
+    MotionNode *motionNode_ = nullptr;
     MPU6050Control *mpu6050Control_ = nullptr;
 };

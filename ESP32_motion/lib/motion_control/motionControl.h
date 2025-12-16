@@ -51,12 +51,12 @@ class MotionControl : public BaseTaskSingleton<MotionControl> {
 
 protected:
     MotionControl();
+    void init_task() override { brake(); };
+    void clean_task() override { brake(); };
+    void sleep() override { vTaskDelay(pdMS_TO_TICKS(milliseconds_)); }
 
 public:
-    void init_task() override;
-    void clean_task() override;
     void update() override;
-    void sleep() override { vTaskDelay(pdMS_TO_TICKS(milliseconds_)); }
     void calculate();
 
     void move();
@@ -152,6 +152,8 @@ private:
     std::deque<WheelSpeed> wheel_speed_deque_;
 
     Preferences preferences_;
+
+    SemaphoreHandle_t mutex_; // 互斥量句柄
 
     std::shared_ptr<MotorControl> left_front_motor_control_, left_back_motor_control_, right_front_motor_control_, right_back_motor_control_;
     std::shared_ptr<PIDControl> position_loop_, line_speed_loop_, angle_speed_loop_;

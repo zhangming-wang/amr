@@ -255,13 +255,9 @@ void MPU6050Control::calculate() {
     imu_msg_.orientation_covariance[4] = 0.0025;
     imu_msg_.orientation_covariance[8] = 0.0025;
 
-    imu_msg_.angular_velocity.x = DEG2RAD(gyroX_);
-    imu_msg_.angular_velocity.y = DEG2RAD(gyroY_);
-    imu_msg_.angular_velocity.z = DEG2RAD(gyroZ_);
-
-    // imu_msg_.angular_velocity.x = gyroX_;
-    // imu_msg_.angular_velocity.y = gyroY_;
-    // imu_msg_.angular_velocity.z = gyroZ_;
+    imu_msg_.angular_velocity.x = gyroX_ * M_PI / 180.0;
+    imu_msg_.angular_velocity.y = gyroY_ * M_PI / 180.0;
+    imu_msg_.angular_velocity.z = gyroZ_ * M_PI / 180.0;
 
     imu_msg_.angular_velocity_covariance[0] = 0.02;
     imu_msg_.angular_velocity_covariance[4] = 0.02;

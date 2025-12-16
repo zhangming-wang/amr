@@ -1,17 +1,23 @@
 #pragma once
 
+#include "baseTask.h"
 #include "pwmControl.h"
-#include "singleton.h"
+#include "settings.h"
+#include "system.h"
 #include <Arduino.h>
 #include <WiFi.h>
 #include <vector>
 
-class YdlidarX2 : public Singleton<YdlidarX2> {
+class YdlidarX2 : public BaseTaskSingleton<YdlidarX2> {
 
     friend class Singleton<YdlidarX2>;
 
-public:
+protected:
     YdlidarX2();
+    void init_task() override;
+    void clean_task() override;
+
+public:
     void update() override;
 
     void motorOn(float speed_percent = 1.0);
@@ -19,10 +25,6 @@ public:
 
     int readData();
     void writeData(uint8_t *buffer, int len);
-
-protected:
-    void init_task() override;
-    void clean_task() override;
 
 private:
     int pin_pwm_ = -1, pin_tx_ = -1, pin_rx_ = -1;

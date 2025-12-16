@@ -2,6 +2,8 @@
 
 #include "I2Cdev/I2Cdev.h"
 #include "MPU6050/MPU6050_6Axis_MotionApps20.h"
+#include "baseTask.h"
+#include "rosidl_runtime_c/string_functions.h"
 #include "system.h"
 #include <Arduino.h>
 #include <Preferences.h>
@@ -15,8 +17,10 @@ class MPU6050Control : public BaseTaskSingleton<MPU6050Control> {
 
     friend class Singleton<MPU6050Control>;
 
-public:
+protected:
     MPU6050Control();
+
+public:
     void update() override;
     void calculate();
 
@@ -32,7 +36,7 @@ private:
     bool is_dmp_handle_ = true;
     bool init_success_ = false;
 
-    std::atomic<bool> is_calibrating_ = false;
+    std::atomic<bool> is_calibrating_{false};
 
     Preferences preferences_;
 

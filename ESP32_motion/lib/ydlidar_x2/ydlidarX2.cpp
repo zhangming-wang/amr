@@ -16,10 +16,10 @@ void YdlidarX2::update() {
     if (!client_.connected()) {
         auto ret = client_.connect(host_.c_str(), port_);
         if (!ret) {
-            Serial.println("雷达 wifi client 连接失败!");
+            serial_print("雷达 wifi client 连接失败!");
             vTaskDelay(pdMS_TO_TICKS(500));
         } else {
-            Serial.println("雷达 wifi client 连接成功!");
+            serial_print("雷达 wifi client 连接成功!");
         }
     } else {
         sendData();
@@ -30,15 +30,6 @@ void YdlidarX2::init_task() {
     pwmControl_.attachPin(pin_pwm_);
     motorOn();
     Serial2.begin(baudrate_, SERIAL_8N1, pin_tx_, pin_rx_);
-}
-
-void YdlidarX2::start_task() {
-    if (enable_task_run == false) {
-        enable_task_run = true;
-        motorOn();
-        Serial2.begin(baudrate_, SERIAL_8N1, pin_tx_, pin_rx_);
-        xTaskCreatePinnedToCore(sendDataLoop, "send_lidar_data_loop", 8192, this, 0, NULL, 0);
-    }
 }
 
 void YdlidarX2::clean_task() {

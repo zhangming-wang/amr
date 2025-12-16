@@ -1,5 +1,6 @@
 #pragma once
 
+#include "settings.h"
 #include <string>
 
 inline std::string constructNodeName(const std::string &ns, const std::string &name) {
@@ -23,7 +24,7 @@ inline std::string constructNodeName(const std::string &ns, const std::string &n
 #if defined(ARDUINO_ARCH_ESP32)
 
 #include <Arduino.h>
-
+#include <WiFi.h>
 inline void test_ram() {
     // 使用Arduino框架提供的PSRAM相关函数
     if (ESP.getPsramSize() > 0) {
@@ -49,6 +50,35 @@ extern void (*serial_print)(const std::string &);
 
 inline void restart_device() {
     ESP.restart();
+}
+
+inline void monitor_wifi() {
+    static bool connected = false;
+
+    if (WiFi.status() != WL_CONNECTED) {
+        connected = false;
+        WiFi.begin(wifi_name, wifi_password);
+        Serial.printf("\nConnecting to WiFi...");
+        unsigned long start = millis();
+        while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+            delay(500);
+            Serial.print(".");
+        }
+        Serial.println();
+        delay(500);
+    } else {
+        if (connected == false) {
+            connected = true;
+            Serial.println("===== WiFi Info =====");
+            Serial.printf("IP      : %s\n", WiFi.localIP().toString().c_str());
+            Serial.printf("RSSI    : %d dBm\n", WiFi.RSSI());
+            Serial.printf("MAC     : %s\n", WiFi.macAddress().c_str());
+            Serial.printf("SSID    : %s\n", WiFi.SSID().c_str());
+            Serial.println("=====================");
+            Serial.println("WiFi connect success!");
+        }
+        delay(1000);
+    }
 }
 
 #endif // ARDUINO_ARCH_ESP32

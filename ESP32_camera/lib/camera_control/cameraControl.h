@@ -1,8 +1,14 @@
 #pragma once
+#include "baseTask.h"
 #include "esp_camera.h"
+#include "system.h"
 #include <Arduino.h>
 #include <Preferences.h>
 #include <WiFi.h>
+#include <micro_ros_utilities/string_utilities.h>
+#include <micro_ros_utilities/type_utilities.h>
+#include <sensor_msgs/msg/compressed_image.h>
+#include <sensor_msgs/msg/image.h>
 
 #define PWDN_GPIO_NUM -1
 #define RESET_GPIO_NUM -1
@@ -60,21 +66,24 @@ typedef struct {
     pixformat_t pixformat; // 像素格式
 } camera_params_t;
 
-class CameraControl {
-private:
+class CameraControl : public BaseTaskSingleton<CameraControl> {
+
+    friend class Singleton<CameraControl>;
+
+protected:
     CameraControl();
-    ~CameraControl();
 
 public:
-    CameraControl(const CameraControl &) = delete;
-    CameraControl &operator=(const CameraControl &) = delete;
+    void update() override {}
 
-    static CameraControl &get_instance();
-    void init(bool load = true);
-    bool isInit();
+    void init_camera(bool load = true);
+    bool camera_inited();
 
-    camera_fb_t *capture_photo();
-    void release_photo(camera_fb_t *fb);
+    void capture_image();
+    void release_image();
+    camera_fb_t *get_image();
+
+    sensor_msgs__msg__CompressedImage &get_image_msg();
 
     void set_params(const camera_params_t &params);
     const camera_params_t &get_params();
@@ -89,11 +98,12 @@ public:
 private:
     camera_config_t config_;
     camera_params_t params_;
+    sensor_msgs__msg__CompressedImage image_msg_;
 
     Preferences preferences_;
+    std::atomic<camera_fb_t *> image_{nullptr};
+    sensor_t *sensor_ = nullptr;
 
     void _set_params();
     void _set_config();
-
-    sensor_t *sensor_ = nullptr;
 };

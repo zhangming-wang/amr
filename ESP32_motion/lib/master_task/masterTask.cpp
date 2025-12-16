@@ -1,23 +1,23 @@
-#include "amrControl.h"
+#include "masterTask.h"
 
-AMRControl::AMRControl() {
+MasterTask::MasterTask() {
     task_name_ = "amr_control_task";
-    core_id_ = 1;
     priority_ = 9;
+    stack_size_ = 16384;
 
     motionControl_ = &MotionControl::instance();
-    amrNode_ = &AMRNode::instance();
+    motionNode_ = &MotionNode::instance();
     mpu6050Control_ = &MPU6050Control::instance();
 }
 
-void AMRControl::update() {
+void MasterTask::update() {
     motionControl_->update();
     mpu6050Control_->update();
 
     motionControl_->calculate();
     mpu6050Control_->calculate();
 
-    amrNode_->publish_msgs();
+    motionNode_->publish_msgs();
 
     motionControl_->move();
 }

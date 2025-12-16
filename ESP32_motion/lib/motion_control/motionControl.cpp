@@ -13,6 +13,16 @@ MotionControl::MotionControl() {
 
     rosidl_runtime_c__String__assign(&odom_msg_.header.frame_id, "odom");          // 参考坐标系
     rosidl_runtime_c__String__assign(&odom_msg_.child_frame_id, "base_footprint"); // 机器人底盘
+
+    mutex_ = xSemaphoreCreateMutex();
+
+    _load_config();
+    _load_params();
+
+    update_target_max_speed();
+
+    set_milliseconds(milliseconds_);
+    set_speed_plan_parms(max_v_, max_acc_, jerk_);
 }
 
 void MotionControl::set_model_params(float track_width, float wheel_width) {
@@ -406,16 +416,6 @@ void MotionControl::move() {
     right_back_motor_control_->move();
 }
 
-void MotionControl::init_task() {
-    _load_config();
-    _load_params();
-
-    update_target_max_speed();
-
-    set_milliseconds(milliseconds_);
-    set_speed_plan_parms(max_v_, max_acc_, jerk_);
-}
-
 void MotionControl::update() {
     static unsigned long last_time = 0, current_time = 0;
     current_time = millis();
@@ -426,10 +426,6 @@ void MotionControl::update() {
     left_back_motor_control_->update(dt_);
     right_front_motor_control_->update(dt_);
     right_back_motor_control_->update(dt_);
-}
-
-void MotionControl::clean_task() {
-    brake();
 }
 
 void MotionControl::calculate() {
@@ -471,7 +467,6 @@ void MotionControl::calculate() {
 
     current_twist_ = _forwardKinematics(current_wheel_v_);
 
-    odom_msg_.header.stamp = get_current_ros_time();
     odom_msg_.pose.pose.position.x = current_euler_pose_.x;
     odom_msg_.pose.pose.position.y = current_euler_pose_.y;
     odom_msg_.pose.pose.position.z = 0.0;

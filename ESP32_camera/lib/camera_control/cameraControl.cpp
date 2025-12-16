@@ -1,21 +1,15 @@
 #include "cameraControl.h"
 
 CameraControl::CameraControl() {
+    image_msg_.header.frame_id = micro_ros_string_utilities_init("camera_link");
+    image_msg_.format = micro_ros_string_utilities_init("jpeg");
 }
 
-CameraControl::~CameraControl() {
-}
-
-CameraControl &CameraControl::get_instance() {
-    static CameraControl instance;
-    return instance;
-}
-
-void CameraControl::init(bool load) {
+void CameraControl::init_camera(bool load) {
     if (sensor_) {
         esp_err_t err = esp_camera_deinit();
         if (err != ESP_OK) {
-            Serial.printf("Failed to deinit camera: %d\n", err);
+            serial_print("Failed to deinit camera: " + std::to_string(err));
         }
         sensor_ = nullptr;
     }
@@ -26,12 +20,12 @@ void CameraControl::init(bool load) {
     esp_err_t err = esp_camera_init(&config_);
     if (err != ESP_OK) {
         sensor_ = nullptr;
-        Serial.printf("摄像头初始化失败，错误代码: 0x%x\n", err);
+        serial_print("Camera init failed with error: " + std::to_string(err));
         return;
     }
     sensor_ = esp_camera_sensor_get();
     if (!sensor_) {
-        Serial.println("无法获取摄像头传感器");
+        serial_print("无法获取摄像头传感器.");
         return;
     }
 
@@ -40,28 +34,50 @@ void CameraControl::init(bool load) {
     else
         _set_params();
 
-    Serial.println("摄像头初始化成功");
+    serial_print("摄像头初始化成功");
 }
 
-bool CameraControl::isInit() {
+bool CameraControl::camera_inited() {
     return sensor_ != nullptr;
 }
 
-camera_fb_t *CameraControl::capture_photo() {
+void CameraControl::capture_image() {
     if (!sensor_)
-        return nullptr; // 摄像头未初始化
+        return; // 摄像头未初始化
 
-    camera_fb_t *fb = esp_camera_fb_get(); // 获取帧缓冲
-    if (!fb) {
-        Serial.println("Failed to get camera frame!");
-        return nullptr;
+    release_image();
+
+    image_.store(esp_camera_fb_get()); // 获取帧缓冲
+    if (!image_.load()) {
+        serial_print("Failed to get camera frame!");
     }
-    return fb;
 }
-void CameraControl::release_photo(camera_fb_t *fb) {
-    if (fb) {
-        esp_camera_fb_return(fb);
+
+void CameraControl::release_image() {
+    if (image_.load()) {
+        esp_camera_fb_return(image_.load());
+        image_.store(nullptr);
+
+        image_msg_.data.capacity = 0;
+        image_msg_.data.data = nullptr;
+        image_msg_.data.size = 0;
     }
+}
+
+camera_fb_t *CameraControl::get_image() {
+    return image_.load();
+}
+sensor_msgs__msg__CompressedImage &CameraControl::get_image_msg() {
+    if (image_.load()) {
+        image_msg_.data.capacity = image_.load()->len;
+        image_msg_.data.data = (uint8_t *)image_.load()->buf;
+        image_msg_.data.size = image_.load()->len;
+    } else {
+        image_msg_.data.capacity = 0;
+        image_msg_.data.data = nullptr;
+        image_msg_.data.size = 0;
+    }
+    return image_msg_;
 }
 
 void CameraControl::set_params(const camera_params_t &params) {
@@ -178,32 +194,32 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_brightness(sensor_, params_.status.brightness);
         if (ret != 0) {
             params_.status.brightness = sensor_->status.brightness;
-            Serial.printf("Failed to set brightness: %d\n", ret);
+            serial_print("Failed to set brightness: " + std::to_string(ret));
         }
     }
 
     if (params_.status.contrast != sensor_->status.contrast) {
         auto ret = sensor_->set_contrast(sensor_, params_.status.contrast);
         if (ret != 0)
-            Serial.printf("Failed to set contrast: %d\n", ret);
+            serial_print("Failed to set contrast: " + std::to_string(ret));
     }
 
     if (params_.status.saturation != sensor_->status.saturation) {
         auto ret = sensor_->set_saturation(sensor_, params_.status.saturation);
         if (ret != 0)
-            Serial.printf("Failed to set saturation: %d\n", ret);
+            serial_print("Failed to set saturation: " + std::to_string(ret));
     }
 
     if (params_.status.sharpness != sensor_->status.sharpness) {
         auto ret = sensor_->set_sharpness(sensor_, params_.status.sharpness);
         if (ret != 0)
-            Serial.printf("Failed to set sharpness: %d\n", ret);
+            serial_print("Failed to set sharpness: " + std::to_string(ret));
     }
 
     if (params_.status.denoise != sensor_->status.denoise) {
         auto ret = sensor_->set_denoise(sensor_, params_.status.denoise);
         if (ret != 0)
-            Serial.printf("Failed to set denoise: %d\n", ret);
+            serial_print("Failed to set denoise: " + std::to_string(ret));
     }
 
     // 图像格式与尺寸
@@ -211,7 +227,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_pixformat(sensor_, static_cast<pixformat_t>(params_.pixformat));
         if (ret != 0) {
             params_.pixformat = sensor_->pixformat;
-            Serial.printf("Failed to set pixformat: %d\n", ret);
+            serial_print("Failed to set pixformat: " + std::to_string(ret));
         }
     }
 
@@ -219,9 +235,9 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_framesize(sensor_, static_cast<framesize_t>(params_.status.framesize));
         if (ret != 0) {
             params_.status.framesize = sensor_->status.framesize;
-            Serial.printf("Failed to set framesize: %d\n", ret);
+            serial_print("Failed to set framesize: " + std::to_string(ret));
         } else {
-            Serial.println("Success to set framesize");
+            serial_print("Success to set framesize");
         }
     }
 
@@ -229,7 +245,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_quality(sensor_, params_.status.quality);
         if (ret != 0) {
             params_.status.quality = sensor_->status.quality;
-            Serial.printf("Failed to set quality: %d\n", ret);
+            serial_print("Failed to set quality: " + std::to_string(ret));
         }
     }
 
@@ -238,7 +254,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_gainceiling(sensor_, static_cast<gainceiling_t>(params_.status.gainceiling));
         if (ret != 0) {
             params_.status.gainceiling = sensor_->status.gainceiling;
-            Serial.printf("Failed to set gainceiling: %d\n", ret);
+            serial_print("Failed to set gainceiling: " + std::to_string(ret));
         }
     }
 
@@ -246,7 +262,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_gain_ctrl(sensor_, params_.status.agc);
         if (ret != 0) {
             params_.status.agc = sensor_->status.agc;
-            Serial.printf("Failed to set gain_ctrl: %d\n", ret);
+            serial_print("Failed to set gain_ctrl: " + std::to_string(ret));
         }
     }
 
@@ -254,7 +270,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_exposure_ctrl(sensor_, params_.status.aec);
         if (ret != 0) {
             params_.status.aec = sensor_->status.aec;
-            Serial.printf("Failed to set exposure_ctrl: %d\n", ret);
+            serial_print("Failed to set exposure_ctrl: " + std::to_string(ret));
         }
     }
 
@@ -262,7 +278,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_aec2(sensor_, params_.status.aec2);
         if (ret != 0) {
             params_.status.aec2 = sensor_->status.aec2;
-            Serial.printf("Failed to set aec2: %d\n", ret);
+            serial_print("Failed to set aec2: " + std::to_string(ret));
         }
     }
 
@@ -270,7 +286,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_agc_gain(sensor_, params_.status.agc_gain);
         if (ret != 0) {
             params_.status.agc_gain = sensor_->status.agc_gain;
-            Serial.printf("Failed to set agc_gain: %d\n", ret);
+            serial_print("Failed to set agc_gain: " + std::to_string(ret));
         }
     }
 
@@ -278,7 +294,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_aec_value(sensor_, params_.status.aec_value);
         if (ret != 0) {
             params_.status.aec_value = sensor_->status.aec_value;
-            Serial.printf("Failed to set aec_value: %d\n", ret);
+            serial_print("Failed to set aec_value: " + std::to_string(ret));
         }
     }
 
@@ -286,7 +302,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_ae_level(sensor_, params_.status.ae_level);
         if (ret != 0) {
             params_.status.ae_level = sensor_->status.ae_level;
-            Serial.printf("Failed to set ae_level: %d\n", ret);
+            serial_print("Failed to set ae_level: " + std::to_string(ret));
         }
     }
 
@@ -295,7 +311,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_whitebal(sensor_, params_.status.awb);
         if (ret != 0) {
             params_.status.awb = sensor_->status.awb;
-            Serial.printf("Failed to set whitebal: %d\n", ret);
+            serial_print("Failed to set whitebal: " + std::to_string(ret));
         }
     }
 
@@ -303,7 +319,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_awb_gain(sensor_, params_.status.awb_gain);
         if (ret != 0) {
             params_.status.awb_gain = sensor_->status.awb_gain;
-            Serial.printf("Failed to set awb_gain: %d\n", ret);
+            serial_print("Failed to set awb_gain: " + std::to_string(ret));
         }
     }
 
@@ -311,7 +327,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_wb_mode(sensor_, params_.status.wb_mode);
         if (ret != 0) {
             params_.status.wb_mode = sensor_->status.wb_mode;
-            Serial.printf("Failed to set wb_mode: %d\n", ret);
+            serial_print("Failed to set wb_mode: " + std::to_string(ret));
         }
     }
 
@@ -319,7 +335,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_dcw(sensor_, params_.status.dcw);
         if (ret != 0) {
             params_.status.dcw = sensor_->status.dcw;
-            Serial.printf("Failed to set dcw: %d\n", ret);
+            serial_print("Failed to set dcw: " + std::to_string(ret));
         }
     }
 
@@ -327,7 +343,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_bpc(sensor_, params_.status.bpc);
         if (ret != 0) {
             params_.status.bpc = sensor_->status.bpc;
-            Serial.printf("Failed to set bpc: %d\n", ret);
+            serial_print("Failed to set bpc: " + std::to_string(ret));
         }
     }
 
@@ -335,7 +351,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_wpc(sensor_, params_.status.wpc);
         if (ret != 0) {
             params_.status.wpc = sensor_->status.wpc;
-            Serial.printf("Failed to set wpc: %d\n", ret);
+            serial_print("Failed to set wpc: " + std::to_string(ret));
         }
     }
 
@@ -343,7 +359,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_raw_gma(sensor_, params_.status.raw_gma);
         if (ret != 0) {
             params_.status.raw_gma = sensor_->status.raw_gma;
-            Serial.printf("Failed to set raw_gma: %d\n", ret);
+            serial_print("Failed to set raw_gma: " + std::to_string(ret));
         }
     }
 
@@ -352,7 +368,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_hmirror(sensor_, params_.status.hmirror);
         if (ret != 0) {
             params_.status.hmirror = sensor_->status.hmirror;
-            Serial.printf("Failed to set hmirror: %d\n", ret);
+            serial_print("Failed to set hmirror: " + std::to_string(ret));
         }
     }
 
@@ -360,7 +376,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_vflip(sensor_, params_.status.vflip);
         if (ret != 0) {
             params_.status.vflip = sensor_->status.vflip;
-            Serial.printf("Failed to set vflip: %d\n", ret);
+            serial_print("Failed to set vflip: " + std::to_string(ret));
         }
     }
 
@@ -368,7 +384,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_special_effect(sensor_, params_.status.special_effect);
         if (ret != 0) {
             params_.status.special_effect = sensor_->status.special_effect;
-            Serial.printf("Failed to set special_effect: %d\n", ret);
+            serial_print("Failed to set special_effect: " + std::to_string(ret));
         }
     }
 
@@ -376,7 +392,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_colorbar(sensor_, params_.status.colorbar);
         if (ret != 0) {
             params_.status.colorbar = sensor_->status.colorbar;
-            Serial.printf("Failed to set colorbar: %d\n", ret);
+            serial_print("Failed to set colorbar: " + std::to_string(ret));
         }
     }
 
@@ -385,7 +401,7 @@ void CameraControl::_set_params() {
         auto ret = sensor_->set_lenc(sensor_, params_.status.lenc);
         if (ret != 0) {
             params_.status.lenc = sensor_->status.lenc;
-            Serial.printf("Failed to set lenc: %d\n", ret);
+            serial_print("Failed to set lenc: " + std::to_string(ret));
         }
     }
 
@@ -490,21 +506,21 @@ void CameraControl::load_config() {
 
     if (psramFound()) {
         // 打印PSRAM总大小
-        Serial.printf("PSRAM总大小: %.2f MB\n", ESP.getPsramSize() / (1024.0 * 1024.0));
+        serial_print("PSRAM总大小: " + std::to_string(ESP.getPsramSize() / (1024.0 * 1024.0)) + " MB");
 
         // 打印当前可用PSRAM大小
         size_t free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-        Serial.printf("可用PSRAM大小: %.2f MB\n", free_psram / (1024.0 * 1024.0));
+        serial_print("可用PSRAM大小: " + std::to_string(free_psram / (1024.0 * 1024.0)) + " MB");
 
         config_.fb_count = 3;
         config_.fb_location = CAMERA_FB_IN_PSRAM; // 如果PSRAM可用，使用PSRAM
         config_.grab_mode = CAMERA_GRAB_LATEST;
-        Serial.println("PSRAM found, using PSRAM for frame buffer.");
+        serial_print("Configured to use PSRAM for frame buffer with 3 buffers.");
     } else {
         config_.fb_count = 1;
         config_.fb_location = CAMERA_FB_IN_DRAM;
         config_.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
-        Serial.println("No PSRAM found, using internal DRAM for frame buffer.");
+        serial_print("No PSRAM found, using internal DRAM for frame buffer.");
     }
     config_.fb_count = preferences_.getInt("fb_count", config_.fb_count);
     config_.fb_location = static_cast<camera_fb_location_t>(preferences_.getInt("fb_location", config_.fb_location));
@@ -520,5 +536,5 @@ void CameraControl::_set_config() {
     if (!sensor_)
         return; // 确保摄像头已初始化
 
-    init(false);
+    init_camera(false);
 }

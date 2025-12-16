@@ -1,8 +1,11 @@
-#include "amrControl.h"
+#include "masterTask.h"
+#include "motionNode.h"
 #include "settings.h"
-#include "tools.h"
+#include "system.h"
 #include "ydlidarX2.h"
 #include <Arduino.h>
+
+void (*serial_print)(const std::string &) = MotionNode::serial_print;
 
 void setup() {
     Serial.begin(115200);
@@ -15,39 +18,15 @@ void setup() {
     WiFi.mode(WIFI_STA);
     WiFi.persistent(false);
 
-    AMRControl &amrControl = AMRControl::instance();
+    MasterTask &masterTask = MasterTask::instance();
     YdlidarX2 &ydlidarX2 = YdlidarX2::instance();
-    AMRNode &amrNode = AMRNode::instance();
+    MotionNode &motionNode = MotionNode::instance();
 
-    amrControl.start_task();
+    masterTask.start_task();
     ydlidarX2.start_task();
-    amrNode.start_task();
+    motionNode.start_task();
 }
 
-bool connected = false;
-
 void loop() {
-    if (WiFi.status() != WL_CONNECTED) {
-        connected = false;
-        WiFi.begin(wifi_name, wifi_password);
-        Serial.printf("\nConnecting to WiFi...");
-        unsigned long start = millis();
-        while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
-            delay(500);
-            Serial.print(".");
-        }
-        Serial.println();
-    } else {
-        if (connected == false) {
-            connected = true;
-            Serial.println("===== WiFi Info =====");
-            Serial.printf("IP      : %s\n", WiFi.localIP().toString().c_str());
-            Serial.printf("RSSI    : %d dBm\n", WiFi.RSSI());
-            Serial.printf("MAC     : %s\n", WiFi.macAddress().c_str());
-            Serial.printf("SSID    : %s\n", WiFi.SSID().c_str());
-            Serial.println("=====================");
-            Serial.println("WiFi connect success!");
-        }
-    }
-    delay(500);
+    monitor_wifi();
 }
