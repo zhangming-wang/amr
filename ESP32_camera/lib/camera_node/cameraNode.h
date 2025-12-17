@@ -20,8 +20,6 @@ class CameraNode : public BaseNode<CameraNode> {
 
 protected:
     CameraNode();
-    void sleep() override { vTaskDelay(pdMS_TO_TICKS(cameraControl_->get_params().milliseconds)); }
-    void spin_micro_ros() override { rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(cameraControl_->get_params().milliseconds)); };
 
     bool init_micro_ros() override;
     void clean_micro_ros() override;

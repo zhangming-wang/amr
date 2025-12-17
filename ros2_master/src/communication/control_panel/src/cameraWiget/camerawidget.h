@@ -3,7 +3,7 @@
 
 #include "../cameraNode/cameraNode.h"
 #include "../common/enum.h"
-#include "../common/tools.h"
+#include "../common/system.h"
 #include "ui_camerawidget.h"
 #include <QDateTime>
 #include <QDebug>

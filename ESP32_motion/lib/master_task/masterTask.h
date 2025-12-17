@@ -13,7 +13,6 @@ class MasterTask : public BaseTaskSingleton<MasterTask> {
 
 protected:
     MasterTask();
-    void sleep() override { vTaskDelay(pdMS_TO_TICKS(motionControl_->get_milliseconds())); }
 
 public:
     void update() override;
@@ -22,4 +21,6 @@ private:
     MotionControl *motionControl_ = nullptr;
     MotionNode *motionNode_ = nullptr;
     MPU6050Control *mpu6050Control_ = nullptr;
+
+    TickType_t task_tick_count_;
 };

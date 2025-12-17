@@ -2,9 +2,10 @@
 
 CameraNode::CameraNode() {
     task_name_ = "camera_node_task";
+    num_handles_ = 3;
+
     camera_image_topic_name_ = constructNodeName(esp32_camera_node_namespace, esp32_camera_image_topic_name);
     camera_service_name_ = constructNodeName(esp32_camera_node_namespace, esp32_camera_settings_service_name);
-    num_handles_ = 2;
 
     cameraControl_ = &CameraControl::instance();
 }
@@ -72,7 +73,7 @@ void CameraNode::publish_image_msg() {
 
     auto image_msg = cameraControl_->get_image_msg();
     if (connected()) {
-        update_timestamp(image_msg.header.stamp);
+        image_msg.header.stamp = get_timestamp();
         rcl_ret_t ret = rcl_publish(&image_publisher_, &image_msg, NULL);
         if (ret != RCL_RET_OK) {
             Serial.printf("error: 发布图像失败，错误码: %d ，图像大小: %d\n", ret, image_msg.data.size);

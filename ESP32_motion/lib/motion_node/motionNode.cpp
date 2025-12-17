@@ -2,7 +2,7 @@
 
 MotionNode::MotionNode() {
     task_name_ = "motion_node_task";
-    num_handles_ = 4;
+    num_handles_ = 6;
 
     motion_cmd_vel_topic_name_ = constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name);
     motion_status_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_status_topic_name);
@@ -272,11 +272,15 @@ void MotionNode::msg_twist_callback(const void *msg) {
 }
 
 void MotionNode::publish_msgs() {
+    if (!connected_)
+        return;
+
     auto odom_msg = motionControl_->get_odom_msg();
     auto imu_msg = mpu6050Control_->get_imu_msg();
 
-    update_timestamp(odom_msg.header.stamp);
-    update_timestamp(imu_msg.header.stamp);
+    auto stamp = get_timestamp();
+    odom_msg.header.stamp = stamp;
+    imu_msg.header.stamp = stamp;
 
     rcl_ret_t ret;
     ret = rcl_publish(&odom_publisher_, &odom_msg, NULL);

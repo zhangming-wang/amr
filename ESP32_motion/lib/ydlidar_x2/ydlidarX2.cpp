@@ -23,6 +23,7 @@ void YdlidarX2::update() {
         }
     } else {
         sendData();
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
@@ -46,6 +47,9 @@ void YdlidarX2::motorOff() {
 }
 
 int YdlidarX2::readData() {
+    if (!Serial2)
+        return 0;
+
     if (Serial2.available()) {
         return Serial2.read();
     } else {

@@ -5,6 +5,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "singleton.h"
+#include <Arduino.h>
 #include <atomic>
 #include <cstdint>
 #include <string>
@@ -17,7 +18,6 @@ protected:
 
     virtual void clean_task() {}
     virtual void init_task() {}
-    virtual void sleep() { vTaskDelay(pdMS_TO_TICKS(10)); }
 
     std::atomic_bool enable_task_run_{false};
     std::atomic<TaskHandle_t> task_handle_{nullptr};
@@ -30,7 +30,7 @@ public:
     BaseTask(const BaseTask &) = delete;
     BaseTask &operator=(const BaseTask &) = delete;
 
-    virtual void update() = 0;
+    virtual void update() { vTaskDelay(pdMS_TO_TICKS(10)); }
 
     void start_task() {
         if (task_handle_.load()) {
@@ -49,6 +49,9 @@ public:
 
         if (ret == pdPASS) {
             task_handle_.store(handle);
+            Serial.printf("Create task %s successfully! \n", task_name_.c_str());
+        } else {
+            Serial.printf("Create task %s failed! \n", task_name_.c_str());
         }
     }
     void stop_task() {
@@ -76,7 +79,6 @@ private:
         self->init_task();
         while (self->enable_task_run_.load()) {
             self->update();
-            self->sleep();
         }
         self->clean_task();
 

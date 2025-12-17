@@ -3,7 +3,7 @@
 
 #include "../common/enum.h"
 #include "../common/settings.h"
-#include "../common/tools.h"
+#include "../common/system.h"
 #include "../motionNode/motionNode.h"
 #include "../qcustomplot/qcustomplot.h"
 #include "./ui_motionwidget.h"

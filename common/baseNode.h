@@ -22,6 +22,7 @@
 #include <rclc/rclc.h>
 #include <rcutils/error_handling.h>
 #include <rosidl_runtime_c/string_functions.h>
+#include <std_msgs/msg/empty.h>
 #include <std_msgs/msg/int32.h>
 #include <std_msgs/msg/string.h>
 #include <string>
@@ -42,82 +43,98 @@ protected:
     rcl_clock_t clock_;
     rclc_executor_t executor_;
     rcl_time_point_value_t now_ns_;
-    rcl_publisher_t serial_msg_publisher_;
-
+    rcl_publisher_t serial_msg_publisher_, heartbeat_publisher_;
+    rcl_timer_t heartbeat_timer_;
     bool support_initialized_ = false;
     bool node_initialized_ = false;
     bool executor_initialized_ = false;
     bool clock_initialized_ = false;
     bool serial_msg_publisher_initialized_ = false;
+    bool heartbeat_timer_initialized_ = false;
+    bool heartbeat_publisher_initialized_ = false;
     bool connected_ = false;
 
-    std::string serial_msg_topic_name_;
+    std::string serial_msg_topic_name_, heartbeat_topic_name_;
 
 protected:
     BaseNode() {
         ip_ = wifi_IP;
         port_ = micro_ros_port;
-        serial_msg_topic_name_ = esp32_motion_serial_msg_topic_name;
         node_name_ = esp32_motion_node_name;
         node_namespace_ = esp32_motion_node_namespace;
+        serial_msg_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_serial_msg_topic_name);
+        heartbeat_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_heartbeat_topic_name);
 
         this->task_name_ = "base_node_task";
-        this->priority_ = 1;
-
+        allocator_ = rcl_get_default_allocator();
         IPAddress agent_ip;
         agent_ip.fromString(String(ip_.c_str()));
         locator_.address = agent_ip;
         locator_.port = port_;
-        allocator_ = rcl_get_default_allocator();
     }
 
     virtual bool init_micro_ros() { return true; }
     virtual void clean_micro_ros() {}
-    virtual void spin_micro_ros() { rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(10)); }
-    void update_timestamp(builtin_interfaces__msg__Time &stamp) {
+
+    builtin_interfaces__msg__Time get_timestamp() {
+        builtin_interfaces__msg__Time stamp;
         rcl_ret_t ret = rcl_clock_get_now(&clock_, &now_ns_);
         if (ret != RCL_RET_OK) {
             Serial.printf("rcl_clock_get_now error: %d\n", ret);
             stamp.sec = 0;
             stamp.nanosec = 0;
-            return;
+        } else {
+            stamp.sec = now_ns_ / 1000000000;
+            stamp.nanosec = now_ns_ % 1000000000;
         }
-        stamp.sec = now_ns_ / 1000000000;
-        stamp.nanosec = now_ns_ % 1000000000;
+        return stamp;
     }
 
 public:
     void update() override {
         if (!connected_) {
-            if (!init_micro_ros()) {
+            if (_init_micro_ros()) {
+                connected_ = true;
+                Serial.println("motion node task is running...");
+            } else {
                 Serial.println("motion node init failed, try again...");
                 vTaskDelay(pdMS_TO_TICKS(500));
                 return;
-            } else {
-                Serial.println("motion node task is running...");
-                connected_ = true;
             }
         }
-        spin_micro_ros();
         if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
-            Serial.println("motion node is disconnected, reconnecting...");
             connected_ = false;
-            vTaskDelay(pdMS_TO_TICKS(500));
+            return;
         }
+
+        rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(5));
+
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
     static inline void serial_print(const std::string &msg) {
         Serial.println(msg.c_str());
-
-        if (BaseNode<T>::instance().connected()) {
+        auto &instance = BaseNode<T>::instance();
+        if (instance.connected()) {
             std_msgs__msg__String ros_msg;
             rosidl_runtime_c__String__init(&ros_msg.data);
             rosidl_runtime_c__String__assign(&ros_msg.data, msg.c_str());
 
             rcl_ret_t ret;
-            ret = rcl_publish(&BaseNode<T>::instance().serial_msg_publisher_, &ros_msg, NULL);
+            ret = rcl_publish(&instance.serial_msg_publisher_, &ros_msg, NULL);
             if (ret != RCL_RET_OK) {
                 Serial.printf("error: pub serial msg failed: %d\n", ret);
+            }
+        }
+    }
+
+    static inline void heartbeat_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+        auto &instance = BaseNode<T>::instance();
+        if (instance.connected()) {
+            std_msgs__msg__Empty msg;
+            rcl_ret_t ret = rcl_publish(&instance.heartbeat_publisher_, &msg, NULL);
+            if (ret != RCL_RET_OK) {
+                Serial.printf("error: pub heartbeat msg failed: %d\n", ret);
             }
         }
     }
@@ -133,7 +150,7 @@ private:
             return false;
         }
 
-        clean_micro_ros();
+        _clean_micro_ros();
 
         auto status = rmw_uros_set_custom_transport(
             false,
@@ -150,6 +167,11 @@ private:
 
         // set_microros_wifi_transports(const_cast<char *>(wifi_name_.c_str()), const_cast<char *>(wifi_passward_.c_str()), agent_ip, port_);
 
+        if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
+            Serial.println("ping agent failed!");
+            return false;
+        }
+
         rcl_ret_t ret;
         if (!support_initialized_) {
             ret = rclc_support_init(&support_, 0, NULL, &allocator_);
@@ -160,9 +182,14 @@ private:
             support_initialized_ = true;
         }
 
-        while (!rmw_uros_epoch_synchronized()) {
-            rmw_uros_sync_session(1000);
-            delay(10);
+        if (rmw_uros_sync_session(100) != RMW_RET_OK) {
+            Serial.println("rmw_uros_sync_session failed!");
+            return false;
+        } else {
+            if (!rmw_uros_epoch_synchronized()) {
+                Serial.println("time sync failed!");
+                return false;
+            }
         }
 
         if (!node_initialized_) {
@@ -198,6 +225,27 @@ private:
             }
             serial_msg_publisher_initialized_ = true;
         }
+        if (!heartbeat_publisher_initialized_) {
+            ret = rclc_publisher_init_default(&heartbeat_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Empty), heartbeat_topic_name_.c_str());
+            if (ret != RCL_RET_OK) {
+                Serial.printf("heartbeat_publisher_:rclc_publisher_init_default error: %d\n", ret);
+                return false;
+            }
+            heartbeat_publisher_initialized_ = true;
+        }
+        if (!heartbeat_timer_initialized_) {
+            ret = rclc_timer_init_default(&heartbeat_timer_, &support_, RCL_MS_TO_NS(1000), heartbeat_timer_callback);
+            if (ret != RCL_RET_OK) {
+                Serial.printf("heartbeat_timer_: rclc_timer_init_default error: %d\n", ret);
+                return false;
+            }
+            ret = rclc_executor_add_timer(&executor_, &heartbeat_timer_);
+            if (ret != RCL_RET_OK) {
+                Serial.printf("heartbeat_timer_: rclc_executor_add_timer error: %d\n", ret);
+                return false;
+            }
+            heartbeat_timer_initialized_ = true;
+        }
 
         return init_micro_ros();
     }
@@ -205,6 +253,20 @@ private:
         clean_micro_ros();
 
         rcl_ret_t ret;
+        if (heartbeat_timer_initialized_) {
+            ret = rcl_timer_fini(&heartbeat_timer_);
+            if (ret != RCL_RET_OK) {
+                Serial.printf("heartbeat_timer_: rcl_timer_fini error: %d\n", ret);
+            }
+            heartbeat_timer_initialized_ = false;
+        }
+        if (heartbeat_publisher_initialized_) {
+            ret = rcl_publisher_fini(&heartbeat_publisher_, &node_);
+            if (ret != RCL_RET_OK) {
+                Serial.printf("heartbeat_publisher_:rcl_publisher_fini error: %d\n", ret);
+            }
+            heartbeat_publisher_initialized_ = false;
+        }
         if (serial_msg_publisher_initialized_) {
             ret = rcl_publisher_fini(&serial_msg_publisher_, &node_);
             if (ret != RCL_RET_OK) {

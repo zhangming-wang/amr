@@ -48,8 +48,23 @@ inline void test_ram() {
 
 extern void (*serial_print)(const std::string &);
 
-inline void restart_device() {
+inline void restart_task(void *param) {
+    vTaskDelay(pdMS_TO_TICKS(500)); // 等待 500ms，确保当前逻辑跑完
     ESP.restart();
+}
+
+inline void restart_device_async() {
+    xTaskCreate(
+        restart_task,
+        "restart_task",
+        2048,
+        nullptr,
+        1,
+        nullptr);
+}
+
+inline void restart_device() {
+    restart_device_async();
 }
 
 inline void monitor_wifi() {
@@ -61,11 +76,11 @@ inline void monitor_wifi() {
         Serial.printf("\nConnecting to WiFi...");
         unsigned long start = millis();
         while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
-            delay(500);
+            vTaskDelay(pdMS_TO_TICKS(500));
             Serial.print(".");
         }
         Serial.println();
-        delay(500);
+        vTaskDelay(pdMS_TO_TICKS(500));
     } else {
         if (connected == false) {
             connected = true;
@@ -77,7 +92,7 @@ inline void monitor_wifi() {
             Serial.println("=====================");
             Serial.println("WiFi connect success!");
         }
-        delay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

@@ -53,7 +53,6 @@ protected:
     MotionControl();
     void init_task() override { brake(); };
     void clean_task() override { brake(); };
-    void sleep() override { vTaskDelay(pdMS_TO_TICKS(milliseconds_)); }
 
 public:
     void update() override;

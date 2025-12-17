@@ -19,9 +19,6 @@ class MotionNode : public BaseNode<MotionNode> {
 
 protected:
     MotionNode();
-    void sleep() override { vTaskDelay(pdMS_TO_TICKS(motionControl_->get_milliseconds())); }
-    void spin_micro_ros() override { rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(motionControl_->get_milliseconds())); };
-
     bool init_micro_ros() override;
     void clean_micro_ros() override;
 
