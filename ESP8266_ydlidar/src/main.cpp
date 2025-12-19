@@ -10,7 +10,7 @@ YdlidarX2 *ydlidarX2 = nullptr;
 
 void setup() {
     ydlidarX2 = &YdlidarX2::get_instance();
-    ydlidarX2->init(wifi_IP, tcp_client_port, D7, ydlidar_baudrate);
+    ydlidarX2->init(wifi_IP, ydlidar_tcp_client_port, D7, ydlidar_baudrate);
 
     WiFi.mode(WIFI_STA);
     WiFi.persistent(false);

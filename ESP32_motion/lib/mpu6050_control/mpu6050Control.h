@@ -11,7 +11,6 @@
 #include <atomic>
 #include <cstdint>
 #include <micro_ros_platformio.h>
-#include <sensor_msgs/msg/imu.h>
 
 class MPU6050Control : public BaseTaskSingleton<MPU6050Control> {
 
@@ -22,13 +21,10 @@ protected:
 
 public:
     void update() override;
-    void calculate();
 
     void set_pins(int pin_SDA, int pin_SCL);
 
     void start_calibration();
-
-    sensor_msgs__msg__Imu &get_imu_msg();
 
 private:
     int pin_SDA_ = -1, pin_SCL_ = -1;
@@ -62,8 +58,6 @@ private:
 
     uint16_t packetSize_;
     uint16_t fifoCount_;
-
-    sensor_msgs__msg__Imu imu_msg_;
 
     void _loadCalibration();
     void _start_calibration_task();

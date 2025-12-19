@@ -1,15 +1,7 @@
+uint64 id
+
 int32 mode
-int64 id
-
-uint8 motor_enable_flags
-
 int32 milliseconds
-int32 position_loop_milliseconds_cnt
-int32 speed_loop_milliseconds_cnt
-
-bool enable_speed_plan
-bool is_mecanum_wheel
-bool enable_pub_motion_status
 
 float32 speed_percent
 float32 max_v
@@ -18,21 +10,6 @@ float32 jerk
 
 float32 wheel_width
 float32 track_width
-
-float32 position_p
-float32 position_i
-float32 position_d
-float32 position_max_total_integral
-
-float32 line_speed_p
-float32 line_speed_i
-float32 line_speed_d
-float32 line_speed_max_total_integral
-
-float32 angle_speed_p
-float32 angle_speed_i
-float32 angle_speed_d
-float32 angle_speed_max_total_integral
 
 int32 left_front_motor_pina
 int32 left_front_motor_pinb
@@ -85,21 +62,17 @@ float32 right_back_motor_max_total_integral
 float32 right_back_motor_wheel_diameter
 int32 right_back_motor_pluses_per_revolution
 int32 right_back_motor_revolutions_per_minute
+
+uint8 motor_enable_flags
+bool enable_speed_plan
+bool is_mecanum_wheel
 
 ---
 
-int32 state
-int64 id
-
-uint8 motor_enable_flags
+uint64 id
 
 int32 milliseconds
-int32 position_loop_milliseconds_cnt
-int32 speed_loop_milliseconds_cnt
-
-bool enable_speed_plan
-bool is_mecanum_wheel
-bool enable_pub_motion_status
+int32 state
 
 float32 speed_percent
 float32 max_v
@@ -108,21 +81,6 @@ float32 jerk
 
 float32 wheel_width
 float32 track_width
-
-float32 position_p
-float32 position_i
-float32 position_d
-float32 position_max_total_integral
-
-float32 line_speed_p
-float32 line_speed_i
-float32 line_speed_d
-float32 line_speed_max_total_integral
-
-float32 angle_speed_p
-float32 angle_speed_i
-float32 angle_speed_d
-float32 angle_speed_max_total_integral
 
 int32 left_front_motor_pina
 int32 left_front_motor_pinb
@@ -175,3 +133,7 @@ float32 right_back_motor_max_total_integral
 float32 right_back_motor_wheel_diameter
 int32 right_back_motor_pluses_per_revolution
 int32 right_back_motor_revolutions_per_minute
+
+uint8 motor_enable_flags
+bool enable_speed_plan
+bool is_mecanum_wheel

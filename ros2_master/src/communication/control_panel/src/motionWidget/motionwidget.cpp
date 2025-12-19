@@ -17,7 +17,6 @@ MotionWidget::MotionWidget(QWidget *parent)
     connect(ui->pushButton_restart, &QPushButton::clicked, this, &MotionWidget::restart);
     connect(ui->pushButton_brake, &QPushButton::clicked, this, &MotionWidget::brake);
     connect(ui->pushButton_stop_move, &QPushButton::clicked, this, &MotionWidget::stop_move);
-    connect(ui->pushButton_set_speed, &QPushButton::clicked, this, &MotionWidget::set_speed);
     connect(ui->pushButton_move_front, &QPushButton::clicked, this, &MotionWidget::move_front);
     connect(ui->pushButton_move_back, &QPushButton::clicked, this, &MotionWidget::move_back);
     connect(ui->pushButton_move_left, &QPushButton::clicked, this, &MotionWidget::move_left);
@@ -37,47 +36,32 @@ MotionWidget::MotionWidget(QWidget *parent)
     connect(ui->pushButton_read_config, &QPushButton::clicked, this, &MotionWidget::on_read_config);
     connect(ui->pushButton_save_config, &QPushButton::clicked, this, &MotionWidget::on_save_config);
 
-    connect(ui->pushButton_path_move, &QPushButton::clicked, this, &MotionWidget::start_move_path);
-    connect(ui->pushButton_path_stop, &QPushButton::clicked, this, &MotionWidget::stop_move_path);
     connect(ui->pushButton_clear_plot, &QPushButton::clicked, this, &MotionWidget::clear_plot);
-    connect(ui->radioButton_polar_coordinates, &QRadioButton::clicked, this, &MotionWidget::on_change_path_mode);
-    connect(ui->radioButton_cartesian_coordinates, &QCheckBox::clicked, this, &MotionWidget::on_change_path_mode);
     connect(ui->pushButton_clear_cmd_info, &QPushButton::clicked, this, [this]() { ui->textEdit_cmd->clear(); });
 
     connect(ui->horizontalSlider_speed_percent, &QSlider::sliderReleased, this, &MotionWidget::set_speed_percent);
-
-    connect(ui->checkBox_enable_pub_motion_status, &QCheckBox::stateChanged, this, &MotionWidget::set_enable_pub_motion_status);
-    connect(ui->checkBox_open_settings, &QCheckBox::stateChanged, this, &MotionWidget::on_settings_show_cHanged);
-
     connect(ui->checkBox_enable_speed_plan, &QCheckBox::stateChanged, this, &MotionWidget::set_speed_plan_state);
 
-    // ui->checkBox_graph_0->click();
-    // ui->checkBox_graph_1->click();
-    // ui->checkBox_graph_2->click();
-    // ui->checkBox_graph_3->click();
-    // connect(ui->checkBox_graph_0, &QCheckBox::clicked, this, &MotionWidget::on_graph_visible_changed);
-    // connect(ui->checkBox_graph_1, &QCheckBox::clicked, this, &MotionWidget::on_graph_visible_changed);
-    // connect(ui->checkBox_graph_2, &QCheckBox::clicked, this, &MotionWidget::on_graph_visible_changed);
-    // connect(ui->checkBox_graph_3, &QCheckBox::clicked, this, &MotionWidget::on_graph_visible_changed);
+    connect(ui->checkBox_show_plot, &QCheckBox::stateChanged, this, &MotionWidget::on_show_plot_changed);
+    connect(ui->checkBox_open_settings, &QCheckBox::stateChanged, this, &MotionWidget::on_settings_show_changed);
 
     _initGamepad();
     _initMotionNode();
     _initTimer();
 
-    // 初始化
-    ui->radioButton_cartesian_coordinates->click();
+    ui->tabWidget_motion->setCurrentIndex(0);
+    ui->tabWidget_settings->setCurrentIndex(0);
+
+    ui->checkBox_open_settings->setChecked(false);
+    ui->checkBox_show_plot->setChecked(false);
+
+    on_show_plot_changed(false);
+    on_settings_show_changed(false);
 
     on_update_status();
     on_connect_changed(false);
-    // _update_odom_label();
-    // on_graph_visible_changed();
-    ui->tabWidget_motion->setCurrentIndex(0);
-    ui->tabWidget_settings->setCurrentIndex(0);
-    ui->checkBox_open_settings->setChecked(false);
-    ui->widget_plot->setVisible(false);
-    ui->tabWidget_settings->setVisible(false);
+    on_show_plot_changed(false);
 
-    // _readConfigJson();
     motionNode_->start();
     status_timer_->start();
 }
@@ -86,7 +70,12 @@ MotionWidget::~MotionWidget() {
     delete ui;
 }
 
-void MotionWidget::on_settings_show_cHanged(bool show) {
+void MotionWidget::on_show_plot_changed(bool show) {
+    ui->widget_plot->setVisible(show);
+    ui->groupBox_plot->setVisible(show);
+}
+
+void MotionWidget::on_settings_show_changed(bool show) {
     ui->tabWidget_settings->setVisible(show);
 }
 
@@ -100,22 +89,14 @@ void MotionWidget::_initMotionNode() {
     motionNode_ = std::make_shared<MotionNode>(pc_motion_node_name, pc_motion_node_namespace);
     connect(motionNode_.get(), &MotionNode::motionStatusMsgChanged, this, &MotionWidget::on_recv_motion_status_msg);
     connect(motionNode_.get(), &MotionNode::motionSettingsServiceResponsed, this, &MotionWidget::on_recv_motion_settings_service_response);
-    // connect(motionNode_.get(), &MotionNode::odomMsgChanged, this, &MotionWidget::on_recv_odom_msg);
     connect(motionNode_.get(), &MotionNode::serialMsgChanged, this, &MotionWidget::on_recv_serial_msg);
     connect(motionNode_.get(), &MotionNode::connectChanged, this, &MotionWidget::on_connect_changed);
     connect(motionNode_.get(), &MotionNode::commandStateChanged, this, &MotionWidget::on_command_state_changed);
     connect(motionNode_.get(), &MotionNode::nodeClosed, this, &MotionWidget::nodeClosed);
 }
 
-QSplitter *MotionWidget::_initCustomPlot() {
-    QSplitter *customPlot_splitter = new QSplitter(Qt::Vertical);
-    QSplitter *speed_customPlot_splitter = new QSplitter(Qt::Horizontal);
-    QSplitter *pose_customPlot_splitter = new QSplitter(Qt::Horizontal);
-
-    linear_speed_customPlot_ = new QCustomPlot();
-    angular_speed_customPlot_ = new QCustomPlot();
-    linear_pose_customPlot_ = new QCustomPlot();
-    angular_pose_customPlot_ = new QCustomPlot();
+QWidget *MotionWidget::_initCustomPlot() {
+    wheel_speed_customPlot_ = new QCustomPlot();
 
     QVector<QColor> colorVector = {
         QColor(0, 122, 255),
@@ -126,13 +107,10 @@ QSplitter *MotionWidget::_initCustomPlot() {
         QColor(0, 199, 255),
         QColor(142, 142, 147),
         QColor(255, 105, 180),
-        QColor(160, 82, 45),
-        QColor(255, 215, 0),
-        QColor(0, 100, 0),
-        QColor(128, 0, 0)};
+    };
 
-    // 线速度
-    QVector<QPair<QColor, QString>> linearSpeedColorVector = {
+    // 速度
+    QVector<QPair<QColor, QString>> wheelSpeedColorVector = {
         {colorVector[0], "左前轮实际速度"},
         {colorVector[1], "左前轮目标速度"},
         {colorVector[2], "左后轮实际速度"},
@@ -141,52 +119,9 @@ QSplitter *MotionWidget::_initCustomPlot() {
         {colorVector[5], "右前轮目标速度"},
         {colorVector[6], "右后轮实际速度"},
         {colorVector[7], "右后轮目标速度"},
-        {colorVector[8], "X轴实际线速度"},
-        {colorVector[9], "X轴目标线速度"},
-        {colorVector[10], "Y轴实际线速度"},
-        {colorVector[11], "Y轴目标线速度"}};
+    };
 
-    // 角速度
-    QVector<QPair<QColor, QString>> angularSpeedColorVector = {
-        {colorVector[0], "Z轴实际角速度"},
-        {colorVector[1], "Z轴目标线速度"}};
-
-    // 线位置
-    QVector<QPair<QColor, QString>> linearPoseColorVector = {
-        {colorVector[0], "X轴实际位置"},
-        {colorVector[1], "X轴目标位置"},
-        {colorVector[2], "Y轴实际位置"},
-        {colorVector[3], "Y轴目标位置"}};
-
-    // 角度位置
-    QVector<QPair<QColor, QString>> angularPoseColorVector = {
-        {colorVector[4], "Z轴实际角度"},
-        {colorVector[5], "Z轴目标角度"}};
-
-    auto linear_speed_widget = _create_customPlot_widget(linear_speed_customPlot_, "线速度曲线", "时间 (s)", "速度 (m/s)", linearSpeedColorVector);
-    auto angular_speed_widget = _create_customPlot_widget(angular_speed_customPlot_, "角速度曲线", "时间 (s)", "角速度 (°/s)", angularSpeedColorVector);
-    auto linear_pose_widget = _create_customPlot_widget(linear_pose_customPlot_, "位置曲线", "时间 (s)", "位置 (m)", linearPoseColorVector);
-    auto angular_pose_widget = _create_customPlot_widget(angular_pose_customPlot_, "角度曲线", "时间 (s)", "角度 (m)", angularPoseColorVector);
-
-    speed_customPlot_splitter->addWidget(linear_speed_widget);
-    speed_customPlot_splitter->addWidget(angular_speed_widget);
-    speed_customPlot_splitter->setCollapsible(0, false);
-    speed_customPlot_splitter->setCollapsible(1, false);
-    speed_customPlot_splitter->setSizes({1000, 1000});
-
-    pose_customPlot_splitter->addWidget(linear_pose_widget);
-    pose_customPlot_splitter->addWidget(angular_pose_widget);
-    pose_customPlot_splitter->setCollapsible(0, false);
-    pose_customPlot_splitter->setCollapsible(1, false);
-    pose_customPlot_splitter->setSizes({1000, 1000});
-
-    customPlot_splitter->addWidget(speed_customPlot_splitter);
-    customPlot_splitter->addWidget(pose_customPlot_splitter);
-    customPlot_splitter->setCollapsible(0, false);
-    customPlot_splitter->setCollapsible(1, false);
-    customPlot_splitter->setSizes({1000, 1000});
-
-    return customPlot_splitter;
+    return _create_customPlot_widget(wheel_speed_customPlot_, "速度曲线", "时间 (s)", "速度 (m/s)", wheelSpeedColorVector);
 }
 
 QWidget *MotionWidget::_create_customPlot_widget(QCustomPlot *customPlot, const QString &title, const QString &xLabel, const QString &yLabel, const QVector<QPair<QColor, QString>> &colorVector) {
@@ -240,14 +175,10 @@ QWidget *MotionWidget::_create_customPlot_widget(QCustomPlot *customPlot, const 
     return widget;
 }
 
-QSplitter *MotionWidget::_initTextEdit() {
-    QSplitter *info_textEdit_splitter = new QSplitter(Qt::Vertical);
-
+QTextEdit *MotionWidget::_initTextEdit() {
     motion_info_text_ = new QTextEdit();
     motion_info_text_->setReadOnly(true);
-    info_textEdit_splitter->addWidget(motion_info_text_);
-
-    return info_textEdit_splitter;
+    return motion_info_text_;
 }
 
 void MotionWidget::_initGamepad() {
@@ -345,22 +276,10 @@ void MotionWidget::on_gamepad_axis_changed() {
     motionNode_->add_twist(-1, twist);
 }
 
-void MotionWidget::set_speed() {
-    std::shared_ptr<geometry_msgs::msg::Twist> twist = std::make_shared<geometry_msgs::msg::Twist>();
-    twist->linear.x = ui->doubleSpinBox_lineX_spd->value();
-    twist->linear.y = ui->doubleSpinBox_lineY_spd->value();
-    twist->linear.z = ui->doubleSpinBox_lineZ_spd->value();
-    twist->angular.x = ui->doubleSpinBox_angleX_spd->value();
-    twist->angular.y = ui->doubleSpinBox_angleY_spd->value();
-    twist->angular.z = ui->doubleSpinBox_angleZ_spd->value();
-    auto cmd_string = _get_cmd_string_prefix() + "设置速度指令";
-    _publish_twist(twist, cmd_string);
-}
-
 void MotionWidget::_publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist, QString &cmd_string) {
     auto id = QDateTime::currentMSecsSinceEpoch();
     QThread::msleep(1);
-    commpand_map_.insert(id, cmd_string);
+    command_map_.insert(id, cmd_string);
     if (motionNode_->add_twist(id, twist)) {
         on_command_state_changed(id, MotionNode::CommandState::Add);
     } else {
@@ -489,14 +408,6 @@ void MotionWidget::set_speed_plan_state() {
     _ask_motion_settings_service(request, cmd_string);
 }
 
-void MotionWidget::set_enable_pub_motion_status() {
-    MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
-    request->mode = MotionService::Type::SetEnablePubMotionStatus;
-    request->enable_pub_motion_status = ui->checkBox_enable_pub_motion_status->isChecked();
-    auto cmd_string = _get_cmd_string_prefix() + "设置调试模式指令";
-    _ask_motion_settings_service(request, cmd_string);
-}
-
 void MotionWidget::on_read_params() {
     MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
     request->mode = MotionService::Type::ReadParams;
@@ -508,11 +419,6 @@ void MotionWidget::on_write_params() {
     MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
     request->mode = MotionService::Type::WriteParams;
 
-    request->position_p = ui->doubleSpinBox_position_p->value();
-    request->position_i = ui->doubleSpinBox_position_i->value();
-    request->position_d = ui->doubleSpinBox_position_d->value();
-    request->position_max_total_integral = ui->doubleSpinBox_position_max_total_integral->value();
-
     request->motor_enable_flags = 0;
     if (ui->checkBox_enable_left_front_motor->isChecked())
         request->motor_enable_flags |= 0x01;
@@ -522,16 +428,6 @@ void MotionWidget::on_write_params() {
         request->motor_enable_flags |= 0x04;
     if (ui->checkBox_enable_right_back_motor->isChecked())
         request->motor_enable_flags |= 0x08;
-
-    request->line_speed_p = ui->doubleSpinBox_line_speed_p->value();
-    request->line_speed_i = ui->doubleSpinBox_line_speed_i->value();
-    request->line_speed_d = ui->doubleSpinBox_line_speed_d->value();
-    request->line_speed_max_total_integral = ui->doubleSpinBox_line_speed_max_total_integral->value();
-
-    request->angle_speed_p = ui->doubleSpinBox_angle_speed_p->value();
-    request->angle_speed_i = ui->doubleSpinBox_angle_speed_i->value();
-    request->angle_speed_d = ui->doubleSpinBox_angle_speed_d->value();
-    request->angle_speed_max_total_integral = ui->doubleSpinBox_angle_speed_max_total_integral->value();
 
     request->left_front_motor_p = ui->doubleSpinBox_left_front_motor_p->value();
     request->left_front_motor_i = ui->doubleSpinBox_left_front_motor_i->value();
@@ -558,8 +454,6 @@ void MotionWidget::on_write_params() {
     request->jerk = ui->doubleSpinBox_jerk->value();
 
     request->milliseconds = ui->spinBox_millseconds->value();
-    request->position_loop_milliseconds_cnt = ui->spinBox_position_loop_milliseconds_cnt->value();
-    request->speed_loop_milliseconds_cnt = ui->spinBox_speed_loop_milliseconds_cnt->value();
 
     auto cmd_string = _get_cmd_string_prefix() + "写入参数指令";
     _ask_motion_settings_service(request, cmd_string);
@@ -641,7 +535,7 @@ void MotionWidget::on_save_config() {
 void MotionWidget::_ask_motion_settings_service(MotionSettingsSrv::Request::SharedPtr request, QString &cmd_string) {
     QThread::msleep(1);
     auto id = QDateTime::currentMSecsSinceEpoch();
-    commpand_map_.insert(id, cmd_string);
+    command_map_.insert(id, cmd_string);
     request->id = id;
     if (motionNode_->add_motion_settings_service(id, request)) {
         on_command_state_changed(id, MotionNode::CommandState::Add);
@@ -655,16 +549,10 @@ void MotionWidget::on_recv_motion_settings_service_response(motion_settings_serv
 
     if (response->state == MotionService::Type::ReadParams) {
         ui->spinBox_millseconds->setValue(response->milliseconds);
-        ui->spinBox_position_loop_milliseconds_cnt->setValue(response->position_loop_milliseconds_cnt);
-        ui->spinBox_speed_loop_milliseconds_cnt->setValue(response->speed_loop_milliseconds_cnt);
 
         ui->checkBox_enable_speed_plan->blockSignals(true);
         ui->checkBox_enable_speed_plan->setChecked(response->enable_speed_plan);
         ui->checkBox_enable_speed_plan->blockSignals(false);
-
-        ui->checkBox_enable_pub_motion_status->blockSignals(true);
-        ui->checkBox_enable_pub_motion_status->setChecked(response->enable_pub_motion_status);
-        ui->checkBox_enable_pub_motion_status->blockSignals(false);
 
         ui->checkBox_enable_left_front_motor->setChecked(response->motor_enable_flags & 0x01);
         ui->checkBox_enable_left_back_motor->setChecked(response->motor_enable_flags & 0x02);
@@ -679,21 +567,6 @@ void MotionWidget::on_recv_motion_settings_service_response(motion_settings_serv
         ui->doubleSpinBox_max_v->setValue(response->max_v);
         ui->doubleSpinBox_max_acc->setValue(response->max_acc);
         ui->doubleSpinBox_jerk->setValue(response->jerk);
-
-        ui->doubleSpinBox_position_p->setValue(response->position_p);
-        ui->doubleSpinBox_position_i->setValue(response->position_i);
-        ui->doubleSpinBox_position_d->setValue(response->position_d);
-        ui->doubleSpinBox_position_max_total_integral->setValue(response->position_max_total_integral);
-
-        ui->doubleSpinBox_line_speed_p->setValue(response->line_speed_p);
-        ui->doubleSpinBox_line_speed_i->setValue(response->line_speed_i);
-        ui->doubleSpinBox_line_speed_d->setValue(response->line_speed_d);
-        ui->doubleSpinBox_line_speed_max_total_integral->setValue(response->line_speed_max_total_integral);
-
-        ui->doubleSpinBox_angle_speed_p->setValue(response->angle_speed_p);
-        ui->doubleSpinBox_angle_speed_i->setValue(response->angle_speed_i);
-        ui->doubleSpinBox_angle_speed_d->setValue(response->angle_speed_d);
-        ui->doubleSpinBox_angle_speed_max_total_integral->setValue(response->angle_speed_max_total_integral);
 
         ui->doubleSpinBox_left_front_motor_p->setValue(response->left_front_motor_p);
         ui->doubleSpinBox_left_front_motor_i->setValue(response->left_front_motor_i);
@@ -768,26 +641,14 @@ void MotionWidget::on_recv_motion_settings_service_response(motion_settings_serv
         ui->spinBox_right_back_encoder_pin0->setValue(response->right_back_encoder_pina);
         ui->spinBox_right_back_encoder_pin1->setValue(response->right_back_encoder_pinb);
     }
-
-    if (ui->checkBox_enable_pub_motion_status->isChecked()) {
-        ui->groupBox_plot->setVisible(true);
-        ui->widget_plot->setVisible(true);
-        ui->label_speed_msg->setVisible(true);
-        ui->label_pose_msg->setVisible(true);
-    } else {
-        ui->groupBox_plot->setVisible(false);
-        ui->widget_plot->setVisible(false);
-        ui->label_speed_msg->setVisible(false);
-        ui->label_pose_msg->setVisible(false);
-    }
 }
 
 void MotionWidget::on_command_state_changed(int64_t id, int state) {
-    auto cmd_string = commpand_map_.value(id, QString());
+    auto cmd_string = command_map_.value(id, QString());
     if (!cmd_string.isEmpty()) {
         _update_cmd_status_label(cmd_string, state);
         if (state == MotionNode::CommandState::Fail || state == MotionNode::CommandState::Success) {
-            commpand_map_.remove(id);
+            command_map_.remove(id);
         }
     }
 }
@@ -833,237 +694,98 @@ void MotionWidget::on_update_status() {
 }
 
 void MotionWidget::on_recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
-    QString speed_text = QString(
-                             "速度:\n"
-                             "    linear_x = %1 m/s\n"
-                             "    linear_y = %2 m/s\n"
-                             "    linear_z = %3 m/s\n"
-                             "    angular_x = %4 °/s\n"
-                             "    angular_y = %5 °/s\n"
-                             "    angular_z = %6 °/s")
-                             .arg(msg->twist_current_linear_x, 0, 'f', 3)
-                             .arg(msg->twist_current_linear_y, 0, 'f', 3)
-                             .arg(msg->twist_current_linear_z, 0, 'f', 3)
-                             .arg(msg->twist_current_angular_x * 180.0 / M_PI, 0, 'f', 3)
-                             .arg(msg->twist_current_angular_y * 180.0 / M_PI, 0, 'f', 3)
-                             .arg(msg->twist_current_angular_z * 180.0 / M_PI, 0, 'f', 3);
-
-    QString pose_text = QString(
-                            "位置:\n"
-                            "    x = %1 m\n"
-                            "    y = %2 m\n"
-                            "    z = %3 m\n"
-                            "    roll = %4 °\n"
-                            "    pitch = %5 °\n"
-                            "    yaw = %6 °")
-                            .arg(msg->twist_current_euler_pose_x, 0, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_y, 0, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_z, 0, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_roll * 180.0 / M_PI, 0, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_pitch * 180.0 / M_PI, 0, 'f', 3)
-                            .arg(msg->twist_current_euler_pose_yaw * 180.0 / M_PI, 0, 'f', 3);
-
-    ui->label_speed_msg->setText(speed_text);
-    ui->label_pose_msg->setText(pose_text);
-
-    if (ui->checkBox_dynamic_refresh->isChecked()) {
-        double minValue = pow(10, -6);
-        if (qFabs(msg->left_front_current_v) > minValue ||
-            qFabs(msg->left_front_target_v) > minValue ||
-            qFabs(msg->left_back_current_v) > minValue ||
-            qFabs(msg->left_back_target_v) > minValue ||
-            qFabs(msg->right_front_current_v) > minValue ||
-            qFabs(msg->right_front_target_v) > minValue ||
-            qFabs(msg->right_back_current_v) > minValue ||
-            qFabs(msg->right_back_target_v) > minValue ||
-            qFabs(msg->twist_current_linear_x) > minValue ||
-            qFabs(msg->twist_target_linear_x) > minValue ||
-            qFabs(msg->twist_current_linear_y) > minValue ||
-            qFabs(msg->twist_target_linear_y) > minValue ||
-            qFabs(msg->twist_current_angular_z) > minValue ||
-            qFabs(msg->twist_target_angular_z) > minValue) {
-            if (stop_plot_) {
-                stop_plot_ = false;
-            }
-        }
-
-        if (stop_plot_) {
-            return;
-        }
-
-        if (linear_speed_customPlot_->graph(0)->dataCount() >= 10000) {
-            clear_plot();
-        }
-
-        reference_sconds += ui->spinBox_millseconds->value() / 1000.0;
-        linear_speed_customPlot_->graph(0)->addData(reference_sconds, msg->left_front_current_v);
-        linear_speed_customPlot_->graph(1)->addData(reference_sconds, msg->left_front_target_v);
-        linear_speed_customPlot_->graph(2)->addData(reference_sconds, msg->left_back_current_v);
-        linear_speed_customPlot_->graph(3)->addData(reference_sconds, msg->left_back_target_v);
-        linear_speed_customPlot_->graph(4)->addData(reference_sconds, msg->right_front_current_v);
-        linear_speed_customPlot_->graph(5)->addData(reference_sconds, msg->right_front_target_v);
-        linear_speed_customPlot_->graph(6)->addData(reference_sconds, msg->right_back_current_v);
-        linear_speed_customPlot_->graph(7)->addData(reference_sconds, msg->right_back_target_v);
-        linear_speed_customPlot_->graph(8)->addData(reference_sconds, msg->twist_current_linear_x);
-        linear_speed_customPlot_->graph(9)->addData(reference_sconds, msg->twist_target_linear_x);
-        linear_speed_customPlot_->graph(10)->addData(reference_sconds, msg->twist_current_linear_y);
-        linear_speed_customPlot_->graph(11)->addData(reference_sconds, msg->twist_target_linear_y);
-
-        angular_speed_customPlot_->graph(0)->addData(reference_sconds, msg->twist_current_angular_z);
-        angular_speed_customPlot_->graph(1)->addData(reference_sconds, msg->twist_target_angular_z);
-
-        linear_pose_customPlot_->graph(0)->addData(reference_sconds, msg->twist_current_euler_pose_x);
-        linear_pose_customPlot_->graph(1)->addData(reference_sconds, msg->twist_target_euler_pose_x);
-        linear_pose_customPlot_->graph(2)->addData(reference_sconds, msg->twist_current_euler_pose_y);
-        linear_pose_customPlot_->graph(3)->addData(reference_sconds, msg->twist_target_euler_pose_y);
-
-        angular_pose_customPlot_->graph(0)->addData(reference_sconds, msg->twist_current_euler_pose_yaw);
-        angular_pose_customPlot_->graph(1)->addData(reference_sconds, msg->twist_target_euler_pose_yaw);
-
-        if (ui->checkBox_dynamic_follow->isChecked()) {
-            if (linear_speed_customPlot_->isVisible()) {
-                linear_speed_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
-            }
-            if (linear_pose_customPlot_->isVisible()) {
-                linear_pose_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
-            }
-            if (angular_speed_customPlot_->isVisible()) {
-                angular_speed_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
-            }
-            if (angular_pose_customPlot_->isVisible()) {
-                angular_pose_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
-            }
-        }
-        if (linear_speed_customPlot_->isVisible()) {
-            linear_speed_customPlot_->replot(); // 刷新绘图
-        }
-        if (linear_pose_customPlot_->isVisible()) {
-            linear_pose_customPlot_->replot(); // 刷新绘图
-        }
-        if (angular_speed_customPlot_->isVisible()) {
-            angular_speed_customPlot_->replot(); // 刷新绘图
-        }
-        if (angular_pose_customPlot_->isVisible()) {
-            angular_pose_customPlot_->replot(); // 刷新绘图
-        }
-        QString line = QString("t= %1\n"
-                               "left_front_current_v= %2,  left_front_target_v= %3,  left_back_current_v= %4,  left_back_target_v= %5\n"
-                               "right_front_current_v= %6,  right_front_target_v= %7,  right_back_current_v= %8,  right_back_target_v= %9\n"
-                               "twist_current_linear_x= %10,  twist_target_linear_x= %11,  twist_current_linear_y= %12,  twist_target_linear_y= %13\n"
-                               "twist_current_angular_z= %14,  twist_target_angular_z= %15,  twist_current_euler_pose_x= %16,  twist_target_euler_pose_x= %17\n"
-                               "twist_current_euler_pose_y= %18,  twist_target_euler_pose_y= %19,  twist_current_euler_pose_yaw= %20,  twist_target_euler_pose_yaw= %21\n")
-                           .arg(reference_sconds, 0, 'f', 3)
-                           .arg(msg->left_front_current_v, 0, 'f', 3)
-                           .arg(msg->left_front_target_v, 0, 'f', 3)
-                           .arg(msg->left_back_current_v, 0, 'f', 3)
-                           .arg(msg->left_back_target_v, 0, 'f', 3)
-                           .arg(msg->right_front_current_v, 0, 'f', 3)
-                           .arg(msg->right_front_target_v, 0, 'f', 3)
-                           .arg(msg->right_back_current_v, 0, 'f', 3)
-                           .arg(msg->right_back_target_v, 0, 'f', 3)
-                           .arg(msg->twist_current_linear_x, 0, 'f', 3)
-                           .arg(msg->twist_target_linear_x, 0, 'f', 3)
-                           .arg(msg->twist_current_linear_y, 0, 'f', 3)
-                           .arg(msg->twist_target_linear_y, 0, 'f', 3)
-                           .arg(msg->twist_current_angular_z, 0, 'f', 3)
-                           .arg(msg->twist_target_angular_z, 0, 'f', 3)
-                           .arg(msg->twist_current_euler_pose_x, 0, 'f', 3)
-                           .arg(msg->twist_target_euler_pose_x, 0, 'f', 3)
-                           .arg(msg->twist_current_euler_pose_y, 0, 'f', 3)
-                           .arg(msg->twist_target_euler_pose_y, 0, 'f', 3)
-                           .arg(msg->twist_current_euler_pose_yaw, 0, 'f', 3)
-                           .arg(msg->twist_target_euler_pose_yaw, 0, 'f', 3);
-        motion_info_text_->append(line);
-
-        if (qFabs(msg->left_front_current_v) < minValue &&
-            qFabs(msg->left_front_target_v) < minValue &&
-            qFabs(msg->left_back_current_v) < minValue &&
-            qFabs(msg->left_back_target_v) < minValue &&
-            qFabs(msg->right_front_current_v) < minValue &&
-            qFabs(msg->right_front_target_v) < minValue &&
-            qFabs(msg->right_back_current_v) < minValue &&
-            qFabs(msg->right_back_target_v) < minValue &&
-            qFabs(msg->twist_current_linear_x) < minValue &&
-            qFabs(msg->twist_target_linear_x) < minValue &&
-            qFabs(msg->twist_current_linear_y) < minValue &&
-            qFabs(msg->twist_target_linear_y) < minValue &&
-            qFabs(msg->twist_current_angular_z) < minValue &&
-            qFabs(msg->twist_target_angular_z) < minValue) {
-            stop_plot_ = true;
-        }
-        ui->groupBox_plot->setTitle(QString(("绘图设置（%1个点）")).arg(linear_speed_customPlot_->graph(0)->dataCount()));
+    if (ui->checkBox_show_plot->isChecked() == false) {
+        return;
     }
-}
 
-// void MotionWidget::on_recv_odom_msg(const nav_msgs::msg::Odometry::SharedPtr msg) {
-//     geometry_msgs::msg::Quaternion q = msg->pose.pose.orientation;
-//     tf2::Quaternion tf_q(q.x, q.y, q.z, q.w);
-//     tf2::Matrix3x3 mat(tf_q);
-//     double roll = 0, pitch = 0, yaw = 0;
-//     mat.getRPY(roll, pitch, yaw);
-//     _update_odom_label(msg->twist.twist.linear.x, msg->twist.twist.angular.z, msg->pose.pose.position.x, msg->pose.pose.position.y, yaw * 180.0 / M_PI + 90);
-// }
+    if (ui->checkBox_dynamic_refresh->isChecked() == false) {
+        return;
+    }
+
+    double minValue = pow(10, -6);
+    if (qFabs(msg->left_front_current_v) > minValue ||
+        qFabs(msg->left_front_target_v) > minValue ||
+        qFabs(msg->left_back_current_v) > minValue ||
+        qFabs(msg->left_back_target_v) > minValue ||
+        qFabs(msg->right_front_current_v) > minValue ||
+        qFabs(msg->right_front_target_v) > minValue ||
+        qFabs(msg->right_back_current_v) > minValue ||
+        qFabs(msg->right_back_target_v) > minValue) {
+        if (stop_plot_) {
+            stop_plot_ = false;
+        }
+    }
+
+    if (stop_plot_) {
+        return;
+    }
+
+    if (wheel_speed_customPlot_->graph(0)->dataCount() >= 10000) {
+        clear_plot();
+    }
+
+    reference_seconds_ += ui->spinBox_millseconds->value() / 1000.0;
+    wheel_speed_customPlot_->graph(0)->addData(reference_seconds_, msg->left_front_current_v);
+    wheel_speed_customPlot_->graph(1)->addData(reference_seconds_, msg->left_front_target_v);
+    wheel_speed_customPlot_->graph(2)->addData(reference_seconds_, msg->left_back_current_v);
+    wheel_speed_customPlot_->graph(3)->addData(reference_seconds_, msg->left_back_target_v);
+    wheel_speed_customPlot_->graph(4)->addData(reference_seconds_, msg->right_front_current_v);
+    wheel_speed_customPlot_->graph(5)->addData(reference_seconds_, msg->right_front_target_v);
+    wheel_speed_customPlot_->graph(6)->addData(reference_seconds_, msg->right_back_current_v);
+    wheel_speed_customPlot_->graph(7)->addData(reference_seconds_, msg->right_back_target_v);
+
+    if (ui->checkBox_dynamic_follow->isChecked()) {
+        if (wheel_speed_customPlot_->isVisible()) {
+            wheel_speed_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
+        }
+    }
+    if (wheel_speed_customPlot_->isVisible()) {
+        wheel_speed_customPlot_->replot(); // 刷新绘图
+    }
+    QString line = QString("t= %1\n"
+                           "left_front_current_v= %2,  left_front_target_v= %3,  left_back_current_v= %4,  left_back_target_v= %5\n"
+                           "right_front_current_v= %6,  right_front_target_v= %7,  right_back_current_v= %8,  right_back_target_v= %9\n")
+                       .arg(reference_seconds_, 0, 'f', 3)
+                       .arg(msg->left_front_current_v, 0, 'f', 3)
+                       .arg(msg->left_front_target_v, 0, 'f', 3)
+                       .arg(msg->left_back_current_v, 0, 'f', 3)
+                       .arg(msg->left_back_target_v, 0, 'f', 3)
+                       .arg(msg->right_front_current_v, 0, 'f', 3)
+                       .arg(msg->right_front_target_v, 0, 'f', 3)
+                       .arg(msg->right_back_current_v, 0, 'f', 3)
+                       .arg(msg->right_back_target_v, 0, 'f', 3);
+    motion_info_text_->append(line);
+
+    if (qFabs(msg->left_front_current_v) < minValue &&
+        qFabs(msg->left_front_target_v) < minValue &&
+        qFabs(msg->left_back_current_v) < minValue &&
+        qFabs(msg->left_back_target_v) < minValue &&
+        qFabs(msg->right_front_current_v) < minValue &&
+        qFabs(msg->right_front_target_v) < minValue &&
+        qFabs(msg->right_back_current_v) < minValue &&
+        qFabs(msg->right_back_target_v) < minValue) {
+        stop_plot_ = true;
+    }
+    ui->groupBox_plot->setTitle(QString(("绘图设置（%1个点）")).arg(wheel_speed_customPlot_->graph(0)->dataCount()));
+}
 
 void MotionWidget::on_recv_serial_msg(const std_msgs::msg::String::SharedPtr msg) {
     QString serial_msg = QString::fromStdString(msg->data);
     _update_cmd_status_label(serial_msg, MotionNode::CommandState::SerialMsg);
 }
 
-void MotionWidget::on_change_path_mode() {
-    if (ui->radioButton_cartesian_coordinates->isChecked()) {
-        ui->widget_cartesian_coordinates->setVisible(true);
-        ui->widget_polar_coordinates->setVisible(false);
-    } else if (ui->radioButton_polar_coordinates->isChecked()) {
-        ui->widget_cartesian_coordinates->setVisible(false);
-        ui->widget_polar_coordinates->setVisible(true);
-    }
-}
-
-// void MotionWidget::on_graph_visible_changed() {
-//     QList<QCheckBox *> checkbox_list = {ui->checkBox_graph_0, ui->checkBox_graph_1, ui->checkBox_graph_2, ui->checkBox_graph_3};
-//     for (int i = 0; i < checkbox_list.size(); i++) {
-//         speed_customPlot_->graph(i)->setVisible(checkbox_list[i]->isChecked());
-//         pose_customPlot_->graph(i)->setVisible(checkbox_list[i]->isChecked());
-//     }
-//     speed_customPlot_->replot();
-//     pose_customPlot_->replot();
-// }
-
 void MotionWidget::clear_plot() {
-    QVector<QCustomPlot *> customPlotList = {linear_speed_customPlot_, angular_speed_customPlot_, linear_pose_customPlot_, angular_pose_customPlot_};
-
-    for (auto &customPlot : customPlotList) {
-        for (int i = 0; i < customPlot->graphCount(); i++) {
-            customPlot->graph(i)->data()->clear();
-        }
-        customPlot->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
-        customPlot->replot();      // 刷新绘图
+    for (int i = 0; i < wheel_speed_customPlot_->graphCount(); i++) {
+        wheel_speed_customPlot_->graph(i)->data()->clear();
     }
-
-    reference_sconds = 0;
+    wheel_speed_customPlot_->rescaleAxes(); // 自动缩放坐标轴，包含所有数据
+    wheel_speed_customPlot_->replot();      // 刷新绘图
+    reference_seconds_ = 0;
 
     motion_info_text_->clear();
 
-    ui->groupBox_plot->setTitle(QString(("绘图设置（%1个点）")).arg(linear_speed_customPlot_->graph(0)->dataCount()));
+    ui->groupBox_plot->setTitle(QString(("绘图设置（%1个点）")).arg(wheel_speed_customPlot_->graph(0)->dataCount()));
 }
-
-// void MotionWidget::_update_odom_label(double line_v, double angle_v, double pos_x, double pos_y, double yaw_deg) {
-//     QString text = QString(
-//                        "速度:\n"
-//                        "    v = %1 m/s\n"
-//                        "    w = %2 rad/s\n"
-//                        "位置:\n"
-//                        "    x = %3 m\n"
-//                        "    y = %4 m\n"
-//                        "角度:\n"
-//                        "    z = %5 °")
-//                        .arg(line_v, 9, 'f', 3)
-//                        .arg(angle_v, 9, 'f', 3)
-//                        .arg(pos_x, 9, 'f', 3)
-//                        .arg(pos_y, 9, 'f', 3)
-//                        .arg(yaw_deg, 9, 'f', 2);
-//     ui->label_odom_msg->setText(text);
-// }
 
 void MotionWidget::_update_cmd_status_label(const QString &cmd_string, int state) {
     QString html_string, cmd_string_tmp;

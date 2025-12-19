@@ -473,27 +473,6 @@ void MotionControl::calculate() {
 
     current_twist_ = _forwardKinematics(current_wheel_v_);
 
-    odom_msg_.pose.pose.position.x = current_euler_pose_.x;
-    odom_msg_.pose.pose.position.y = current_euler_pose_.y;
-    odom_msg_.pose.pose.position.z = 0.0;
-
-    geometry_msgs__msg__Quaternion quaternion;
-
-    double cy = cos(current_euler_pose_.yaw * 0.5);
-    double sy = sin(current_euler_pose_.yaw * 0.5);
-    double cp = cos(current_euler_pose_.pitch * 0.5);
-    double sp = sin(current_euler_pose_.pitch * 0.5);
-    double cr = cos(current_euler_pose_.roll * 0.5);
-    double sr = sin(current_euler_pose_.roll * 0.5);
-
-    quaternion.w = cr * cp * cy + sr * sp * sy;
-    quaternion.x = sr * cp * cy - cr * sp * sy;
-    quaternion.y = cr * sp * cy + sr * cp * sy;
-    quaternion.z = cr * cp * sy - sr * sp * cy;
-
-    odom_msg_.pose.pose.orientation = quaternion;
-    odom_msg_.twist.twist = current_twist_;
-
     motion_status_msg_.left_front_current_v = current_wheel_v_.left_front_v;
     motion_status_msg_.left_front_target_v = target_wheel_v_.left_front_v;
     motion_status_msg_.left_back_current_v = current_wheel_v_.left_back_v;

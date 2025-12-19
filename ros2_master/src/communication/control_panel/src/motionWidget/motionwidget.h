@@ -57,15 +57,14 @@ public:
     void start_move_path();
     void stop_move_path();
 
-    void set_speed();
     void set_speed_percent();
     void set_speed_plan_state();
-    void set_enable_pub_motion_status();
 
     void clear_plot();
 
     void on_gamepad_button_clicked();
     void on_gamepad_axis_changed();
+    void on_show_plot_changed(bool show);
 
     void on_write_params();
     void on_read_params();
@@ -77,7 +76,6 @@ public:
 
     void on_recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg);
     void on_recv_serial_msg(const std_msgs::msg::String::SharedPtr msg);
-    // void on_recv_odom_msg(const nav_msgs::msg::Odometry::SharedPtr msg);
     void on_recv_motion_settings_service_response(MotionSettingsSrv::Response::SharedPtr response);
     void on_command_state_changed(int64_t id, int state);
 
@@ -85,7 +83,7 @@ public:
     void on_update_status();
 
     void on_connect_changed(bool connect);
-    void on_settings_show_cHanged(bool show);
+    void on_settings_show_changed(bool show);
 
 signals:
     void nodeClosed();
@@ -98,9 +96,9 @@ private:
     std::shared_ptr<QGamepad> gamepad_;
 
     QTextEdit *motion_info_text_ = nullptr;
-    QCustomPlot *linear_speed_customPlot_ = nullptr, *angular_speed_customPlot_ = nullptr, *linear_pose_customPlot_ = nullptr, *angular_pose_customPlot_ = nullptr; // acc_customPlot_
+    QCustomPlot *wheel_speed_customPlot_ = nullptr; // acc_customPlot_
 
-    QHash<int64_t, QString> commpand_map_;
+    QHash<int64_t, QString> command_map_;
 
     void _publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist, QString &cmd_string);
     void _ask_motion_settings_service(MotionSettingsSrv::Request::SharedPtr request, QString &cmd_string);
@@ -111,7 +109,7 @@ private:
 
     bool stop_plot_ = false;
 
-    double reference_sconds = 0;
+    double reference_seconds_ = 0;
 
     static constexpr const char *OK_STYLESHEET = "color:green;font-size:20px;"; // background-color:green;
     static constexpr const char *ERROR_STYLESHEET = "color:red;font-size:20px;";
@@ -121,8 +119,8 @@ private:
     }
 
     void _initTimer();
-    QSplitter *_initCustomPlot();
-    QSplitter *_initTextEdit();
+    QWidget *_initCustomPlot();
+    QTextEdit *_initTextEdit();
     void _initGamepad();
     void _initMotionNode();
 

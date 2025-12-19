@@ -6,8 +6,6 @@ MPU6050Control::MPU6050Control() {
     } else {
         init_success_ = _manual_init();
     }
-    sensor_msgs__msg__Imu__init(&imu_msg_);
-    rosidl_runtime_c__String__assign(&imu_msg_.header.frame_id, "imu_link");
 }
 
 void MPU6050Control::update() {
@@ -236,36 +234,4 @@ void MPU6050Control::_manual_read() {
 
 sensor_msgs__msg__Imu &MPU6050Control::get_imu_msg() {
     return imu_msg_;
-}
-
-void MPU6050Control::calculate() {
-    double cy = cos(yaw_ * 0.5);
-    double sy = sin(yaw_ * 0.5);
-    double cp = cos(pitch_ * 0.5);
-    double sp = sin(pitch_ * 0.5);
-    double cr = cos(roll_ * 0.5);
-    double sr = sin(roll_ * 0.5);
-
-    imu_msg_.orientation.w = cr * cp * cy + sr * sp * sy;
-    imu_msg_.orientation.x = sr * cp * cy - cr * sp * sy;
-    imu_msg_.orientation.y = cr * sp * cy + sr * cp * sy;
-    imu_msg_.orientation.z = cr * cp * sy - sr * sp * cy;
-
-    imu_msg_.orientation_covariance[0] = 0.0025;
-    imu_msg_.orientation_covariance[4] = 0.0025;
-    imu_msg_.orientation_covariance[8] = 0.0025;
-
-    imu_msg_.angular_velocity.x = gyroX_ * M_PI / 180.0;
-    imu_msg_.angular_velocity.y = gyroY_ * M_PI / 180.0;
-    imu_msg_.angular_velocity.z = gyroZ_ * M_PI / 180.0;
-
-    imu_msg_.angular_velocity_covariance[0] = 0.02;
-    imu_msg_.angular_velocity_covariance[4] = 0.02;
-    imu_msg_.angular_velocity_covariance[8] = 0.02;
-
-    imu_msg_.linear_acceleration.x = 0.0;
-    imu_msg_.linear_acceleration.y = 0.0;
-    imu_msg_.linear_acceleration.z = 0.0;
-
-    imu_msg_.linear_acceleration_covariance[0] = -1.0;
 }
