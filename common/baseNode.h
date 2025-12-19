@@ -11,6 +11,7 @@
 #include "system.h"
 #include <Arduino.h>
 #include <WiFi.h>
+#include <atomic>
 #include <builtin_interfaces/msg/time.h>
 #include <micro_ros_platformio.h>
 #include <micro_ros_utilities/string_utilities.h>
@@ -52,7 +53,7 @@ protected:
     bool serial_msg_publisher_initialized_ = false;
     bool heartbeat_timer_initialized_ = false;
     bool heartbeat_publisher_initialized_ = false;
-    bool connected_ = false;
+    std::atomic<bool> connected_{false};
 
     std::string serial_msg_topic_name_, heartbeat_topic_name_;
 
@@ -92,9 +93,9 @@ protected:
 
 public:
     void update() override {
-        if (!connected_) {
+        if (!connected_.load()) {
             if (_init_micro_ros()) {
-                connected_ = true;
+                connected_.store(true);
                 Serial.println("motion node task is running...");
             } else {
                 Serial.println("motion node init failed, try again...");
@@ -102,14 +103,18 @@ public:
                 return;
             }
         }
-        if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
-            connected_ = false;
-            return;
-        }
 
         rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(5));
-
         vTaskDelay(pdMS_TO_TICKS(5));
+    }
+
+    bool check_connect() {
+        if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
+            connected_.store(false);
+            return false;
+        } else {
+            return true;
+        }
     }
 
     static inline void serial_print(const std::string &msg) {
@@ -130,7 +135,7 @@ public:
 
     static inline void heartbeat_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
         auto &instance = BaseNode<T>::instance();
-        if (instance.connected()) {
+        if (instance.check_connect()) {
             std_msgs__msg__Empty msg;
             rcl_ret_t ret = rcl_publish(&instance.heartbeat_publisher_, &msg, NULL);
             if (ret != RCL_RET_OK) {
@@ -139,12 +144,9 @@ public:
         }
     }
 
-    bool connected() { return connected_; }
+    bool connected() { return connected_.load(); }
 
 private:
-    void init_task() override { _init_micro_ros(); }
-    void clean_task() override { _clean_micro_ros(); }
-
     bool _init_micro_ros() {
         if (WiFi.status() != WL_CONNECTED) {
             return false;

@@ -1,3 +1,5 @@
+uint64 stamp
+
 float32 left_front_current_v
 float32 left_front_target_v
 
@@ -10,32 +12,22 @@ float32 right_front_target_v
 float32 right_back_current_v
 float32 right_back_target_v
 
-float32 twist_current_linear_x
-float32 twist_current_linear_y
-float32 twist_current_linear_z
-float32 twist_current_angular_x
-float32 twist_current_angular_y
-float32 twist_current_angular_z
+float32 odom_pose_x
+float32 odom_pose_y
+float32 odom_pose_z
+float32 odom_pose_roll
+float32 odom_pose_pitch
+float32 odom_pose_yaw
+float32 odom_twist_linear_x
+float32 odom_twist_linear_y
+float32 odom_twist_linear_z
+float32 odom_twist_angular_x
+float32 odom_twist_angular_y
+float32 odom_twist_angular_z
 
-float32 twist_target_linear_x
-float32 twist_target_linear_y
-float32 twist_target_linear_z
-float32 twist_target_angular_x
-float32 twist_target_angular_y
-float32 twist_target_angular_z
-
-float32 twist_current_euler_pose_x
-float32 twist_current_euler_pose_y
-float32 twist_current_euler_pose_z
-float32 twist_current_euler_pose_roll
-float32 twist_current_euler_pose_pitch
-float32 twist_current_euler_pose_yaw
-
-float32 twist_target_euler_pose_x
-float32 twist_target_euler_pose_y
-float32 twist_target_euler_pose_z
-float32 twist_target_euler_pose_roll
-float32 twist_target_euler_pose_pitch
-float32 twist_target_euler_pose_yaw
-
-
+float32 imu_pose_roll
+float32 imu_pose_pitch
+float32 imu_pose_yaw
+float32 imu_angular_x
+float32 imu_angular_y
+float32 imu_angular_z

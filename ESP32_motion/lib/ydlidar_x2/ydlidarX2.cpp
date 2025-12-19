@@ -2,7 +2,6 @@
 
 YdlidarX2::YdlidarX2() {
     task_name_ = "ydlidar_x2_task";
-    core_id_ = 0;
     priority_ = 3;
     host_ = wifi_IP;
     port_ = ydlidar_tcp_client_port;
@@ -10,9 +9,37 @@ YdlidarX2::YdlidarX2() {
     pin_tx_ = 25;
     pin_rx_ = -1;
     baudrate_ = ydlidar_baudrate;
+
+    pwmControl_.attachPin(pin_pwm_);
+}
+
+void YdlidarX2::init_task() {
+    Serial2.begin(baudrate_, SERIAL_8N1, pin_tx_, pin_rx_);
+    while (!Serial2) {
+        delay(50);
+    }
+    motorOn();
+}
+
+void YdlidarX2::clean_task() {
+    motorOff();
+    if (Serial2)
+        Serial2.end();
 }
 
 void YdlidarX2::update() {
+    if (WiFi.status() != WL_CONNECTED) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+        Serial.println("雷达 wifi 未连接!");
+        return;
+    }
+
+    if (!Serial2) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+        Serial.println("雷达串口未初始化!");
+        return;
+    }
+
     if (!client_.connected()) {
         auto ret = client_.connect(host_.c_str(), port_);
         if (!ret) {
@@ -25,17 +52,6 @@ void YdlidarX2::update() {
         sendData();
         vTaskDelay(pdMS_TO_TICKS(10));
     }
-}
-
-void YdlidarX2::init_task() {
-    pwmControl_.attachPin(pin_pwm_);
-    motorOn();
-    Serial2.begin(baudrate_, SERIAL_8N1, pin_tx_, pin_rx_);
-}
-
-void YdlidarX2::clean_task() {
-    motorOff();
-    Serial2.end();
 }
 
 void YdlidarX2::motorOn(float speed_percent) {

@@ -2,7 +2,7 @@
 
 MotionNode::MotionNode() {
     task_name_ = "motion_node_task";
-    num_handles_ = 6;
+    num_handles_ = 9;
 
     motion_cmd_vel_topic_name_ = constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name);
     motion_status_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_status_topic_name);
@@ -13,92 +13,85 @@ MotionNode::MotionNode() {
 }
 
 bool MotionNode::init_micro_ros() {
+    rmw_qos_profile_t best_effort_qos = rmw_qos_profile_default;
+    best_effort_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
+    best_effort_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
+    best_effort_qos.depth = 1;
+    best_effort_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
     rcl_ret_t ret;
     if (!motion_cmd_vel_subscription_initialized_) {
-        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
-        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
-        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;           // 保存最后 N 条
-        my_qos.depth = 1;                                            // 队列长度
-        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;      // 临时消息
 
-        ret = rclc_subscription_init(&motion_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), motion_cmd_vel_topic_name_.c_str(), &my_qos);
+        ret = rclc_subscription_init(&motion_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), motion_cmd_vel_topic_name_.c_str(), &best_effort_qos);
         if (ret != RCL_RET_OK) {
-            Serial.printf("rclc_motion_cmd_vel_subscription_init_default:%d\n", ret);
+            Serial.printf("[micro_ros] cmd_vel subscription init failed: %d\n", ret);
             return false;
-        } else {
-            ret = rclc_executor_add_subscription(&executor_, &motion_cmd_vel_subscription_, &motion_twist_msg_, msg_twist_callback, ON_NEW_DATA);
-            if (ret != RCL_RET_OK) {
-                Serial.printf("rclc_executor_add_motion_cmd_vel_subscription:%d\n", ret);
-                ret = rcl_subscription_fini(&motion_cmd_vel_subscription_, &node_);
-                if (ret != RCL_RET_OK) {
-                    Serial.printf("rcl_motion_cmd_vel_subscription_fini error:%d\n", ret);
-                }
-                return false;
-            }
+        }
+
+        ret = rclc_executor_add_subscription(&executor_,
+                                             &motion_cmd_vel_subscription_, &motion_twist_msg_, msg_twist_callback, ON_NEW_DATA);
+
+        if (ret != RCL_RET_OK) {
+            Serial.printf("[micro_ros] cmd_vel subscription add to executor failed: %d\n", ret);
+            ret = rcl_subscription_fini(&motion_cmd_vel_subscription_, &node_);
+            return false;
         }
         motion_cmd_vel_subscription_initialized_ = true;
     }
-    if (!control_cmd_vel_subscription_initialized_) {
-        rmw_qos_profile_t my_qos = rmw_qos_profile_default;
-        my_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE; // 可靠RMW_QOS_POLICY_RELIABILITY_RELIABLE
-        my_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;        // 保存最后 N 条
-        my_qos.depth = 10;                                        // 队列长度
-        my_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;   // 临时消息
 
-        ret = rclc_subscription_init(&control_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel", &my_qos);
+    if (!control_cmd_vel_subscription_initialized_) {
+        ret = rclc_subscription_init_default(&control_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel");
         if (ret != RCL_RET_OK) {
-            Serial.printf("rclc_control_cmd_vel_subscription_init_default:%d\n", ret);
+            Serial.printf("[micro_ros] control cmd_vel subscription init failed: %d\n", ret);
             return false;
-        } else {
-            ret = rclc_executor_add_subscription(&executor_, &control_cmd_vel_subscription_, &control_twist_msg_, msg_twist_callback, ON_NEW_DATA);
-            if (ret != RCL_RET_OK) {
-                Serial.printf("rclc_executor_add_control_cmd_vel_subscription:%d\n", ret);
-                ret = rcl_subscription_fini(&control_cmd_vel_subscription_, &node_);
-                if (ret != RCL_RET_OK) {
-                    Serial.printf("rcl_control_cmd_vel_subscription_fini error:%d\n", ret);
-                }
-                return false;
-            }
+        }
+
+        ret = rclc_executor_add_subscription(&executor_, &control_cmd_vel_subscription_, &control_twist_msg_, msg_twist_callback, ON_NEW_DATA);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("[micro_ros] control cmd_vel subscription add to executor failed: %d\n", ret);
+            ret = rcl_subscription_fini(&control_cmd_vel_subscription_, &node_);
+            return false;
         }
         control_cmd_vel_subscription_initialized_ = true;
     }
+
     if (!odom_publisher_initialized_) {
-        ret = rclc_publisher_init_default(&odom_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "/odom"); //
+        ret = rclc_publisher_init_default(&odom_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "/odom");
         if (ret != RCL_RET_OK) {
-            Serial.printf("odom_publisher_:rclc_publisher_init_default:%d\n", ret);
+            Serial.printf("[micro_ros] odom publisher init failed: %d\n", ret);
             return false;
         }
         odom_publisher_initialized_ = true;
     }
+
     if (!imu_publisher_initialized_) {
-        ret = rclc_publisher_init_default(&imu_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu"); //
+        ret = rclc_publisher_init(&imu_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu", &best_effort_qos);
         if (ret != RCL_RET_OK) {
-            Serial.printf("imu_publisher_:rclc_publisher_init_default:%d\n", ret);
+            Serial.printf("[micro_ros] imu publisher init failed: %d\n", ret);
             return false;
         }
         imu_publisher_initialized_ = true;
     }
+
     if (!motion_status_publisher_initialized_) {
-        ret = rclc_publisher_init_best_effort(&motion_status_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(motion_status_msgs, msg, MotionStatus), motion_status_topic_name_.c_str()); //
+        ret = rclc_publisher_init(&motion_status_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(motion_status_msgs, msg, MotionStatus), motion_status_topic_name_.c_str(), &best_effort_qos);
         if (ret != RCL_RET_OK) {
-            Serial.printf("motion_status_publisher_:rclc_publisher_init_best_effort:%d\n", ret);
+            Serial.printf("[micro_ros] motion status publisher init failed: %d\n", ret);
             return false;
         }
         motion_status_publisher_initialized_ = true;
     }
+
     if (!motion_settings_service_initialized_) {
         ret = rclc_service_init_default(&motion_settings_service_, &node_, ROSIDL_GET_SRV_TYPE_SUPPORT(motion_settings_service, srv, MotionSettingsService), motion_services_name_.c_str());
         if (ret != RCL_RET_OK) {
-            Serial.printf("rclc_service_init_default motion_settings_service:%d\n", ret);
+            Serial.printf("[micro_ros] motion settings service init failed: %d\n", ret);
             return false;
         }
+
         ret = rclc_executor_add_service(&executor_, &motion_settings_service_, &motion_settings_request_, &motion_settings_response_, motion_settings_service_callback);
         if (ret != RCL_RET_OK) {
-            Serial.printf("rclc_executor_add_service motion_settings_service:%d\n", ret);
+            Serial.printf("[micro_ros] motion settings service add to executor failed: %d\n", ret);
             ret = rcl_service_fini(&motion_settings_service_, &node_);
-            if (ret != RCL_RET_OK) {
-                Serial.printf("rcl_service_fini motion_settings_service error:%d\n", ret);
-            }
             return false;
         }
         motion_settings_service_initialized_ = true;
@@ -109,46 +102,50 @@ bool MotionNode::init_micro_ros() {
 
 void MotionNode::clean_micro_ros() {
     rcl_ret_t ret;
-
     if (motion_settings_service_initialized_) {
         ret = rcl_service_fini(&motion_settings_service_, &node_);
         if (ret != RCL_RET_OK) {
-            Serial.printf("rcl_service_fini motion_settings_service error:%d\n", ret);
+            Serial.printf("[micro_ros] motion settings service fini failed: %d\n", ret);
         }
         motion_settings_service_initialized_ = false;
     }
+
     if (motion_cmd_vel_subscription_initialized_) {
         ret = rcl_subscription_fini(&motion_cmd_vel_subscription_, &node_);
         if (ret != RCL_RET_OK) {
-            Serial.printf("rcl_motion_cmd_vel_subscription_fini error:%d\n", ret);
+            Serial.printf("[micro_ros] cmd_vel subscription fini failed: %d\n", ret);
         }
         motion_cmd_vel_subscription_initialized_ = false;
     }
+
     if (control_cmd_vel_subscription_initialized_) {
         ret = rcl_subscription_fini(&control_cmd_vel_subscription_, &node_);
         if (ret != RCL_RET_OK) {
-            Serial.printf("rcl_control_cmd_vel_subscription_fini error:%d\n", ret);
+            Serial.printf("[micro_ros] control cmd_vel subscription fini failed: %d\n", ret);
         }
         control_cmd_vel_subscription_initialized_ = false;
     }
+
     if (motion_status_publisher_initialized_) {
         ret = rcl_publisher_fini(&motion_status_publisher_, &node_);
         if (ret != RCL_RET_OK) {
-            Serial.printf("motion_status_publisher:rcl_publisher_fini error:%d\n", ret);
+            Serial.printf("[micro_ros] motion status publisher fini failed: %d\n", ret);
         }
         motion_status_publisher_initialized_ = false;
     }
+
     if (odom_publisher_initialized_) {
         ret = rcl_publisher_fini(&odom_publisher_, &node_);
         if (ret != RCL_RET_OK) {
-            Serial.printf("odom_publisher:rcl_publisher_fini error:%d\n", ret);
+            Serial.printf("[micro_ros] odom publisher fini failed: %d\n", ret);
         }
         odom_publisher_initialized_ = false;
     }
+
     if (imu_publisher_initialized_) {
         ret = rcl_publisher_fini(&imu_publisher_, &node_);
         if (ret != RCL_RET_OK) {
-            Serial.printf("imu_publisher:rcl_publisher_fini error:%d\n", ret);
+            Serial.printf("[micro_ros] imu publisher fini failed: %d\n", ret);
         }
         imu_publisher_initialized_ = false;
     }
@@ -272,29 +269,41 @@ void MotionNode::msg_twist_callback(const void *msg) {
 }
 
 void MotionNode::publish_msgs() {
-    if (!connected_)
+    if (!connected()) {
+        // Serial.println("motion node not connected, skip publish msgs");
         return;
+    }
 
-    auto odom_msg = motionControl_->get_odom_msg();
-    auto imu_msg = mpu6050Control_->get_imu_msg();
+    // static uint begin_time = 0;
+    // begin_time = millis();
 
     auto stamp = get_timestamp();
-    odom_msg.header.stamp = stamp;
-    imu_msg.header.stamp = stamp;
 
-    rcl_ret_t ret;
-    ret = rcl_publish(&odom_publisher_, &odom_msg, NULL);
-    if (ret != RCL_RET_OK) {
-        Serial.printf("error: pub odom msg failed:%d\n", ret);
+    if (imu_publisher_initialized_) {
+        auto &imu_msg = mpu6050Control_->get_imu_msg();
+        imu_msg.header.stamp = stamp;
+        rcl_ret_t ret = rcl_publish(&imu_publisher_, &imu_msg, NULL);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("error: pub imu msg failed:%d\n", ret);
+        }
     }
 
-    ret = rcl_publish(&imu_publisher_, &imu_msg, NULL);
+    // if (odom_publisher_initialized_) {
+    //     auto &odom_msg = motionControl_->get_odom_msg();
+    //     odom_msg.header.stamp = stamp;
+    //     rcl_ret_t ret = rcl_publish(&odom_publisher_, &odom_msg, NULL);
+    //     if (ret != RCL_RET_OK) {
+    //         Serial.printf("error: pub odom msg failed:%d\n", ret);
+    //     }
+    // }
+
+    rcl_ret_t ret = rcl_publish(&motion_status_publisher_, &motionControl_->get_motion_status_msg(), NULL);
     if (ret != RCL_RET_OK) {
-        Serial.printf("error: pub imu msg failed:%d\n", ret);
+        Serial.printf("error: pub motion status msg failed:%d\n", ret);
     }
 
-    if (enable_pub_motion_status_) {
-        ret = rcl_publish(&motion_status_publisher_, &motionControl_->get_motion_status_msg(), NULL);
+    if (enable_pub_motion_status_ && motion_status_publisher_initialized_) {
+        rcl_ret_t ret = rcl_publish(&motion_status_publisher_, &motionControl_->get_motion_status_msg(), NULL);
         if (ret != RCL_RET_OK) {
             Serial.printf("error: pub motion status msg failed:%d\n", ret);
         }

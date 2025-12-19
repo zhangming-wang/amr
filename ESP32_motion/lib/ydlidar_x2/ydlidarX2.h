@@ -17,14 +17,14 @@ protected:
     void init_task() override;
     void clean_task() override;
 
-public:
-    void update() override;
-
     void motorOn(float speed_percent = 1.0);
     void motorOff();
 
     int readData();
     void writeData(uint8_t *buffer, int len);
+
+public:
+    void update() override;
 
 private:
     int pin_pwm_ = -1, pin_tx_ = -1, pin_rx_ = -1;

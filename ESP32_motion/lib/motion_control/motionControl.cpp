@@ -11,10 +11,16 @@ MotionControl::MotionControl() {
     angle_speed_loop_ = std::make_shared<PIDControl>("asl");
     position_loop_ = std::make_shared<PIDControl>("pl");
 
-    rosidl_runtime_c__String__assign(&odom_msg_.header.frame_id, "odom");          // 参考坐标系
+    mutex_ = xSemaphoreCreateMutex();
+
+    nav_msgs__msg__Odometry__init(&odom_msg_);
+    rosidl_runtime_c__String__assign(&odom_msg_.header.frame_id, "odom_link");     // 参考坐标系
     rosidl_runtime_c__String__assign(&odom_msg_.child_frame_id, "base_footprint"); // 机器人底盘
 
-    mutex_ = xSemaphoreCreateMutex();
+    for (int i = 0; i < 36; i++) {
+        odom_msg_.pose.covariance[i] = 0.0;
+        odom_msg_.twist.covariance[i] = 0.0;
+    }
 
     _load_config();
     _load_params();

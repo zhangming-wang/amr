@@ -6,7 +6,7 @@ MPU6050Control::MPU6050Control() {
     } else {
         init_success_ = _manual_init();
     }
-
+    sensor_msgs__msg__Imu__init(&imu_msg_);
     rosidl_runtime_c__String__assign(&imu_msg_.header.frame_id, "imu_link");
 }
 
