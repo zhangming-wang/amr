@@ -26,7 +26,6 @@ bool MotionNode::init_micro_ros() {
     best_effort_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
     rcl_ret_t ret;
     if (!motion_cmd_vel_subscription_initialized_) {
-
         ret = rclc_subscription_init(&motion_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), motion_cmd_vel_topic_name_.c_str(), &best_effort_qos);
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] cmd_vel subscription init failed: %d\n", ret);
@@ -85,12 +84,17 @@ bool MotionNode::init_micro_ros() {
         motion_settings_service_initialized_ = true;
     }
 
-    return true;
+    return _create_publish_motion_status_timer();
 }
 
 void MotionNode::clean_micro_ros() {
+    _destroy_publish_motion_status_timer();
     rcl_ret_t ret;
     if (motion_settings_service_initialized_) {
+        ret = rclc_executor_remove_service(&executor_, &motion_settings_service_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("[micro_ros] motion settings service remove from executor failed: %d\n", ret);
+        }
         ret = rcl_service_fini(&motion_settings_service_, &node_);
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] motion settings service fini failed: %d\n", ret);
@@ -174,7 +178,10 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
     else if (request->mode == MotionService::Type::ReadParams) {
         instance.motionControl_->read_params(response);
     } else if (request->mode == MotionService::Type::WriteParams) {
-        instance.motionControl_->set_milliseconds(request->milliseconds);
+        if (instance.motionControl_->get_milliseconds() != request->milliseconds) {
+            instance.motionControl_->set_milliseconds(request->milliseconds);
+            instance._create_publish_motion_status_timer();
+        }
 
         instance.motionControl_->set_left_front_motor_pid_params(request->left_front_motor_p, request->left_front_motor_i, request->left_front_motor_d, request->left_front_motor_max_total_integral);
         instance.motionControl_->set_left_back_motor_pid_params(request->left_back_motor_p, request->left_back_motor_i, request->left_back_motor_d, request->left_back_motor_max_total_integral);
@@ -232,5 +239,43 @@ void MotionNode::publish_msgs() {
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] motion status publish failed: %d\n", ret);
         }
+    }
+}
+
+void MotionNode::publish_motion_status_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+    MotionNode::instance().publish_msgs();
+}
+
+bool MotionNode::_create_publish_motion_status_timer() {
+    _destroy_publish_motion_status_timer();
+
+    if (!publish_motion_status_timer_initialized_) {
+        rcl_ret_t ret = rclc_timer_init_default(&publish_motion_status_timer_, &support_, RCL_MS_TO_NS(motionControl_->get_milliseconds()), publish_motion_status_timer_callback);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("[micro_ros] publish motion status timer init failed: %d\n", ret);
+            return false;
+        }
+        ret = rclc_executor_add_timer(&executor_, &publish_motion_status_timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("[micro_ros] publish motion status timer add to executor failed: %d\n", ret);
+            ret = rcl_timer_fini(&publish_motion_status_timer_);
+            return false;
+        }
+        publish_motion_status_timer_initialized_ = true;
+    }
+
+    return true;
+}
+void MotionNode::_destroy_publish_motion_status_timer() {
+    if (publish_motion_status_timer_initialized_) {
+        rcl_ret_t ret = rclc_executor_remove_timer(&executor_, &publish_motion_status_timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("[micro_ros] publish motion status timer remove from executor failed: %d\n", ret);
+        }
+        ret = rcl_timer_fini(&publish_motion_status_timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("[micro_ros] publish motion status timer fini failed: %d\n", ret);
+        }
+        publish_motion_status_timer_initialized_ = false;
     }
 }

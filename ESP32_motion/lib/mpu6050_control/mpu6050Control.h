@@ -18,7 +18,8 @@ class MPU6050Control : public BaseTaskSingleton<MPU6050Control> {
     friend class Singleton<MPU6050Control>;
 
 protected:
-    MPU6050Control();
+    MPU6050Control() = default;
+    virtual ~MPU6050Control() = default;
 
 public:
     void update() override;

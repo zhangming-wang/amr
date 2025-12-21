@@ -2,7 +2,6 @@
 #include "motionNode.h"
 #include "settings.h"
 #include "system.h"
-#include "ydlidarX2.h"
 #include <Arduino.h>
 
 void (*serial_print)(const std::string &) = MotionNode::serial_print;
@@ -22,11 +21,9 @@ void setup() {
     WiFi.persistent(false);
 
     masterTask = &MasterTask::instance();
-    // YdlidarX2 &ydlidarX2 = YdlidarX2::instance();
     motionNode = &MotionNode::instance();
 
     masterTask->start_task();
-    // ydlidarX2.start_task();
     motionNode->start_task();
 }
 

@@ -706,15 +706,18 @@ void MotionWidget::on_recv_motion_status_msg(const MotionStatusMsg::SharedPtr ms
         clear_plot();
     }
 
-    reference_seconds_ += ui->spinBox_millseconds->value() / 1000.0;
-    wheel_speed_customPlot_->graph(0)->addData(reference_seconds_, msg->left_front_current_v);
-    wheel_speed_customPlot_->graph(1)->addData(reference_seconds_, msg->left_front_target_v);
-    wheel_speed_customPlot_->graph(2)->addData(reference_seconds_, msg->left_back_current_v);
-    wheel_speed_customPlot_->graph(3)->addData(reference_seconds_, msg->left_back_target_v);
-    wheel_speed_customPlot_->graph(4)->addData(reference_seconds_, msg->right_front_current_v);
-    wheel_speed_customPlot_->graph(5)->addData(reference_seconds_, msg->right_front_target_v);
-    wheel_speed_customPlot_->graph(6)->addData(reference_seconds_, msg->right_back_current_v);
-    wheel_speed_customPlot_->graph(7)->addData(reference_seconds_, msg->right_back_target_v);
+    if (wheel_speed_customPlot_->graph(0)->dataCount() == 0) {
+        reference_seconds_ = msg->stamp * 1e-9;
+    }
+
+    wheel_speed_customPlot_->graph(0)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->left_front_current_v);
+    wheel_speed_customPlot_->graph(1)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->left_front_target_v);
+    wheel_speed_customPlot_->graph(2)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->left_back_current_v);
+    wheel_speed_customPlot_->graph(3)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->left_back_target_v);
+    wheel_speed_customPlot_->graph(4)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->right_front_current_v);
+    wheel_speed_customPlot_->graph(5)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->right_front_target_v);
+    wheel_speed_customPlot_->graph(6)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->right_back_current_v);
+    wheel_speed_customPlot_->graph(7)->addData(msg->stamp * 1e-9 - reference_seconds_, msg->right_back_target_v);
 
     if (ui->checkBox_dynamic_follow->isChecked()) {
         if (wheel_speed_customPlot_->isVisible()) {

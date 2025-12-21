@@ -1,13 +1,5 @@
 #include "mpu6050Control.h"
 
-MPU6050Control::MPU6050Control() {
-    if (is_dmp_handle_) {
-        init_success_ = _dmp_init();
-    } else {
-        init_success_ = _manual_init();
-    }
-}
-
 void MPU6050Control::update() {
     if (init_success_ && !is_calibrating_.load()) {
         if (is_dmp_handle_) {
@@ -22,6 +14,12 @@ void MPU6050Control::set_pins(int pin_SDA, int pin_SCL) {
     if (pin_SDA != pin_SDA_ || pin_SCL != pin_SCL_) {
         pin_SDA_ = pin_SDA;
         pin_SCL_ = pin_SCL;
+    }
+
+    if (is_dmp_handle_) {
+        init_success_ = _dmp_init();
+    } else {
+        init_success_ = _manual_init();
     }
 }
 
@@ -44,33 +42,38 @@ bool MPU6050Control::_manual_init() {
 }
 
 bool MPU6050Control::_dmp_init() {
-    if (pin_SDA_ <= 0 || pin_SCL_ <= 0)
+    if (pin_SDA_ < 0 || pin_SCL_ < 0)
         return false;
 
     Wire.begin(pin_SDA_, pin_SCL_);
-    Wire.setClock(400000); // I2C 400kHz
-    delay(500);
+    Wire.setClock(400000);
+    delay(200);
 
-    mpu_.reset(); // 重置 MPU6050 的所有寄存器
-    delay(100);
-    mpu_.resetFIFO(); // 清空 FIFO 缓冲区
-    mpu_.setSleepEnabled(false);
     mpu_.initialize();
+    delay(100);
+
+    if (!mpu_.testConnection()) {
+        Serial.println("MPU6050 not responding");
+        return false;
+    }
+
+    mpu_.setSleepEnabled(false);
 
     uint8_t devStatus = mpu_.dmpInitialize();
-    if (devStatus == 0) {
-        // 进行校准（保持静止）
-        _loadCalibration();
-        // 启用 DMP
-        mpu_.setRate(4);
-        mpu_.setDMPEnabled(true);
-        packetSize_ = mpu_.dmpGetFIFOPacketSize();
-        serial_print("DMP 初始化成功！");
-    } else {
+    if (devStatus != 0) {
         serial_print("DMP 初始化失败，错误代码: " + std::to_string(devStatus));
         return false;
     }
 
+    // ⚠️ DMP 固件加载完成后
+    _loadCalibration(); // 保持静止
+
+    mpu_.setDMPEnabled(true);
+    mpu_.resetFIFO(); // ✅ 只在这里 reset
+
+    packetSize_ = mpu_.dmpGetFIFOPacketSize();
+
+    serial_print("DMP 初始化成功！");
     return true;
 }
 

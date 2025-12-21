@@ -69,8 +69,8 @@ def generate_launch_description():
 
     nodes_list = [
         *control_panel_nodes,
-        *lidar_nodes,
-        *amr_nodes,
+        # *lidar_nodes,
+        # *amr_nodes,
     ]
 
     return LaunchDescription(nodes_list)

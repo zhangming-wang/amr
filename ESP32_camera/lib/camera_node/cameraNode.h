@@ -48,7 +48,7 @@ private:
     camera_settings_service__srv__CameraSettingsService_Request camera_settings_request_;
     camera_settings_service__srv__CameraSettingsService_Response camera_settings_response_;
 
-    void _create_publish_image_timer();
+    bool _create_publish_image_timer();
     void _destroy_publish_image_timer();
 
     static void camera_settings_service_callback(const void *req, void *res);

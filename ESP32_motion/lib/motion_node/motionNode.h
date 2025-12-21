@@ -29,6 +29,7 @@ private:
     rcl_subscription_t motion_cmd_vel_subscription_, control_cmd_vel_subscription_;
     rcl_publisher_t motion_status_publisher_;
     rcl_service_t motion_settings_service_;
+    rcl_timer_t publish_motion_status_timer_;
 
     std::string motion_cmd_vel_topic_name_;
     std::string motion_services_name_;
@@ -43,10 +44,15 @@ private:
     bool motion_cmd_vel_subscription_initialized_ = false;
     bool control_cmd_vel_subscription_initialized_ = false;
     bool motion_status_publisher_initialized_ = false;
+    bool publish_motion_status_timer_initialized_ = false;
 
     MotionControl *motionControl_ = nullptr;
     MPU6050Control *mpu6050Control_ = nullptr;
 
+    bool _create_publish_motion_status_timer();
+    void _destroy_publish_motion_status_timer();
+
     static void motion_settings_service_callback(const void *req, void *res);
     static void msg_twist_callback(const void *msg);
+    static void publish_motion_status_timer_callback(rcl_timer_t *timer, int64_t last_call_time);
 };

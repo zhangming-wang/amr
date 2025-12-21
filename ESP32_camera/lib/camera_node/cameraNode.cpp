@@ -49,7 +49,7 @@ bool CameraNode::init_micro_ros() {
     }
 
     if (enable_series_capture_) {
-        _create_publish_image_timer();
+        return _create_publish_image_timer();
     }
 
     return true;
@@ -60,6 +60,10 @@ void CameraNode::clean_micro_ros() {
 
     rcl_ret_t ret;
     if (camera_settings_service_initialized_) {
+        ret = rclc_executor_remove_timer(&executor_, &publish_image_timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("rclc_executor_remove_timer publish_image_timer error: %d\n", ret);
+        }
         ret = rcl_service_fini(&camera_settings_service_, &node_);
         if (ret != RCL_RET_OK) {
             Serial.printf("rcl_service_fini camera_settings_service error: %d\n", ret);
@@ -307,22 +311,23 @@ void CameraNode::publish_image_timer_callback(rcl_timer_t *timer, int64_t last_c
     CameraNode::instance().publish_image_msg();
 }
 
-void CameraNode::_create_publish_image_timer() {
+bool CameraNode::_create_publish_image_timer() {
     if (publish_image_timer_initialized_) {
         _destroy_publish_image_timer();
     }
     rcl_ret_t ret = rclc_timer_init_default(&publish_image_timer_, &support_, RCL_MS_TO_NS(cameraControl_->get_params().milliseconds), publish_image_timer_callback);
     if (ret != RCL_RET_OK) {
         Serial.printf("publish_image_timer_: rclc_timer_init_default error: %d\n", ret);
-        return;
+        return false;
     }
     ret = rclc_executor_add_timer(&executor_, &publish_image_timer_);
     if (ret != RCL_RET_OK) {
         Serial.printf("publish_image_timer_: rclc_executor_add_timer error: %d\n", ret);
         ret = rcl_timer_fini(&publish_image_timer_);
-        return;
+        return false;
     }
     publish_image_timer_initialized_ = true;
+    return true;
 }
 
 void CameraNode::_destroy_publish_image_timer() {
