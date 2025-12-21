@@ -20,38 +20,30 @@ extern "C"
 /// Struct defined in msg/MotionStatus in the package motion_status_msgs.
 typedef struct motion_status_msgs__msg__MotionStatus
 {
+  uint64_t stamp;
+  uint64_t seq;
+  float left_front_total_distance;
+  float left_front_dt_distance;
   float left_front_current_v;
   float left_front_target_v;
+  float left_back_total_distance;
+  float left_back_dt_distance;
   float left_back_current_v;
   float left_back_target_v;
+  float right_front_total_distance;
+  float right_front_dt_distance;
   float right_front_current_v;
   float right_front_target_v;
+  float right_back_total_distance;
+  float right_back_dt_distance;
   float right_back_current_v;
   float right_back_target_v;
-  float twist_current_linear_x;
-  float twist_current_linear_y;
-  float twist_current_linear_z;
-  float twist_current_angular_x;
-  float twist_current_angular_y;
-  float twist_current_angular_z;
-  float twist_target_linear_x;
-  float twist_target_linear_y;
-  float twist_target_linear_z;
-  float twist_target_angular_x;
-  float twist_target_angular_y;
-  float twist_target_angular_z;
-  float twist_current_euler_pose_x;
-  float twist_current_euler_pose_y;
-  float twist_current_euler_pose_z;
-  float twist_current_euler_pose_roll;
-  float twist_current_euler_pose_pitch;
-  float twist_current_euler_pose_yaw;
-  float twist_target_euler_pose_x;
-  float twist_target_euler_pose_y;
-  float twist_target_euler_pose_z;
-  float twist_target_euler_pose_roll;
-  float twist_target_euler_pose_pitch;
-  float twist_target_euler_pose_yaw;
+  float imu_roll;
+  float imu_pitch;
+  float imu_yaw;
+  float imu_gyro_x;
+  float imu_gyro_y;
+  float imu_gyro_z;
 } motion_status_msgs__msg__MotionStatus;
 
 // Struct for a sequence of motion_status_msgs__msg__MotionStatus.

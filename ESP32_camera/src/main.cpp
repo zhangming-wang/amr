@@ -1,10 +1,10 @@
 #include "cameraControl.h"
 #include "cameraNode.h"
 #include "esp_timer.h"
-#include "masterTask.h"
 #include "settings.h"
 #include "system.h"
 #include <Arduino.h>
+#include <WiFi.h>
 
 void (*serial_print)(const std::string &) = CameraNode::serial_print;
 
@@ -18,12 +18,11 @@ void setup() {
 
     WiFi.mode(WIFI_STA);
     WiFi.persistent(false);
+    CameraControl &cameraControl = CameraControl::instance();
+    cameraControl.init_camera(true);
 
     CameraNode &cameraNode = CameraNode::instance();
-    MasterTask &masterTask = MasterTask::instance();
-
     cameraNode.start_task();
-    masterTask.start_task();
 }
 
 void loop() {

@@ -122,20 +122,23 @@ float MotorControl::get_target_acc() {
     return target_acc_;
 }
 
-float MotorControl::get_distance_change() {
+float MotorControl::get_total_distance() {
+    if (motorParams_.pluses_per_revolution == 0)
+        return 0;
+    else
+        return encoder_->get_count() * PI * motorParams_.wheel_diameter / motorParams_.pluses_per_revolution;
+}
+
+float MotorControl::get_dt_distance() {
     if (motorParams_.pluses_per_revolution == 0)
         return 0;
     else
         return encoder_->get_count_change() * PI * motorParams_.wheel_diameter / motorParams_.pluses_per_revolution;
 }
 
-long MotorControl::get_encoder_count() {
-    return encoder_->get_count();
-}
-
 void MotorControl::set_speed(float target_v, float dt, bool pid_adjust) {
     target_v_ = target_v;
-    latest_current_v_ = get_distance_change() / dt;
+    latest_current_v_ = get_dt_distance() / dt;
     current_acc_ = (latest_current_v_ - current_v_) / dt;
     current_v_ = latest_current_v_;
     if (pid_adjust) {

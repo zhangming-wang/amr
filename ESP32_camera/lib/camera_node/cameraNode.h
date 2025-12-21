@@ -33,17 +33,24 @@ public:
 private:
     rcl_publisher_t image_publisher_;
     rcl_service_t camera_settings_service_;
+    rcl_timer_t publish_image_timer_;
 
     bool camera_settings_service_initialized_ = false;
     bool image_publisher_initialized_ = false;
+    bool publish_image_timer_initialized_ = false;
 
     bool enable_series_capture_ = true;
     std::string camera_image_topic_name_, camera_service_name_;
 
     CameraControl *cameraControl_ = nullptr;
+    sensor_msgs__msg__CompressedImage image_msg_;
 
     camera_settings_service__srv__CameraSettingsService_Request camera_settings_request_;
     camera_settings_service__srv__CameraSettingsService_Response camera_settings_response_;
 
+    void _create_publish_image_timer();
+    void _destroy_publish_image_timer();
+
     static void camera_settings_service_callback(const void *req, void *res);
+    static void publish_image_timer_callback(rcl_timer_t *timer, int64_t last_call_time);
 };

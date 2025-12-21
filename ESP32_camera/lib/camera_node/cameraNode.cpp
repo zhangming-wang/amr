@@ -3,11 +3,20 @@
 CameraNode::CameraNode() {
     task_name_ = "camera_node_task";
     num_handles_ = 3;
+    stack_size_ = 16384;
+
+    node_name_ = esp32_camera_node_name;
+    node_namespace_ = esp32_camera_node_namespace;
+    serial_msg_topic_name_ = constructNodeName(esp32_camera_node_namespace, esp32_camera_serial_msg_topic_name);
+    heartbeat_topic_name_ = constructNodeName(esp32_camera_node_namespace, esp32_camera_heartbeat_topic_name);
 
     camera_image_topic_name_ = constructNodeName(esp32_camera_node_namespace, esp32_camera_image_topic_name);
     camera_service_name_ = constructNodeName(esp32_camera_node_namespace, esp32_camera_settings_service_name);
 
     cameraControl_ = &CameraControl::instance();
+
+    image_msg_.header.frame_id = micro_ros_string_utilities_init("camera_link");
+    image_msg_.format = micro_ros_string_utilities_init("jpeg");
 }
 
 bool CameraNode::init_micro_ros() {
@@ -39,10 +48,16 @@ bool CameraNode::init_micro_ros() {
         camera_settings_service_initialized_ = true;
     }
 
+    if (enable_series_capture_) {
+        _create_publish_image_timer();
+    }
+
     return true;
 }
 
 void CameraNode::clean_micro_ros() {
+    _destroy_publish_image_timer();
+
     rcl_ret_t ret;
     if (camera_settings_service_initialized_) {
         ret = rcl_service_fini(&camera_settings_service_, &node_);
@@ -62,6 +77,11 @@ void CameraNode::clean_micro_ros() {
 
 void CameraNode::set_enable_series_capture(bool status) {
     enable_series_capture_ = status;
+    if (enable_series_capture_) {
+        _create_publish_image_timer();
+    } else {
+        _destroy_publish_image_timer();
+    }
 }
 
 bool CameraNode::get_enable_series_capture() {
@@ -69,15 +89,29 @@ bool CameraNode::get_enable_series_capture() {
 }
 
 void CameraNode::publish_image_msg() {
-    cameraControl_->capture_image();
+    if (!connected()) {
+        return;
+    }
+    if (!image_publisher_initialized_) {
+        return;
+    }
 
-    auto image_msg = cameraControl_->get_image_msg();
-    if (connected()) {
-        image_msg.header.stamp = get_timestamp();
-        rcl_ret_t ret = rcl_publish(&image_publisher_, &image_msg, NULL);
-        if (ret != RCL_RET_OK) {
-            Serial.printf("error: 发布图像失败，错误码: %d ，图像大小: %d\n", ret, image_msg.data.size);
-        }
+    auto image_ = cameraControl_->capture_image();
+    if (!image_) {
+        return;
+    }
+
+    auto now_ns = get_now_ns();
+    image_msg_.header.stamp.sec = static_cast<int32_t>(now_ns / 1000000000ULL);
+    image_msg_.header.stamp.nanosec = static_cast<uint32_t>(now_ns % 1000000000ULL);
+
+    image_msg_.data.capacity = image_->len;
+    image_msg_.data.data = (uint8_t *)image_->buf;
+    image_msg_.data.size = image_->len;
+
+    rcl_ret_t ret = rcl_publish(&image_publisher_, &image_msg_, NULL);
+    if (ret != RCL_RET_OK) {
+        Serial.printf("error: 发布图像失败，错误码: %d ，图像大小: %d\n", ret, image_msg_.data.size);
     }
 
     cameraControl_->release_image();
@@ -132,7 +166,12 @@ void CameraNode::camera_settings_service_callback(const void *req, void *res) {
     } else if (request->mode == CameraService::Type::WriteParams) {
         auto params = instance.cameraControl_->get_params();
 
-        params.milliseconds = request->milliseconds;
+        bool need_restart_timer = false;
+        if (request->milliseconds != params.milliseconds) {
+            params.milliseconds = request->milliseconds;
+            need_restart_timer = true;
+        }
+
         params.pixformat = static_cast<pixformat_t>(request->pixformat);
         params.status.framesize = static_cast<framesize_t>(request->framesize);
         params.status.quality = request->quality;
@@ -162,6 +201,10 @@ void CameraNode::camera_settings_service_callback(const void *req, void *res) {
         params.status.colorbar = request->colorbar;
 
         instance.cameraControl_->set_params(params);
+
+        if (need_restart_timer && instance.enable_series_capture_) {
+            instance._create_publish_image_timer();
+        }
 
         params = instance.cameraControl_->get_params();
         response->enable_series_capture = instance.enable_series_capture_;
@@ -258,4 +301,40 @@ void CameraNode::camera_settings_service_callback(const void *req, void *res) {
 
     response->state = request->mode;
     response->id = request->id;
+}
+
+void CameraNode::publish_image_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+    CameraNode::instance().publish_image_msg();
+}
+
+void CameraNode::_create_publish_image_timer() {
+    if (publish_image_timer_initialized_) {
+        _destroy_publish_image_timer();
+    }
+    rcl_ret_t ret = rclc_timer_init_default(&publish_image_timer_, &support_, RCL_MS_TO_NS(cameraControl_->get_params().milliseconds), publish_image_timer_callback);
+    if (ret != RCL_RET_OK) {
+        Serial.printf("publish_image_timer_: rclc_timer_init_default error: %d\n", ret);
+        return;
+    }
+    ret = rclc_executor_add_timer(&executor_, &publish_image_timer_);
+    if (ret != RCL_RET_OK) {
+        Serial.printf("publish_image_timer_: rclc_executor_add_timer error: %d\n", ret);
+        ret = rcl_timer_fini(&publish_image_timer_);
+        return;
+    }
+    publish_image_timer_initialized_ = true;
+}
+
+void CameraNode::_destroy_publish_image_timer() {
+    if (publish_image_timer_initialized_) {
+        rcl_ret_t ret = rclc_executor_remove_timer(&executor_, &publish_image_timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("publish_image_timer_: rclc_executor_remove_timer error: %d\n", ret);
+        }
+        ret = rcl_timer_fini(&publish_image_timer_);
+        if (ret != RCL_RET_OK) {
+            Serial.printf("publish_image_timer_: rcl_timer_fini error: %d\n", ret);
+        }
+        publish_image_timer_initialized_ = false;
+    }
 }

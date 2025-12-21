@@ -16,33 +16,15 @@ motion_settings_service__srv__MotionSettingsService_Request__init(motion_setting
   if (!msg) {
     return false;
   }
-  // mode
   // id
-  // motor_enable_flags
+  // mode
   // milliseconds
-  // position_loop_milliseconds_cnt
-  // speed_loop_milliseconds_cnt
-  // enable_speed_plan
-  // is_mecanum_wheel
-  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
   // jerk
   // wheel_width
   // track_width
-  // position_p
-  // position_i
-  // position_d
-  // position_max_total_integral
-  // line_speed_p
-  // line_speed_i
-  // line_speed_d
-  // line_speed_max_total_integral
-  // angle_speed_p
-  // angle_speed_i
-  // angle_speed_d
-  // angle_speed_max_total_integral
   // left_front_motor_pina
   // left_front_motor_pinb
   // left_front_motor_pinpwm
@@ -91,6 +73,9 @@ motion_settings_service__srv__MotionSettingsService_Request__init(motion_setting
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // motor_enable_flags
+  // enable_speed_plan
+  // is_mecanum_wheel
   return true;
 }
 
@@ -100,33 +85,15 @@ motion_settings_service__srv__MotionSettingsService_Request__fini(motion_setting
   if (!msg) {
     return;
   }
-  // mode
   // id
-  // motor_enable_flags
+  // mode
   // milliseconds
-  // position_loop_milliseconds_cnt
-  // speed_loop_milliseconds_cnt
-  // enable_speed_plan
-  // is_mecanum_wheel
-  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
   // jerk
   // wheel_width
   // track_width
-  // position_p
-  // position_i
-  // position_d
-  // position_max_total_integral
-  // line_speed_p
-  // line_speed_i
-  // line_speed_d
-  // line_speed_max_total_integral
-  // angle_speed_p
-  // angle_speed_i
-  // angle_speed_d
-  // angle_speed_max_total_integral
   // left_front_motor_pina
   // left_front_motor_pinb
   // left_front_motor_pinpwm
@@ -175,6 +142,9 @@ motion_settings_service__srv__MotionSettingsService_Request__fini(motion_setting
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // motor_enable_flags
+  // enable_speed_plan
+  // is_mecanum_wheel
 }
 
 bool
@@ -183,40 +153,16 @@ motion_settings_service__srv__MotionSettingsService_Request__are_equal(const mot
   if (!lhs || !rhs) {
     return false;
   }
-  // mode
-  if (lhs->mode != rhs->mode) {
-    return false;
-  }
   // id
   if (lhs->id != rhs->id) {
     return false;
   }
-  // motor_enable_flags
-  if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
+  // mode
+  if (lhs->mode != rhs->mode) {
     return false;
   }
   // milliseconds
   if (lhs->milliseconds != rhs->milliseconds) {
-    return false;
-  }
-  // position_loop_milliseconds_cnt
-  if (lhs->position_loop_milliseconds_cnt != rhs->position_loop_milliseconds_cnt) {
-    return false;
-  }
-  // speed_loop_milliseconds_cnt
-  if (lhs->speed_loop_milliseconds_cnt != rhs->speed_loop_milliseconds_cnt) {
-    return false;
-  }
-  // enable_speed_plan
-  if (lhs->enable_speed_plan != rhs->enable_speed_plan) {
-    return false;
-  }
-  // is_mecanum_wheel
-  if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
-    return false;
-  }
-  // enable_pub_motion_status
-  if (lhs->enable_pub_motion_status != rhs->enable_pub_motion_status) {
     return false;
   }
   // speed_percent
@@ -241,54 +187,6 @@ motion_settings_service__srv__MotionSettingsService_Request__are_equal(const mot
   }
   // track_width
   if (lhs->track_width != rhs->track_width) {
-    return false;
-  }
-  // position_p
-  if (lhs->position_p != rhs->position_p) {
-    return false;
-  }
-  // position_i
-  if (lhs->position_i != rhs->position_i) {
-    return false;
-  }
-  // position_d
-  if (lhs->position_d != rhs->position_d) {
-    return false;
-  }
-  // position_max_total_integral
-  if (lhs->position_max_total_integral != rhs->position_max_total_integral) {
-    return false;
-  }
-  // line_speed_p
-  if (lhs->line_speed_p != rhs->line_speed_p) {
-    return false;
-  }
-  // line_speed_i
-  if (lhs->line_speed_i != rhs->line_speed_i) {
-    return false;
-  }
-  // line_speed_d
-  if (lhs->line_speed_d != rhs->line_speed_d) {
-    return false;
-  }
-  // line_speed_max_total_integral
-  if (lhs->line_speed_max_total_integral != rhs->line_speed_max_total_integral) {
-    return false;
-  }
-  // angle_speed_p
-  if (lhs->angle_speed_p != rhs->angle_speed_p) {
-    return false;
-  }
-  // angle_speed_i
-  if (lhs->angle_speed_i != rhs->angle_speed_i) {
-    return false;
-  }
-  // angle_speed_d
-  if (lhs->angle_speed_d != rhs->angle_speed_d) {
-    return false;
-  }
-  // angle_speed_max_total_integral
-  if (lhs->angle_speed_max_total_integral != rhs->angle_speed_max_total_integral) {
     return false;
   }
   // left_front_motor_pina
@@ -483,6 +381,18 @@ motion_settings_service__srv__MotionSettingsService_Request__are_equal(const mot
   if (lhs->right_back_motor_revolutions_per_minute != rhs->right_back_motor_revolutions_per_minute) {
     return false;
   }
+  // motor_enable_flags
+  if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
+    return false;
+  }
+  // enable_speed_plan
+  if (lhs->enable_speed_plan != rhs->enable_speed_plan) {
+    return false;
+  }
+  // is_mecanum_wheel
+  if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
+    return false;
+  }
   return true;
 }
 
@@ -494,24 +404,12 @@ motion_settings_service__srv__MotionSettingsService_Request__copy(
   if (!input || !output) {
     return false;
   }
-  // mode
-  output->mode = input->mode;
   // id
   output->id = input->id;
-  // motor_enable_flags
-  output->motor_enable_flags = input->motor_enable_flags;
+  // mode
+  output->mode = input->mode;
   // milliseconds
   output->milliseconds = input->milliseconds;
-  // position_loop_milliseconds_cnt
-  output->position_loop_milliseconds_cnt = input->position_loop_milliseconds_cnt;
-  // speed_loop_milliseconds_cnt
-  output->speed_loop_milliseconds_cnt = input->speed_loop_milliseconds_cnt;
-  // enable_speed_plan
-  output->enable_speed_plan = input->enable_speed_plan;
-  // is_mecanum_wheel
-  output->is_mecanum_wheel = input->is_mecanum_wheel;
-  // enable_pub_motion_status
-  output->enable_pub_motion_status = input->enable_pub_motion_status;
   // speed_percent
   output->speed_percent = input->speed_percent;
   // max_v
@@ -524,30 +422,6 @@ motion_settings_service__srv__MotionSettingsService_Request__copy(
   output->wheel_width = input->wheel_width;
   // track_width
   output->track_width = input->track_width;
-  // position_p
-  output->position_p = input->position_p;
-  // position_i
-  output->position_i = input->position_i;
-  // position_d
-  output->position_d = input->position_d;
-  // position_max_total_integral
-  output->position_max_total_integral = input->position_max_total_integral;
-  // line_speed_p
-  output->line_speed_p = input->line_speed_p;
-  // line_speed_i
-  output->line_speed_i = input->line_speed_i;
-  // line_speed_d
-  output->line_speed_d = input->line_speed_d;
-  // line_speed_max_total_integral
-  output->line_speed_max_total_integral = input->line_speed_max_total_integral;
-  // angle_speed_p
-  output->angle_speed_p = input->angle_speed_p;
-  // angle_speed_i
-  output->angle_speed_i = input->angle_speed_i;
-  // angle_speed_d
-  output->angle_speed_d = input->angle_speed_d;
-  // angle_speed_max_total_integral
-  output->angle_speed_max_total_integral = input->angle_speed_max_total_integral;
   // left_front_motor_pina
   output->left_front_motor_pina = input->left_front_motor_pina;
   // left_front_motor_pinb
@@ -644,6 +518,12 @@ motion_settings_service__srv__MotionSettingsService_Request__copy(
   output->right_back_motor_pluses_per_revolution = input->right_back_motor_pluses_per_revolution;
   // right_back_motor_revolutions_per_minute
   output->right_back_motor_revolutions_per_minute = input->right_back_motor_revolutions_per_minute;
+  // motor_enable_flags
+  output->motor_enable_flags = input->motor_enable_flags;
+  // enable_speed_plan
+  output->enable_speed_plan = input->enable_speed_plan;
+  // is_mecanum_wheel
+  output->is_mecanum_wheel = input->is_mecanum_wheel;
   return true;
 }
 
@@ -833,33 +713,15 @@ motion_settings_service__srv__MotionSettingsService_Response__init(motion_settin
   if (!msg) {
     return false;
   }
-  // state
   // id
-  // motor_enable_flags
+  // state
   // milliseconds
-  // position_loop_milliseconds_cnt
-  // speed_loop_milliseconds_cnt
-  // enable_speed_plan
-  // is_mecanum_wheel
-  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
   // jerk
   // wheel_width
   // track_width
-  // position_p
-  // position_i
-  // position_d
-  // position_max_total_integral
-  // line_speed_p
-  // line_speed_i
-  // line_speed_d
-  // line_speed_max_total_integral
-  // angle_speed_p
-  // angle_speed_i
-  // angle_speed_d
-  // angle_speed_max_total_integral
   // left_front_motor_pina
   // left_front_motor_pinb
   // left_front_motor_pinpwm
@@ -908,6 +770,9 @@ motion_settings_service__srv__MotionSettingsService_Response__init(motion_settin
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // motor_enable_flags
+  // enable_speed_plan
+  // is_mecanum_wheel
   return true;
 }
 
@@ -917,33 +782,15 @@ motion_settings_service__srv__MotionSettingsService_Response__fini(motion_settin
   if (!msg) {
     return;
   }
-  // state
   // id
-  // motor_enable_flags
+  // state
   // milliseconds
-  // position_loop_milliseconds_cnt
-  // speed_loop_milliseconds_cnt
-  // enable_speed_plan
-  // is_mecanum_wheel
-  // enable_pub_motion_status
   // speed_percent
   // max_v
   // max_acc
   // jerk
   // wheel_width
   // track_width
-  // position_p
-  // position_i
-  // position_d
-  // position_max_total_integral
-  // line_speed_p
-  // line_speed_i
-  // line_speed_d
-  // line_speed_max_total_integral
-  // angle_speed_p
-  // angle_speed_i
-  // angle_speed_d
-  // angle_speed_max_total_integral
   // left_front_motor_pina
   // left_front_motor_pinb
   // left_front_motor_pinpwm
@@ -992,6 +839,9 @@ motion_settings_service__srv__MotionSettingsService_Response__fini(motion_settin
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // motor_enable_flags
+  // enable_speed_plan
+  // is_mecanum_wheel
 }
 
 bool
@@ -1000,40 +850,16 @@ motion_settings_service__srv__MotionSettingsService_Response__are_equal(const mo
   if (!lhs || !rhs) {
     return false;
   }
-  // state
-  if (lhs->state != rhs->state) {
-    return false;
-  }
   // id
   if (lhs->id != rhs->id) {
     return false;
   }
-  // motor_enable_flags
-  if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
+  // state
+  if (lhs->state != rhs->state) {
     return false;
   }
   // milliseconds
   if (lhs->milliseconds != rhs->milliseconds) {
-    return false;
-  }
-  // position_loop_milliseconds_cnt
-  if (lhs->position_loop_milliseconds_cnt != rhs->position_loop_milliseconds_cnt) {
-    return false;
-  }
-  // speed_loop_milliseconds_cnt
-  if (lhs->speed_loop_milliseconds_cnt != rhs->speed_loop_milliseconds_cnt) {
-    return false;
-  }
-  // enable_speed_plan
-  if (lhs->enable_speed_plan != rhs->enable_speed_plan) {
-    return false;
-  }
-  // is_mecanum_wheel
-  if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
-    return false;
-  }
-  // enable_pub_motion_status
-  if (lhs->enable_pub_motion_status != rhs->enable_pub_motion_status) {
     return false;
   }
   // speed_percent
@@ -1058,54 +884,6 @@ motion_settings_service__srv__MotionSettingsService_Response__are_equal(const mo
   }
   // track_width
   if (lhs->track_width != rhs->track_width) {
-    return false;
-  }
-  // position_p
-  if (lhs->position_p != rhs->position_p) {
-    return false;
-  }
-  // position_i
-  if (lhs->position_i != rhs->position_i) {
-    return false;
-  }
-  // position_d
-  if (lhs->position_d != rhs->position_d) {
-    return false;
-  }
-  // position_max_total_integral
-  if (lhs->position_max_total_integral != rhs->position_max_total_integral) {
-    return false;
-  }
-  // line_speed_p
-  if (lhs->line_speed_p != rhs->line_speed_p) {
-    return false;
-  }
-  // line_speed_i
-  if (lhs->line_speed_i != rhs->line_speed_i) {
-    return false;
-  }
-  // line_speed_d
-  if (lhs->line_speed_d != rhs->line_speed_d) {
-    return false;
-  }
-  // line_speed_max_total_integral
-  if (lhs->line_speed_max_total_integral != rhs->line_speed_max_total_integral) {
-    return false;
-  }
-  // angle_speed_p
-  if (lhs->angle_speed_p != rhs->angle_speed_p) {
-    return false;
-  }
-  // angle_speed_i
-  if (lhs->angle_speed_i != rhs->angle_speed_i) {
-    return false;
-  }
-  // angle_speed_d
-  if (lhs->angle_speed_d != rhs->angle_speed_d) {
-    return false;
-  }
-  // angle_speed_max_total_integral
-  if (lhs->angle_speed_max_total_integral != rhs->angle_speed_max_total_integral) {
     return false;
   }
   // left_front_motor_pina
@@ -1300,6 +1078,18 @@ motion_settings_service__srv__MotionSettingsService_Response__are_equal(const mo
   if (lhs->right_back_motor_revolutions_per_minute != rhs->right_back_motor_revolutions_per_minute) {
     return false;
   }
+  // motor_enable_flags
+  if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
+    return false;
+  }
+  // enable_speed_plan
+  if (lhs->enable_speed_plan != rhs->enable_speed_plan) {
+    return false;
+  }
+  // is_mecanum_wheel
+  if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
+    return false;
+  }
   return true;
 }
 
@@ -1311,24 +1101,12 @@ motion_settings_service__srv__MotionSettingsService_Response__copy(
   if (!input || !output) {
     return false;
   }
-  // state
-  output->state = input->state;
   // id
   output->id = input->id;
-  // motor_enable_flags
-  output->motor_enable_flags = input->motor_enable_flags;
+  // state
+  output->state = input->state;
   // milliseconds
   output->milliseconds = input->milliseconds;
-  // position_loop_milliseconds_cnt
-  output->position_loop_milliseconds_cnt = input->position_loop_milliseconds_cnt;
-  // speed_loop_milliseconds_cnt
-  output->speed_loop_milliseconds_cnt = input->speed_loop_milliseconds_cnt;
-  // enable_speed_plan
-  output->enable_speed_plan = input->enable_speed_plan;
-  // is_mecanum_wheel
-  output->is_mecanum_wheel = input->is_mecanum_wheel;
-  // enable_pub_motion_status
-  output->enable_pub_motion_status = input->enable_pub_motion_status;
   // speed_percent
   output->speed_percent = input->speed_percent;
   // max_v
@@ -1341,30 +1119,6 @@ motion_settings_service__srv__MotionSettingsService_Response__copy(
   output->wheel_width = input->wheel_width;
   // track_width
   output->track_width = input->track_width;
-  // position_p
-  output->position_p = input->position_p;
-  // position_i
-  output->position_i = input->position_i;
-  // position_d
-  output->position_d = input->position_d;
-  // position_max_total_integral
-  output->position_max_total_integral = input->position_max_total_integral;
-  // line_speed_p
-  output->line_speed_p = input->line_speed_p;
-  // line_speed_i
-  output->line_speed_i = input->line_speed_i;
-  // line_speed_d
-  output->line_speed_d = input->line_speed_d;
-  // line_speed_max_total_integral
-  output->line_speed_max_total_integral = input->line_speed_max_total_integral;
-  // angle_speed_p
-  output->angle_speed_p = input->angle_speed_p;
-  // angle_speed_i
-  output->angle_speed_i = input->angle_speed_i;
-  // angle_speed_d
-  output->angle_speed_d = input->angle_speed_d;
-  // angle_speed_max_total_integral
-  output->angle_speed_max_total_integral = input->angle_speed_max_total_integral;
   // left_front_motor_pina
   output->left_front_motor_pina = input->left_front_motor_pina;
   // left_front_motor_pinb
@@ -1461,6 +1215,12 @@ motion_settings_service__srv__MotionSettingsService_Response__copy(
   output->right_back_motor_pluses_per_revolution = input->right_back_motor_pluses_per_revolution;
   // right_back_motor_revolutions_per_minute
   output->right_back_motor_revolutions_per_minute = input->right_back_motor_revolutions_per_minute;
+  // motor_enable_flags
+  output->motor_enable_flags = input->motor_enable_flags;
+  // enable_speed_plan
+  output->enable_speed_plan = input->enable_speed_plan;
+  // is_mecanum_wheel
+  output->is_mecanum_wheel = input->is_mecanum_wheel;
   return true;
 }
 

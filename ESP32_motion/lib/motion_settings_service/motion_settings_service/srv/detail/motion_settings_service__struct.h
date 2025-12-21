@@ -20,33 +20,15 @@ extern "C"
 /// Struct defined in srv/MotionSettingsService in the package motion_settings_service.
 typedef struct motion_settings_service__srv__MotionSettingsService_Request
 {
+  uint64_t id;
   int32_t mode;
-  int64_t id;
-  uint8_t motor_enable_flags;
   int32_t milliseconds;
-  int32_t position_loop_milliseconds_cnt;
-  int32_t speed_loop_milliseconds_cnt;
-  bool enable_speed_plan;
-  bool is_mecanum_wheel;
-  bool enable_pub_motion_status;
   float speed_percent;
   float max_v;
   float max_acc;
   float jerk;
   float wheel_width;
   float track_width;
-  float position_p;
-  float position_i;
-  float position_d;
-  float position_max_total_integral;
-  float line_speed_p;
-  float line_speed_i;
-  float line_speed_d;
-  float line_speed_max_total_integral;
-  float angle_speed_p;
-  float angle_speed_i;
-  float angle_speed_d;
-  float angle_speed_max_total_integral;
   int32_t left_front_motor_pina;
   int32_t left_front_motor_pinb;
   int32_t left_front_motor_pinpwm;
@@ -95,6 +77,9 @@ typedef struct motion_settings_service__srv__MotionSettingsService_Request
   float right_back_motor_wheel_diameter;
   int32_t right_back_motor_pluses_per_revolution;
   int32_t right_back_motor_revolutions_per_minute;
+  uint8_t motor_enable_flags;
+  bool enable_speed_plan;
+  bool is_mecanum_wheel;
 } motion_settings_service__srv__MotionSettingsService_Request;
 
 // Struct for a sequence of motion_settings_service__srv__MotionSettingsService_Request.
@@ -113,33 +98,15 @@ typedef struct motion_settings_service__srv__MotionSettingsService_Request__Sequ
 /// Struct defined in srv/MotionSettingsService in the package motion_settings_service.
 typedef struct motion_settings_service__srv__MotionSettingsService_Response
 {
+  uint64_t id;
   int32_t state;
-  int64_t id;
-  uint8_t motor_enable_flags;
   int32_t milliseconds;
-  int32_t position_loop_milliseconds_cnt;
-  int32_t speed_loop_milliseconds_cnt;
-  bool enable_speed_plan;
-  bool is_mecanum_wheel;
-  bool enable_pub_motion_status;
   float speed_percent;
   float max_v;
   float max_acc;
   float jerk;
   float wheel_width;
   float track_width;
-  float position_p;
-  float position_i;
-  float position_d;
-  float position_max_total_integral;
-  float line_speed_p;
-  float line_speed_i;
-  float line_speed_d;
-  float line_speed_max_total_integral;
-  float angle_speed_p;
-  float angle_speed_i;
-  float angle_speed_d;
-  float angle_speed_max_total_integral;
   int32_t left_front_motor_pina;
   int32_t left_front_motor_pinb;
   int32_t left_front_motor_pinpwm;
@@ -188,6 +155,9 @@ typedef struct motion_settings_service__srv__MotionSettingsService_Response
   float right_back_motor_wheel_diameter;
   int32_t right_back_motor_pluses_per_revolution;
   int32_t right_back_motor_revolutions_per_minute;
+  uint8_t motor_enable_flags;
+  bool enable_speed_plan;
+  bool is_mecanum_wheel;
 } motion_settings_service__srv__MotionSettingsService_Response;
 
 // Struct for a sequence of motion_settings_service__srv__MotionSettingsService_Response.

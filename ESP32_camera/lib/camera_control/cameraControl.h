@@ -79,11 +79,8 @@ public:
     void init_camera(bool load = true);
     bool camera_inited();
 
-    void capture_image();
+    camera_fb_t *capture_image();
     void release_image();
-    camera_fb_t *get_image();
-
-    sensor_msgs__msg__CompressedImage &get_image_msg();
 
     void set_params(const camera_params_t &params);
     const camera_params_t &get_params();
@@ -98,11 +95,10 @@ public:
 private:
     camera_config_t config_;
     camera_params_t params_;
-    sensor_msgs__msg__CompressedImage image_msg_;
 
     Preferences preferences_;
-    std::atomic<camera_fb_t *> image_{nullptr};
     sensor_t *sensor_ = nullptr;
+    camera_fb_t *image_ = nullptr;
 
     void _set_params();
     void _set_config();

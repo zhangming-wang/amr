@@ -3,6 +3,7 @@
 #include "I2Cdev/I2Cdev.h"
 #include "MPU6050/MPU6050_6Axis_MotionApps20.h"
 #include "baseTask.h"
+#include "motion_status_msgs/msg/motion_status.h"
 #include "rosidl_runtime_c/string_functions.h"
 #include "system.h"
 #include <Arduino.h>
@@ -25,6 +26,8 @@ public:
     void set_pins(int pin_SDA, int pin_SCL);
 
     void start_calibration();
+
+    void get_motion_status(motion_status_msgs__msg__MotionStatus &msg);
 
 private:
     int pin_SDA_ = -1, pin_SCL_ = -1;

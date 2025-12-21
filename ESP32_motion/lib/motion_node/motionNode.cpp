@@ -2,11 +2,17 @@
 
 MotionNode::MotionNode() {
     task_name_ = "motion_node_task";
-    num_handles_ = 9;
+    num_handles_ = 6;
 
-    motion_cmd_vel_topic_name_ = constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name);
-    motion_status_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_status_topic_name);
+    node_name_ = esp32_motion_node_name;
+    node_namespace_ = esp32_motion_node_namespace;
+    serial_msg_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_serial_msg_topic_name);
+    heartbeat_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_heartbeat_topic_name);
+
     motion_services_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_settings_service_name);
+
+    motion_status_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_status_topic_name);
+    motion_cmd_vel_topic_name_ = constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name);
 
     motionControl_ = &MotionControl::instance();
     mpu6050Control_ = &MPU6050Control::instance();
@@ -52,24 +58,6 @@ bool MotionNode::init_micro_ros() {
             return false;
         }
         control_cmd_vel_subscription_initialized_ = true;
-    }
-
-    if (!odom_publisher_initialized_) {
-        ret = rclc_publisher_init_default(&odom_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "/odom");
-        if (ret != RCL_RET_OK) {
-            Serial.printf("[micro_ros] odom publisher init failed: %d\n", ret);
-            return false;
-        }
-        odom_publisher_initialized_ = true;
-    }
-
-    if (!imu_publisher_initialized_) {
-        ret = rclc_publisher_init(&imu_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu", &best_effort_qos);
-        if (ret != RCL_RET_OK) {
-            Serial.printf("[micro_ros] imu publisher init failed: %d\n", ret);
-            return false;
-        }
-        imu_publisher_initialized_ = true;
     }
 
     if (!motion_status_publisher_initialized_) {
@@ -133,30 +121,6 @@ void MotionNode::clean_micro_ros() {
         }
         motion_status_publisher_initialized_ = false;
     }
-
-    if (odom_publisher_initialized_) {
-        ret = rcl_publisher_fini(&odom_publisher_, &node_);
-        if (ret != RCL_RET_OK) {
-            Serial.printf("[micro_ros] odom publisher fini failed: %d\n", ret);
-        }
-        odom_publisher_initialized_ = false;
-    }
-
-    if (imu_publisher_initialized_) {
-        ret = rcl_publisher_fini(&imu_publisher_, &node_);
-        if (ret != RCL_RET_OK) {
-            Serial.printf("[micro_ros] imu publisher fini failed: %d\n", ret);
-        }
-        imu_publisher_initialized_ = false;
-    }
-}
-
-void MotionNode::set_enable_pub_motion_status(bool status) {
-    enable_pub_motion_status_ = status;
-}
-
-bool MotionNode::get_enable_pub_motion_status() {
-    return enable_pub_motion_status_;
 }
 
 void MotionNode::motion_settings_service_callback(const void *req, void *res) {
@@ -203,27 +167,14 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
         instance.motionControl_->set_speed_percent(request->speed_percent);
         response->max_v = instance.motionControl_->get_max_speed();
         response->speed_percent = instance.motionControl_->get_speed_percent();
-    }
-
-    else if (request->mode == MotionService::Type::SetSpeedPlanState) {
+    } else if (request->mode == MotionService::Type::SetSpeedPlanState) {
         instance.motionControl_->set_speed_plan_state(request->enable_speed_plan);
-    }
-
-    else if (request->mode == MotionService::Type::SetEnablePubMotionStatus) {
-        instance.set_enable_pub_motion_status(request->enable_pub_motion_status);
     }
 
     else if (request->mode == MotionService::Type::ReadParams) {
         instance.motionControl_->read_params(response);
-        response->enable_pub_motion_status = instance.get_enable_pub_motion_status();
     } else if (request->mode == MotionService::Type::WriteParams) {
         instance.motionControl_->set_milliseconds(request->milliseconds);
-        instance.motionControl_->set_loop_period_cnt(request->position_loop_milliseconds_cnt, request->speed_loop_milliseconds_cnt);
-
-        instance.motionControl_->set_position_pid_params(request->position_p, request->position_i, request->position_d, request->position_max_total_integral);
-
-        instance.motionControl_->set_line_speed_pid_params(request->line_speed_p, request->line_speed_i, request->line_speed_d, request->line_speed_max_total_integral);
-        instance.motionControl_->set_angle_speed_pid_params(request->angle_speed_p, request->angle_speed_i, request->angle_speed_d, request->angle_speed_max_total_integral);
 
         instance.motionControl_->set_left_front_motor_pid_params(request->left_front_motor_p, request->left_front_motor_i, request->left_front_motor_d, request->left_front_motor_max_total_integral);
         instance.motionControl_->set_left_back_motor_pid_params(request->left_back_motor_p, request->left_back_motor_i, request->left_back_motor_d, request->left_back_motor_max_total_integral);
@@ -270,42 +221,16 @@ void MotionNode::msg_twist_callback(const void *msg) {
 
 void MotionNode::publish_msgs() {
     if (!connected()) {
-        // Serial.println("motion node not connected, skip publish msgs");
         return;
     }
 
-    // static uint begin_time = 0;
-    // begin_time = millis();
-
-    auto stamp = get_timestamp();
-
-    if (imu_publisher_initialized_) {
-        auto &imu_msg = mpu6050Control_->get_imu_msg();
-        imu_msg.header.stamp = stamp;
-        rcl_ret_t ret = rcl_publish(&imu_publisher_, &imu_msg, NULL);
+    if (motion_status_publisher_initialized_) {
+        motion_status_msg_.stamp = get_now_ns();
+        motionControl_->get_motion_status(motion_status_msg_);
+        mpu6050Control_->get_motion_status(motion_status_msg_);
+        rcl_ret_t ret = rcl_publish(&motion_status_publisher_, &motion_status_msg_, nullptr);
         if (ret != RCL_RET_OK) {
-            Serial.printf("error: pub imu msg failed:%d\n", ret);
-        }
-    }
-
-    // if (odom_publisher_initialized_) {
-    //     auto &odom_msg = motionControl_->get_odom_msg();
-    //     odom_msg.header.stamp = stamp;
-    //     rcl_ret_t ret = rcl_publish(&odom_publisher_, &odom_msg, NULL);
-    //     if (ret != RCL_RET_OK) {
-    //         Serial.printf("error: pub odom msg failed:%d\n", ret);
-    //     }
-    // }
-
-    rcl_ret_t ret = rcl_publish(&motion_status_publisher_, &motionControl_->get_motion_status_msg(), NULL);
-    if (ret != RCL_RET_OK) {
-        Serial.printf("error: pub motion status msg failed:%d\n", ret);
-    }
-
-    if (enable_pub_motion_status_ && motion_status_publisher_initialized_) {
-        rcl_ret_t ret = rcl_publish(&motion_status_publisher_, &motionControl_->get_motion_status_msg(), NULL);
-        if (ret != RCL_RET_OK) {
-            Serial.printf("error: pub motion status msg failed:%d\n", ret);
+            Serial.printf("[micro_ros] motion status publish failed: %d\n", ret);
         }
     }
 }

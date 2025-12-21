@@ -21,30 +21,11 @@ void MasterTask::update() {
     motionControl_->update();
     mpu6050Control_->update();
 
-    // Serial.print("\n\nMasterTask update dt: ");
-    // Serial.println(millis() - time_count);
-    // time_count = millis();
-
-    motionControl_->calculate();
-    mpu6050Control_->calculate();
-
-    // Serial.print("MasterTask calculate dt: ");
-    // Serial.println(millis() - time_count);
-    // time_count = millis();
-
     motionNode_->publish_msgs();
-
-    // Serial.print("MasterTask publish_msgs dt: ");
-    // Serial.println(millis() - time_count);
-    // time_count = millis();
 
     motionControl_->move();
 
-    // Serial.print("MasterTask move dt: ");
-    // Serial.println(millis() - time_count);
-    // time_count = millis();
-
-    vTaskDelayUntil(&task_tick_count_, pdMS_TO_TICKS(20));
+    vTaskDelayUntil(&task_tick_count_, motionControl_->get_milliseconds());
 
     // Serial.print("MasterTask total dt: ");
     // Serial.println(millis() - begin_time);

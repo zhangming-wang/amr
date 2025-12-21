@@ -79,8 +79,8 @@ public:
     float get_target_speed();
     float get_target_acc();
 
-    float get_distance_change();
-    long get_encoder_count();
+    float get_dt_distance();
+    float get_total_distance();
 
 private:
     //-------------保存参数-------------

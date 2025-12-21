@@ -61,10 +61,6 @@ protected:
     BaseNode() {
         ip_ = wifi_IP;
         port_ = micro_ros_port;
-        node_name_ = esp32_motion_node_name;
-        node_namespace_ = esp32_motion_node_namespace;
-        serial_msg_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_serial_msg_topic_name);
-        heartbeat_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_heartbeat_topic_name);
 
         this->task_name_ = "base_node_task";
         allocator_ = rcl_get_default_allocator();
@@ -77,18 +73,13 @@ protected:
     virtual bool init_micro_ros() { return true; }
     virtual void clean_micro_ros() {}
 
-    builtin_interfaces__msg__Time get_timestamp() {
-        builtin_interfaces__msg__Time stamp;
+    uint64_t get_now_ns() {
         rcl_ret_t ret = rcl_clock_get_now(&clock_, &now_ns_);
         if (ret != RCL_RET_OK) {
             Serial.printf("rcl_clock_get_now error: %d\n", ret);
-            stamp.sec = 0;
-            stamp.nanosec = 0;
-        } else {
-            stamp.sec = now_ns_ / 1000000000;
-            stamp.nanosec = now_ns_ % 1000000000;
+            now_ns_ = 0;
         }
-        return stamp;
+        return static_cast<uint64_t>(now_ns_);
     }
 
 public:
@@ -96,9 +87,9 @@ public:
         if (!connected_.load()) {
             if (_init_micro_ros()) {
                 connected_.store(true);
-                Serial.println("motion node task is running...");
+                Serial.println("microRos node task is running...");
             } else {
-                Serial.println("motion node init failed, try again...");
+                Serial.println("microRos node init failed, try again...");
                 vTaskDelay(pdMS_TO_TICKS(500));
                 return;
             }
@@ -120,7 +111,7 @@ public:
     static inline void serial_print(const std::string &msg) {
         Serial.println(msg.c_str());
         auto &instance = BaseNode<T>::instance();
-        if (instance.connected()) {
+        if (instance.connected() && instance.serial_msg_publisher_initialized_) {
             std_msgs__msg__String ros_msg;
             rosidl_runtime_c__String__init(&ros_msg.data);
             rosidl_runtime_c__String__assign(&ros_msg.data, msg.c_str());
@@ -135,7 +126,7 @@ public:
 
     static inline void heartbeat_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
         auto &instance = BaseNode<T>::instance();
-        if (instance.check_connect()) {
+        if (instance.check_connect() && instance.heartbeat_publisher_initialized_) {
             std_msgs__msg__Empty msg;
             rcl_ret_t ret = rcl_publish(&instance.heartbeat_publisher_, &msg, NULL);
             if (ret != RCL_RET_OK) {
@@ -243,6 +234,7 @@ private:
             }
             ret = rclc_executor_add_timer(&executor_, &heartbeat_timer_);
             if (ret != RCL_RET_OK) {
+                ret = rcl_timer_fini(&heartbeat_timer_);
                 Serial.printf("heartbeat_timer_: rclc_executor_add_timer error: %d\n", ret);
                 return false;
             }

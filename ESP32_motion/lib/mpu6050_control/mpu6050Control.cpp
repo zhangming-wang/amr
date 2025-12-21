@@ -232,6 +232,11 @@ void MPU6050Control::_manual_read() {
     roll_ = ALPHA * roll_ + (1 - ALPHA) * atan2(ay, az) * 180.0 / M_PI;
 }
 
-sensor_msgs__msg__Imu &MPU6050Control::get_imu_msg() {
-    return imu_msg_;
+void MPU6050Control::get_motion_status(motion_status_msgs__msg__MotionStatus &msg) {
+    msg.imu_gyro_x = gyroX_;
+    msg.imu_gyro_y = gyroY_;
+    msg.imu_gyro_z = gyroZ_;
+    msg.imu_roll = roll_;
+    msg.imu_pitch = pitch_;
+    msg.imu_yaw = yaw_;
 }

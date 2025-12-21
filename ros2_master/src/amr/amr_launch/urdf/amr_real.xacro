@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="amr_real">
     <xacro:property name="base_link" value="base_link" />
-    <xacro:property name="lidar_link" value="lidar_frame" />
-    <xacro:property name="camera_link" value="camera_frame" />
-    <xacro:property name="imu_link" value="imu_frame" />
+    <xacro:property name="lidar_link" value="lidar_link" />
+    <xacro:property name="camera_link" value="camera_link" />
+    <xacro:property name="imu_link" value="imu_link" />
 
     <xacro:property name="left_front_wheel" value="left_front_wheel" />
     <xacro:property name="left_back_wheel" value="left_back_wheel" />

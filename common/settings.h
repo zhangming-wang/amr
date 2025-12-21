@@ -18,8 +18,10 @@ static constexpr const char *pc_cmd_vel_topic_name = "cmd_vel";
 
 static constexpr const char *esp32_camera_node_name = "esp32_camera_node";
 static constexpr const char *esp32_camera_node_namespace = "esp32";
-static constexpr const char *esp32_camera_image_topic_name = "image_topic";
+static constexpr const char *esp32_camera_image_topic_name = "compressed_image_topic";
 static constexpr const char *esp32_camera_settings_service_name = "camera_settings_service";
+static constexpr const char *esp32_camera_heartbeat_topic_name = "camera_heartbeat_topic";
+static constexpr const char *esp32_camera_serial_msg_topic_name = "camera_serial_msg_topic";
 
 static constexpr const char *esp32_motion_node_name = "esp32_motion_node";
 static constexpr const char *esp32_motion_node_namespace = "esp32";

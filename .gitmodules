@@ -15,11 +15,11 @@
 	url = https://github.com/micro-ROS/micro_ros_setup.git
 	branch = humble
 [submodule "ros2_master/src/micro-ROS-Agent"]
-	path = ros2_master/src/micro-ROS-Agent
+	path = ros2_master/src/control/micro-ROS-Agent
 	url = https://github.com/micro-ROS/micro-ROS-Agent.git
 	branch = humble
 [submodule "ros2_master/src/micro_ros_msgs"]
-	path = ros2_master/src/micro_ros_msgs
+	path = ros2_master/src/control/micro_ros_msgs
 	url = https://github.com/micro-ROS/micro_ros_msgs.git
 	branch = humble
 [submodule "ESP32_camera/lib/esp32-camera"]

@@ -17,38 +17,30 @@ motion_status_msgs__msg__MotionStatus__init(motion_status_msgs__msg__MotionStatu
   if (!msg) {
     return false;
   }
+  // stamp
+  // seq
+  // left_front_total_distance
+  // left_front_dt_distance
   // left_front_current_v
   // left_front_target_v
+  // left_back_total_distance
+  // left_back_dt_distance
   // left_back_current_v
   // left_back_target_v
+  // right_front_total_distance
+  // right_front_dt_distance
   // right_front_current_v
   // right_front_target_v
+  // right_back_total_distance
+  // right_back_dt_distance
   // right_back_current_v
   // right_back_target_v
-  // twist_current_linear_x
-  // twist_current_linear_y
-  // twist_current_linear_z
-  // twist_current_angular_x
-  // twist_current_angular_y
-  // twist_current_angular_z
-  // twist_target_linear_x
-  // twist_target_linear_y
-  // twist_target_linear_z
-  // twist_target_angular_x
-  // twist_target_angular_y
-  // twist_target_angular_z
-  // twist_current_euler_pose_x
-  // twist_current_euler_pose_y
-  // twist_current_euler_pose_z
-  // twist_current_euler_pose_roll
-  // twist_current_euler_pose_pitch
-  // twist_current_euler_pose_yaw
-  // twist_target_euler_pose_x
-  // twist_target_euler_pose_y
-  // twist_target_euler_pose_z
-  // twist_target_euler_pose_roll
-  // twist_target_euler_pose_pitch
-  // twist_target_euler_pose_yaw
+  // imu_roll
+  // imu_pitch
+  // imu_yaw
+  // imu_gyro_x
+  // imu_gyro_y
+  // imu_gyro_z
   return true;
 }
 
@@ -58,44 +50,52 @@ motion_status_msgs__msg__MotionStatus__fini(motion_status_msgs__msg__MotionStatu
   if (!msg) {
     return;
   }
+  // stamp
+  // seq
+  // left_front_total_distance
+  // left_front_dt_distance
   // left_front_current_v
   // left_front_target_v
+  // left_back_total_distance
+  // left_back_dt_distance
   // left_back_current_v
   // left_back_target_v
+  // right_front_total_distance
+  // right_front_dt_distance
   // right_front_current_v
   // right_front_target_v
+  // right_back_total_distance
+  // right_back_dt_distance
   // right_back_current_v
   // right_back_target_v
-  // twist_current_linear_x
-  // twist_current_linear_y
-  // twist_current_linear_z
-  // twist_current_angular_x
-  // twist_current_angular_y
-  // twist_current_angular_z
-  // twist_target_linear_x
-  // twist_target_linear_y
-  // twist_target_linear_z
-  // twist_target_angular_x
-  // twist_target_angular_y
-  // twist_target_angular_z
-  // twist_current_euler_pose_x
-  // twist_current_euler_pose_y
-  // twist_current_euler_pose_z
-  // twist_current_euler_pose_roll
-  // twist_current_euler_pose_pitch
-  // twist_current_euler_pose_yaw
-  // twist_target_euler_pose_x
-  // twist_target_euler_pose_y
-  // twist_target_euler_pose_z
-  // twist_target_euler_pose_roll
-  // twist_target_euler_pose_pitch
-  // twist_target_euler_pose_yaw
+  // imu_roll
+  // imu_pitch
+  // imu_yaw
+  // imu_gyro_x
+  // imu_gyro_y
+  // imu_gyro_z
 }
 
 bool
 motion_status_msgs__msg__MotionStatus__are_equal(const motion_status_msgs__msg__MotionStatus * lhs, const motion_status_msgs__msg__MotionStatus * rhs)
 {
   if (!lhs || !rhs) {
+    return false;
+  }
+  // stamp
+  if (lhs->stamp != rhs->stamp) {
+    return false;
+  }
+  // seq
+  if (lhs->seq != rhs->seq) {
+    return false;
+  }
+  // left_front_total_distance
+  if (lhs->left_front_total_distance != rhs->left_front_total_distance) {
+    return false;
+  }
+  // left_front_dt_distance
+  if (lhs->left_front_dt_distance != rhs->left_front_dt_distance) {
     return false;
   }
   // left_front_current_v
@@ -106,12 +106,28 @@ motion_status_msgs__msg__MotionStatus__are_equal(const motion_status_msgs__msg__
   if (lhs->left_front_target_v != rhs->left_front_target_v) {
     return false;
   }
+  // left_back_total_distance
+  if (lhs->left_back_total_distance != rhs->left_back_total_distance) {
+    return false;
+  }
+  // left_back_dt_distance
+  if (lhs->left_back_dt_distance != rhs->left_back_dt_distance) {
+    return false;
+  }
   // left_back_current_v
   if (lhs->left_back_current_v != rhs->left_back_current_v) {
     return false;
   }
   // left_back_target_v
   if (lhs->left_back_target_v != rhs->left_back_target_v) {
+    return false;
+  }
+  // right_front_total_distance
+  if (lhs->right_front_total_distance != rhs->right_front_total_distance) {
+    return false;
+  }
+  // right_front_dt_distance
+  if (lhs->right_front_dt_distance != rhs->right_front_dt_distance) {
     return false;
   }
   // right_front_current_v
@@ -122,6 +138,14 @@ motion_status_msgs__msg__MotionStatus__are_equal(const motion_status_msgs__msg__
   if (lhs->right_front_target_v != rhs->right_front_target_v) {
     return false;
   }
+  // right_back_total_distance
+  if (lhs->right_back_total_distance != rhs->right_back_total_distance) {
+    return false;
+  }
+  // right_back_dt_distance
+  if (lhs->right_back_dt_distance != rhs->right_back_dt_distance) {
+    return false;
+  }
   // right_back_current_v
   if (lhs->right_back_current_v != rhs->right_back_current_v) {
     return false;
@@ -130,100 +154,28 @@ motion_status_msgs__msg__MotionStatus__are_equal(const motion_status_msgs__msg__
   if (lhs->right_back_target_v != rhs->right_back_target_v) {
     return false;
   }
-  // twist_current_linear_x
-  if (lhs->twist_current_linear_x != rhs->twist_current_linear_x) {
+  // imu_roll
+  if (lhs->imu_roll != rhs->imu_roll) {
     return false;
   }
-  // twist_current_linear_y
-  if (lhs->twist_current_linear_y != rhs->twist_current_linear_y) {
+  // imu_pitch
+  if (lhs->imu_pitch != rhs->imu_pitch) {
     return false;
   }
-  // twist_current_linear_z
-  if (lhs->twist_current_linear_z != rhs->twist_current_linear_z) {
+  // imu_yaw
+  if (lhs->imu_yaw != rhs->imu_yaw) {
     return false;
   }
-  // twist_current_angular_x
-  if (lhs->twist_current_angular_x != rhs->twist_current_angular_x) {
+  // imu_gyro_x
+  if (lhs->imu_gyro_x != rhs->imu_gyro_x) {
     return false;
   }
-  // twist_current_angular_y
-  if (lhs->twist_current_angular_y != rhs->twist_current_angular_y) {
+  // imu_gyro_y
+  if (lhs->imu_gyro_y != rhs->imu_gyro_y) {
     return false;
   }
-  // twist_current_angular_z
-  if (lhs->twist_current_angular_z != rhs->twist_current_angular_z) {
-    return false;
-  }
-  // twist_target_linear_x
-  if (lhs->twist_target_linear_x != rhs->twist_target_linear_x) {
-    return false;
-  }
-  // twist_target_linear_y
-  if (lhs->twist_target_linear_y != rhs->twist_target_linear_y) {
-    return false;
-  }
-  // twist_target_linear_z
-  if (lhs->twist_target_linear_z != rhs->twist_target_linear_z) {
-    return false;
-  }
-  // twist_target_angular_x
-  if (lhs->twist_target_angular_x != rhs->twist_target_angular_x) {
-    return false;
-  }
-  // twist_target_angular_y
-  if (lhs->twist_target_angular_y != rhs->twist_target_angular_y) {
-    return false;
-  }
-  // twist_target_angular_z
-  if (lhs->twist_target_angular_z != rhs->twist_target_angular_z) {
-    return false;
-  }
-  // twist_current_euler_pose_x
-  if (lhs->twist_current_euler_pose_x != rhs->twist_current_euler_pose_x) {
-    return false;
-  }
-  // twist_current_euler_pose_y
-  if (lhs->twist_current_euler_pose_y != rhs->twist_current_euler_pose_y) {
-    return false;
-  }
-  // twist_current_euler_pose_z
-  if (lhs->twist_current_euler_pose_z != rhs->twist_current_euler_pose_z) {
-    return false;
-  }
-  // twist_current_euler_pose_roll
-  if (lhs->twist_current_euler_pose_roll != rhs->twist_current_euler_pose_roll) {
-    return false;
-  }
-  // twist_current_euler_pose_pitch
-  if (lhs->twist_current_euler_pose_pitch != rhs->twist_current_euler_pose_pitch) {
-    return false;
-  }
-  // twist_current_euler_pose_yaw
-  if (lhs->twist_current_euler_pose_yaw != rhs->twist_current_euler_pose_yaw) {
-    return false;
-  }
-  // twist_target_euler_pose_x
-  if (lhs->twist_target_euler_pose_x != rhs->twist_target_euler_pose_x) {
-    return false;
-  }
-  // twist_target_euler_pose_y
-  if (lhs->twist_target_euler_pose_y != rhs->twist_target_euler_pose_y) {
-    return false;
-  }
-  // twist_target_euler_pose_z
-  if (lhs->twist_target_euler_pose_z != rhs->twist_target_euler_pose_z) {
-    return false;
-  }
-  // twist_target_euler_pose_roll
-  if (lhs->twist_target_euler_pose_roll != rhs->twist_target_euler_pose_roll) {
-    return false;
-  }
-  // twist_target_euler_pose_pitch
-  if (lhs->twist_target_euler_pose_pitch != rhs->twist_target_euler_pose_pitch) {
-    return false;
-  }
-  // twist_target_euler_pose_yaw
-  if (lhs->twist_target_euler_pose_yaw != rhs->twist_target_euler_pose_yaw) {
+  // imu_gyro_z
+  if (lhs->imu_gyro_z != rhs->imu_gyro_z) {
     return false;
   }
   return true;
@@ -237,70 +189,54 @@ motion_status_msgs__msg__MotionStatus__copy(
   if (!input || !output) {
     return false;
   }
+  // stamp
+  output->stamp = input->stamp;
+  // seq
+  output->seq = input->seq;
+  // left_front_total_distance
+  output->left_front_total_distance = input->left_front_total_distance;
+  // left_front_dt_distance
+  output->left_front_dt_distance = input->left_front_dt_distance;
   // left_front_current_v
   output->left_front_current_v = input->left_front_current_v;
   // left_front_target_v
   output->left_front_target_v = input->left_front_target_v;
+  // left_back_total_distance
+  output->left_back_total_distance = input->left_back_total_distance;
+  // left_back_dt_distance
+  output->left_back_dt_distance = input->left_back_dt_distance;
   // left_back_current_v
   output->left_back_current_v = input->left_back_current_v;
   // left_back_target_v
   output->left_back_target_v = input->left_back_target_v;
+  // right_front_total_distance
+  output->right_front_total_distance = input->right_front_total_distance;
+  // right_front_dt_distance
+  output->right_front_dt_distance = input->right_front_dt_distance;
   // right_front_current_v
   output->right_front_current_v = input->right_front_current_v;
   // right_front_target_v
   output->right_front_target_v = input->right_front_target_v;
+  // right_back_total_distance
+  output->right_back_total_distance = input->right_back_total_distance;
+  // right_back_dt_distance
+  output->right_back_dt_distance = input->right_back_dt_distance;
   // right_back_current_v
   output->right_back_current_v = input->right_back_current_v;
   // right_back_target_v
   output->right_back_target_v = input->right_back_target_v;
-  // twist_current_linear_x
-  output->twist_current_linear_x = input->twist_current_linear_x;
-  // twist_current_linear_y
-  output->twist_current_linear_y = input->twist_current_linear_y;
-  // twist_current_linear_z
-  output->twist_current_linear_z = input->twist_current_linear_z;
-  // twist_current_angular_x
-  output->twist_current_angular_x = input->twist_current_angular_x;
-  // twist_current_angular_y
-  output->twist_current_angular_y = input->twist_current_angular_y;
-  // twist_current_angular_z
-  output->twist_current_angular_z = input->twist_current_angular_z;
-  // twist_target_linear_x
-  output->twist_target_linear_x = input->twist_target_linear_x;
-  // twist_target_linear_y
-  output->twist_target_linear_y = input->twist_target_linear_y;
-  // twist_target_linear_z
-  output->twist_target_linear_z = input->twist_target_linear_z;
-  // twist_target_angular_x
-  output->twist_target_angular_x = input->twist_target_angular_x;
-  // twist_target_angular_y
-  output->twist_target_angular_y = input->twist_target_angular_y;
-  // twist_target_angular_z
-  output->twist_target_angular_z = input->twist_target_angular_z;
-  // twist_current_euler_pose_x
-  output->twist_current_euler_pose_x = input->twist_current_euler_pose_x;
-  // twist_current_euler_pose_y
-  output->twist_current_euler_pose_y = input->twist_current_euler_pose_y;
-  // twist_current_euler_pose_z
-  output->twist_current_euler_pose_z = input->twist_current_euler_pose_z;
-  // twist_current_euler_pose_roll
-  output->twist_current_euler_pose_roll = input->twist_current_euler_pose_roll;
-  // twist_current_euler_pose_pitch
-  output->twist_current_euler_pose_pitch = input->twist_current_euler_pose_pitch;
-  // twist_current_euler_pose_yaw
-  output->twist_current_euler_pose_yaw = input->twist_current_euler_pose_yaw;
-  // twist_target_euler_pose_x
-  output->twist_target_euler_pose_x = input->twist_target_euler_pose_x;
-  // twist_target_euler_pose_y
-  output->twist_target_euler_pose_y = input->twist_target_euler_pose_y;
-  // twist_target_euler_pose_z
-  output->twist_target_euler_pose_z = input->twist_target_euler_pose_z;
-  // twist_target_euler_pose_roll
-  output->twist_target_euler_pose_roll = input->twist_target_euler_pose_roll;
-  // twist_target_euler_pose_pitch
-  output->twist_target_euler_pose_pitch = input->twist_target_euler_pose_pitch;
-  // twist_target_euler_pose_yaw
-  output->twist_target_euler_pose_yaw = input->twist_target_euler_pose_yaw;
+  // imu_roll
+  output->imu_roll = input->imu_roll;
+  // imu_pitch
+  output->imu_pitch = input->imu_pitch;
+  // imu_yaw
+  output->imu_yaw = input->imu_yaw;
+  // imu_gyro_x
+  output->imu_gyro_x = input->imu_gyro_x;
+  // imu_gyro_y
+  output->imu_gyro_y = input->imu_gyro_y;
+  // imu_gyro_z
+  output->imu_gyro_z = input->imu_gyro_z;
   return true;
 }
 

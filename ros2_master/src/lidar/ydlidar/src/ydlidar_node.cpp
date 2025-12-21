@@ -153,8 +153,8 @@ int main(int argc, char *argv[]) {
     node->declare_parameter("invalid_range_is_inf", invalid_range_is_inf);
     node->get_parameter("invalid_range_is_inf", invalid_range_is_inf);
 
-    auto laser_pub = node->create_publisher<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS());
-    auto pc_pub = node->create_publisher<sensor_msgs::msg::PointCloud>("point_cloud", rclcpp::SensorDataQoS());
+    auto laser_pub = node->create_publisher<sensor_msgs::msg::LaserScan>("/scan", rclcpp::SensorDataQoS());
+    auto pc_pub = node->create_publisher<sensor_msgs::msg::PointCloud>("/scan/points", rclcpp::SensorDataQoS());
 
     auto stop_scan_service =
         [&laser](const std::shared_ptr<rmw_request_id_t> request_header,

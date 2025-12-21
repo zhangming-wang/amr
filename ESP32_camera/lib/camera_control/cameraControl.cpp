@@ -1,8 +1,6 @@
 #include "cameraControl.h"
 
 CameraControl::CameraControl() {
-    image_msg_.header.frame_id = micro_ros_string_utilities_init("camera_link");
-    image_msg_.format = micro_ros_string_utilities_init("jpeg");
 }
 
 void CameraControl::init_camera(bool load) {
@@ -41,43 +39,20 @@ bool CameraControl::camera_inited() {
     return sensor_ != nullptr;
 }
 
-void CameraControl::capture_image() {
-    if (!sensor_)
-        return; // 摄像头未初始化
+camera_fb_t *CameraControl::capture_image() {
+    if (!camera_inited())
+        return nullptr; // 摄像头未初始化
 
     release_image();
-
-    image_.store(esp_camera_fb_get()); // 获取帧缓冲
-    if (!image_.load()) {
-        serial_print("Failed to get camera frame!");
-    }
+    image_ = esp_camera_fb_get();
+    return image_;
 }
 
 void CameraControl::release_image() {
-    if (image_.load()) {
-        esp_camera_fb_return(image_.load());
-        image_.store(nullptr);
-
-        image_msg_.data.capacity = 0;
-        image_msg_.data.data = nullptr;
-        image_msg_.data.size = 0;
+    if (image_) {
+        esp_camera_fb_return(image_);
+        image_ = nullptr;
     }
-}
-
-camera_fb_t *CameraControl::get_image() {
-    return image_.load();
-}
-sensor_msgs__msg__CompressedImage &CameraControl::get_image_msg() {
-    if (image_.load()) {
-        image_msg_.data.capacity = image_.load()->len;
-        image_msg_.data.data = (uint8_t *)image_.load()->buf;
-        image_msg_.data.size = image_.load()->len;
-    } else {
-        image_msg_.data.capacity = 0;
-        image_msg_.data.data = nullptr;
-        image_msg_.data.size = 0;
-    }
-    return image_msg_;
 }
 
 void CameraControl::set_params(const camera_params_t &params) {
@@ -94,6 +69,7 @@ const camera_params_t &CameraControl::get_params() {
 
 void CameraControl::save_params() {
     preferences_.begin("camSet", false);
+    preferences_.clear();
     preferences_.putShort("milliseconds", params_.milliseconds);
     // 1. 基础画质参数
     preferences_.putShort("brightness", params_.status.brightness);
@@ -423,6 +399,7 @@ const camera_config_t &CameraControl::get_config() {
 
 void CameraControl::save_config() {
     preferences_.begin("camCfg", false);
+    preferences_.clear();
     preferences_.putInt("pin_pwdn", config_.pin_pwdn);
     preferences_.putInt("pin_reset", config_.pin_reset);
     preferences_.putInt("pin_xclk", config_.pin_xclk);
@@ -505,13 +482,6 @@ void CameraControl::load_config() {
     config_.jpeg_quality = preferences_.getInt("jpeg_quality", 15);
 
     if (psramFound()) {
-        // 打印PSRAM总大小
-        serial_print("PSRAM总大小: " + std::to_string(ESP.getPsramSize() / (1024.0 * 1024.0)) + " MB");
-
-        // 打印当前可用PSRAM大小
-        size_t free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-        serial_print("可用PSRAM大小: " + std::to_string(free_psram / (1024.0 * 1024.0)) + " MB");
-
         config_.fb_count = 3;
         config_.fb_location = CAMERA_FB_IN_PSRAM; // 如果PSRAM可用，使用PSRAM
         config_.grab_mode = CAMERA_GRAB_LATEST;
