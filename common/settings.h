@@ -29,3 +29,22 @@ static constexpr const char *esp32_motion_status_topic_name = "motion_status_top
 static constexpr const char *esp32_motion_serial_msg_topic_name = "motion_serial_msg_topic";
 static constexpr const char *esp32_motion_settings_service_name = "motion_settings_service";
 static constexpr const char *esp32_motion_heartbeat_topic_name = "motion_heartbeat_topic";
+
+static constexpr const char *odom_topic_name = "/odom";
+static constexpr const char *imu_topic_name = "/imu";
+static constexpr const char *cmd_vel_topic_name = "/cmd_vel";
+static constexpr const char *scan_topic_name = "/scan";
+static constexpr const char *scan_points_topic_name = "/scan/points";
+static constexpr const char *joint_states_topic_name = "/joint_states";
+static constexpr const char *camera_image_raw_topic_name = "/camera/image_raw";
+
+static constexpr const char *base_footprint_tf_frame_id = "base_footprint";
+static constexpr const char *base_link_tf_frame_id = "base_link";
+static constexpr const char *odom_tf_frame_id = "odom";
+static constexpr const char *imu_tf_frame_id = "imu_link";
+static constexpr const char *camera_tf_frame_id = "camera_link";
+
+static constexpr const char *left_front_wheel_joint_name = "left_front_wheel_joint";
+static constexpr const char *left_back_wheel_joint_name = "left_back_wheel_joint";
+static constexpr const char *right_front_wheel_joint_name = "right_front_wheel_joint";
+static constexpr const char *right_back_wheel_joint_name = "right_back_wheel_joint";

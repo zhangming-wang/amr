@@ -45,10 +45,11 @@ MotionWidget::MotionWidget(QWidget *parent)
     connect(ui->checkBox_show_plot, &QCheckBox::stateChanged, this, &MotionWidget::on_show_plot_changed);
     connect(ui->checkBox_open_settings, &QCheckBox::stateChanged, this, &MotionWidget::on_settings_show_changed);
 
+    connect(ui->pushButton_calibrate_mpu6050, &QPushButton::clicked, this, &MotionWidget::on_calibrate_mpu6050);
+
     _initGamepad();
     _initMotionNode();
     _initTimer();
-
     ui->tabWidget_motion->setCurrentIndex(0);
     ui->tabWidget_settings->setCurrentIndex(0);
 
@@ -275,6 +276,13 @@ void MotionWidget::on_gamepad_axis_changed() {
     motionNode_->publish_twist(twist);
 }
 
+void MotionWidget::on_calibrate_mpu6050() {
+    MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
+    request->mode = MotionService::Type::CalibrateMPU6050;
+    auto cmd_string = _get_cmd_string_prefix() + "MPU6050标定指令";
+    _ask_motion_settings_service(request, cmd_string);
+}
+
 void MotionWidget::restart() {
     MotionSettingsSrv::Request::SharedPtr request(std::make_shared<MotionSettingsSrv::Request>());
     request->mode = MotionService::Type::Restart;
@@ -399,6 +407,12 @@ void MotionWidget::on_write_params() {
     if (ui->checkBox_enable_right_back_motor->isChecked())
         request->motor_enable_flags |= 0x08;
 
+    request->milliseconds = ui->spinBox_milliseconds->value();
+
+    request->max_v = ui->doubleSpinBox_max_v->value();
+    request->max_acc = ui->doubleSpinBox_max_acc->value();
+    request->jerk = ui->doubleSpinBox_jerk->value();
+
     request->left_front_motor_p = ui->doubleSpinBox_left_front_motor_p->value();
     request->left_front_motor_i = ui->doubleSpinBox_left_front_motor_i->value();
     request->left_front_motor_d = ui->doubleSpinBox_left_front_motor_d->value();
@@ -419,11 +433,12 @@ void MotionWidget::on_write_params() {
     request->right_back_motor_d = ui->doubleSpinBox_right_back_motor_d->value();
     request->right_back_motor_max_total_integral = ui->doubleSpinBox_right_back_motor_max_total_integral->value();
 
-    request->max_v = ui->doubleSpinBox_max_v->value();
-    request->max_acc = ui->doubleSpinBox_max_acc->value();
-    request->jerk = ui->doubleSpinBox_jerk->value();
-
-    request->milliseconds = ui->spinBox_millseconds->value();
+    request->mpu6050_accel_offset_x = ui->spinBox_mpu6050_accel_offset_x->value();
+    request->mpu6050_accel_offset_y = ui->spinBox_mpu6050_accel_offset_y->value();
+    request->mpu6050_accel_offset_z = ui->spinBox_mpu6050_accel_offset_z->value();
+    request->mpu6050_gyro_offset_x = ui->spinBox_mpu6050_gyro_offset_x->value();
+    request->mpu6050_gyro_offset_y = ui->spinBox_mpu6050_gyro_offset_y->value();
+    request->mpu6050_gyro_offset_z = ui->spinBox_mpu6050_gyro_offset_z->value();
 
     auto cmd_string = _get_cmd_string_prefix() + "写入参数指令";
     _ask_motion_settings_service(request, cmd_string);
@@ -491,6 +506,9 @@ void MotionWidget::on_write_config() {
     request->right_back_encoder_pina = ui->spinBox_right_back_encoder_pin0->value();
     request->right_back_encoder_pinb = ui->spinBox_right_back_encoder_pin1->value();
 
+    request->mpu6050_pin_sda = ui->spinBox_mpu6050_pin_sda->value();
+    request->mpu6050_pin_scl = ui->spinBox_mpu6050_pin_scl->value();
+
     auto cmd_string = _get_cmd_string_prefix() + "写入配置指令";
     _ask_motion_settings_service(request, cmd_string);
 }
@@ -536,7 +554,7 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
     }
 
     if (response->state == MotionService::Type::ReadParams) {
-        ui->spinBox_millseconds->setValue(response->milliseconds);
+        ui->spinBox_milliseconds->setValue(response->milliseconds);
 
         ui->checkBox_enable_speed_plan->blockSignals(true);
         ui->checkBox_enable_speed_plan->setChecked(response->enable_speed_plan);
@@ -575,12 +593,13 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         ui->doubleSpinBox_right_back_motor_i->setValue(response->right_back_motor_i);
         ui->doubleSpinBox_right_back_motor_d->setValue(response->right_back_motor_d);
         ui->doubleSpinBox_right_back_motor_max_total_integral->setValue(response->right_back_motor_max_total_integral);
-    } else if (response->state == MotionService::Type::WriteParams || response->state == MotionService::Type::SetSpeedPercent) {
-        ui->horizontalSlider_speed_percent->blockSignals(true);
-        ui->horizontalSlider_speed_percent->setValue(response->speed_percent * ui->horizontalSlider_speed_percent->maximum());
-        ui->horizontalSlider_speed_percent->blockSignals(false);
-        ui->doubleSpinBox_max_v->setValue(response->max_v);
-        _update_speed_percent_label(response->speed_percent);
+
+        ui->spinBox_mpu6050_accel_offset_x->setValue(response->mpu6050_accel_offset_x);
+        ui->spinBox_mpu6050_accel_offset_y->setValue(response->mpu6050_accel_offset_y);
+        ui->spinBox_mpu6050_accel_offset_z->setValue(response->mpu6050_accel_offset_z);
+        ui->spinBox_mpu6050_gyro_offset_x->setValue(response->mpu6050_gyro_offset_x);
+        ui->spinBox_mpu6050_gyro_offset_y->setValue(response->mpu6050_gyro_offset_y);
+        ui->spinBox_mpu6050_gyro_offset_z->setValue(response->mpu6050_gyro_offset_z);
     } else if (response->state == MotionService::Type::ReadConfig) {
         ui->checkBox_is_mecanum_wheel->blockSignals(true);
         ui->checkBox_is_mecanum_wheel->setChecked(response->is_mecanum_wheel);
@@ -628,10 +647,19 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
 
         ui->spinBox_right_back_encoder_pin0->setValue(response->right_back_encoder_pina);
         ui->spinBox_right_back_encoder_pin1->setValue(response->right_back_encoder_pinb);
-    }
 
-    if (response->state == MotionService::Type::ReadConfig || response->state == MotionService::Type::WriteConfig) {
+        ui->spinBox_mpu6050_pin_sda->setValue(response->mpu6050_pin_sda);
+        ui->spinBox_mpu6050_pin_scl->setValue(response->mpu6050_pin_scl);
+    } else if (response->state == MotionService::Type::WriteParams || response->state == MotionService::Type::SetSpeedPercent) {
+        ui->horizontalSlider_speed_percent->blockSignals(true);
+        ui->horizontalSlider_speed_percent->setValue(response->speed_percent * ui->horizontalSlider_speed_percent->maximum());
+        ui->horizontalSlider_speed_percent->blockSignals(false);
+        ui->doubleSpinBox_max_v->setValue(response->max_v);
+        _update_speed_percent_label(response->speed_percent);
+    } else if (response->state == MotionService::Type::ReadConfig || response->state == MotionService::Type::WriteConfig) {
         motionNode_->set_model_param(ui->spinBox_track_width->value() / 1000.0, ui->spinBox_wheel_width->value() / 1000.0, ui->checkBox_is_mecanum_wheel->isChecked());
+    } else if (response->state == MotionService::Type::CalibrateMPU6050) {
+        on_read_params();
     }
 }
 

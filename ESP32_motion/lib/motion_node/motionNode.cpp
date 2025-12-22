@@ -44,7 +44,7 @@ bool MotionNode::init_micro_ros() {
     }
 
     if (!control_cmd_vel_subscription_initialized_) {
-        ret = rclc_subscription_init_default(&control_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "/cmd_vel");
+        ret = rclc_subscription_init_default(&control_cmd_vel_subscription_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), cmd_vel_topic_name);
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] control cmd_vel subscription init failed: %d\n", ret);
             return false;
@@ -163,7 +163,7 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
         instance.motionControl_->turn_right();
     }
 
-    else if (request->mode == MotionService::Type::CalibrateIMU) {
+    else if (request->mode == MotionService::Type::CalibrateMPU6050) {
         instance.mpu6050Control_->start_calibration();
     }
 
@@ -177,6 +177,7 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
 
     else if (request->mode == MotionService::Type::ReadParams) {
         instance.motionControl_->read_params(response);
+        instance.mpu6050Control_->read_params(response);
     } else if (request->mode == MotionService::Type::WriteParams) {
         if (instance.motionControl_->get_milliseconds() != request->milliseconds) {
             instance.motionControl_->set_milliseconds(request->milliseconds);
@@ -195,12 +196,17 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
 
         response->max_v = instance.motionControl_->get_max_speed();
         response->speed_percent = instance.motionControl_->get_speed_percent();
+
+        instance.mpu6050Control_->set_offset(request->mpu6050_accel_offset_x, request->mpu6050_accel_offset_y, request->mpu6050_accel_offset_z,
+                                             request->mpu6050_gyro_offset_x, request->mpu6050_gyro_offset_y, request->mpu6050_gyro_offset_z);
     } else if (request->mode == MotionService::Type::SaveParams) {
         instance.motionControl_->save_params();
+        instance.mpu6050Control_->save_params();
     }
 
     else if (request->mode == MotionService::Type::ReadConfig) {
         instance.motionControl_->read_config(response);
+        instance.mpu6050Control_->read_config(response);
     } else if (request->mode == MotionService::Type::WriteConfig) {
         instance.motionControl_->set_wheel_type(request->is_mecanum_wheel);
         instance.motionControl_->set_model_params(request->track_width, request->wheel_width);
@@ -213,8 +219,11 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
         instance.motionControl_->set_right_back_motor_config_params(request->right_back_motor_pina, request->right_back_motor_pinb, request->right_back_encoder_pina, request->right_back_encoder_pinb, request->right_back_motor_pinpwm,
                                                                     request->right_back_motor_wheel_diameter, request->right_back_motor_pluses_per_revolution, request->right_back_motor_revolutions_per_minute);
         instance.motionControl_->update_target_max_speed();
+
+        instance.mpu6050Control_->set_pins(request->mpu6050_pin_sda, request->mpu6050_pin_scl);
     } else if (request->mode == MotionService::Type::SaveConfig) {
         instance.motionControl_->save_config();
+        instance.mpu6050Control_->save_config();
     }
 
     response->state = request->mode;
@@ -266,6 +275,7 @@ bool MotionNode::_create_publish_motion_status_timer() {
 
     return true;
 }
+
 void MotionNode::_destroy_publish_motion_status_timer() {
     if (publish_motion_status_timer_initialized_) {
         rcl_ret_t ret = rclc_executor_remove_timer(&executor_, &publish_motion_status_timer_);

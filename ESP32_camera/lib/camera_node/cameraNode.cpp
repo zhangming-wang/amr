@@ -15,7 +15,7 @@ CameraNode::CameraNode() {
 
     cameraControl_ = &CameraControl::instance();
 
-    image_msg_.header.frame_id = micro_ros_string_utilities_init("camera_link");
+    image_msg_.header.frame_id = micro_ros_string_utilities_init(camera_tf_frame_id);
     image_msg_.format = micro_ros_string_utilities_init("jpeg");
 }
 

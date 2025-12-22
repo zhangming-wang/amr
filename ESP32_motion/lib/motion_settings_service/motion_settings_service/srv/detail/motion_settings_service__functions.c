@@ -73,6 +73,14 @@ motion_settings_service__srv__MotionSettingsService_Request__init(motion_setting
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // mpu6050_pin_sda
+  // mpu6050_pin_scl
+  // mpu6050_accel_offset_x
+  // mpu6050_accel_offset_y
+  // mpu6050_accel_offset_z
+  // mpu6050_gyro_offset_x
+  // mpu6050_gyro_offset_y
+  // mpu6050_gyro_offset_z
   // motor_enable_flags
   // enable_speed_plan
   // is_mecanum_wheel
@@ -142,6 +150,14 @@ motion_settings_service__srv__MotionSettingsService_Request__fini(motion_setting
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // mpu6050_pin_sda
+  // mpu6050_pin_scl
+  // mpu6050_accel_offset_x
+  // mpu6050_accel_offset_y
+  // mpu6050_accel_offset_z
+  // mpu6050_gyro_offset_x
+  // mpu6050_gyro_offset_y
+  // mpu6050_gyro_offset_z
   // motor_enable_flags
   // enable_speed_plan
   // is_mecanum_wheel
@@ -381,6 +397,38 @@ motion_settings_service__srv__MotionSettingsService_Request__are_equal(const mot
   if (lhs->right_back_motor_revolutions_per_minute != rhs->right_back_motor_revolutions_per_minute) {
     return false;
   }
+  // mpu6050_pin_sda
+  if (lhs->mpu6050_pin_sda != rhs->mpu6050_pin_sda) {
+    return false;
+  }
+  // mpu6050_pin_scl
+  if (lhs->mpu6050_pin_scl != rhs->mpu6050_pin_scl) {
+    return false;
+  }
+  // mpu6050_accel_offset_x
+  if (lhs->mpu6050_accel_offset_x != rhs->mpu6050_accel_offset_x) {
+    return false;
+  }
+  // mpu6050_accel_offset_y
+  if (lhs->mpu6050_accel_offset_y != rhs->mpu6050_accel_offset_y) {
+    return false;
+  }
+  // mpu6050_accel_offset_z
+  if (lhs->mpu6050_accel_offset_z != rhs->mpu6050_accel_offset_z) {
+    return false;
+  }
+  // mpu6050_gyro_offset_x
+  if (lhs->mpu6050_gyro_offset_x != rhs->mpu6050_gyro_offset_x) {
+    return false;
+  }
+  // mpu6050_gyro_offset_y
+  if (lhs->mpu6050_gyro_offset_y != rhs->mpu6050_gyro_offset_y) {
+    return false;
+  }
+  // mpu6050_gyro_offset_z
+  if (lhs->mpu6050_gyro_offset_z != rhs->mpu6050_gyro_offset_z) {
+    return false;
+  }
   // motor_enable_flags
   if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
     return false;
@@ -518,6 +566,22 @@ motion_settings_service__srv__MotionSettingsService_Request__copy(
   output->right_back_motor_pluses_per_revolution = input->right_back_motor_pluses_per_revolution;
   // right_back_motor_revolutions_per_minute
   output->right_back_motor_revolutions_per_minute = input->right_back_motor_revolutions_per_minute;
+  // mpu6050_pin_sda
+  output->mpu6050_pin_sda = input->mpu6050_pin_sda;
+  // mpu6050_pin_scl
+  output->mpu6050_pin_scl = input->mpu6050_pin_scl;
+  // mpu6050_accel_offset_x
+  output->mpu6050_accel_offset_x = input->mpu6050_accel_offset_x;
+  // mpu6050_accel_offset_y
+  output->mpu6050_accel_offset_y = input->mpu6050_accel_offset_y;
+  // mpu6050_accel_offset_z
+  output->mpu6050_accel_offset_z = input->mpu6050_accel_offset_z;
+  // mpu6050_gyro_offset_x
+  output->mpu6050_gyro_offset_x = input->mpu6050_gyro_offset_x;
+  // mpu6050_gyro_offset_y
+  output->mpu6050_gyro_offset_y = input->mpu6050_gyro_offset_y;
+  // mpu6050_gyro_offset_z
+  output->mpu6050_gyro_offset_z = input->mpu6050_gyro_offset_z;
   // motor_enable_flags
   output->motor_enable_flags = input->motor_enable_flags;
   // enable_speed_plan
@@ -770,6 +834,14 @@ motion_settings_service__srv__MotionSettingsService_Response__init(motion_settin
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // mpu6050_pin_sda
+  // mpu6050_pin_scl
+  // mpu6050_accel_offset_x
+  // mpu6050_accel_offset_y
+  // mpu6050_accel_offset_z
+  // mpu6050_gyro_offset_x
+  // mpu6050_gyro_offset_y
+  // mpu6050_gyro_offset_z
   // motor_enable_flags
   // enable_speed_plan
   // is_mecanum_wheel
@@ -839,6 +911,14 @@ motion_settings_service__srv__MotionSettingsService_Response__fini(motion_settin
   // right_back_motor_wheel_diameter
   // right_back_motor_pluses_per_revolution
   // right_back_motor_revolutions_per_minute
+  // mpu6050_pin_sda
+  // mpu6050_pin_scl
+  // mpu6050_accel_offset_x
+  // mpu6050_accel_offset_y
+  // mpu6050_accel_offset_z
+  // mpu6050_gyro_offset_x
+  // mpu6050_gyro_offset_y
+  // mpu6050_gyro_offset_z
   // motor_enable_flags
   // enable_speed_plan
   // is_mecanum_wheel
@@ -1078,6 +1158,38 @@ motion_settings_service__srv__MotionSettingsService_Response__are_equal(const mo
   if (lhs->right_back_motor_revolutions_per_minute != rhs->right_back_motor_revolutions_per_minute) {
     return false;
   }
+  // mpu6050_pin_sda
+  if (lhs->mpu6050_pin_sda != rhs->mpu6050_pin_sda) {
+    return false;
+  }
+  // mpu6050_pin_scl
+  if (lhs->mpu6050_pin_scl != rhs->mpu6050_pin_scl) {
+    return false;
+  }
+  // mpu6050_accel_offset_x
+  if (lhs->mpu6050_accel_offset_x != rhs->mpu6050_accel_offset_x) {
+    return false;
+  }
+  // mpu6050_accel_offset_y
+  if (lhs->mpu6050_accel_offset_y != rhs->mpu6050_accel_offset_y) {
+    return false;
+  }
+  // mpu6050_accel_offset_z
+  if (lhs->mpu6050_accel_offset_z != rhs->mpu6050_accel_offset_z) {
+    return false;
+  }
+  // mpu6050_gyro_offset_x
+  if (lhs->mpu6050_gyro_offset_x != rhs->mpu6050_gyro_offset_x) {
+    return false;
+  }
+  // mpu6050_gyro_offset_y
+  if (lhs->mpu6050_gyro_offset_y != rhs->mpu6050_gyro_offset_y) {
+    return false;
+  }
+  // mpu6050_gyro_offset_z
+  if (lhs->mpu6050_gyro_offset_z != rhs->mpu6050_gyro_offset_z) {
+    return false;
+  }
   // motor_enable_flags
   if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
     return false;
@@ -1215,6 +1327,22 @@ motion_settings_service__srv__MotionSettingsService_Response__copy(
   output->right_back_motor_pluses_per_revolution = input->right_back_motor_pluses_per_revolution;
   // right_back_motor_revolutions_per_minute
   output->right_back_motor_revolutions_per_minute = input->right_back_motor_revolutions_per_minute;
+  // mpu6050_pin_sda
+  output->mpu6050_pin_sda = input->mpu6050_pin_sda;
+  // mpu6050_pin_scl
+  output->mpu6050_pin_scl = input->mpu6050_pin_scl;
+  // mpu6050_accel_offset_x
+  output->mpu6050_accel_offset_x = input->mpu6050_accel_offset_x;
+  // mpu6050_accel_offset_y
+  output->mpu6050_accel_offset_y = input->mpu6050_accel_offset_y;
+  // mpu6050_accel_offset_z
+  output->mpu6050_accel_offset_z = input->mpu6050_accel_offset_z;
+  // mpu6050_gyro_offset_x
+  output->mpu6050_gyro_offset_x = input->mpu6050_gyro_offset_x;
+  // mpu6050_gyro_offset_y
+  output->mpu6050_gyro_offset_y = input->mpu6050_gyro_offset_y;
+  // mpu6050_gyro_offset_z
+  output->mpu6050_gyro_offset_z = input->mpu6050_gyro_offset_z;
   // motor_enable_flags
   output->motor_enable_flags = input->motor_enable_flags;
   // enable_speed_plan

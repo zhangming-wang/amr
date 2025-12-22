@@ -1,7 +1,11 @@
 #include "mpu6050Control.h"
 
+MPU6050Control::MPU6050Control() {
+    _load_config();
+}
+
 void MPU6050Control::update() {
-    if (init_success_ && !is_calibrating_.load()) {
+    if (init_success_.load() && !is_calibrating_.load()) {
         if (is_dmp_handle_) {
             _dmp_read();
         } else {
@@ -14,12 +18,15 @@ void MPU6050Control::set_pins(int pin_SDA, int pin_SCL) {
     if (pin_SDA != pin_SDA_ || pin_SCL != pin_SCL_) {
         pin_SDA_ = pin_SDA;
         pin_SCL_ = pin_SCL;
+    } else {
+        return;
     }
+    init_success_.store(false);
 
     if (is_dmp_handle_) {
-        init_success_ = _dmp_init();
+        init_success_.store(_dmp_init());
     } else {
-        init_success_ = _manual_init();
+        init_success_.store(_manual_init());
     }
 }
 
@@ -53,7 +60,7 @@ bool MPU6050Control::_dmp_init() {
     delay(100);
 
     if (!mpu_.testConnection()) {
-        Serial.println("MPU6050 not responding");
+        serial_print("MPU6050 not connected!");
         return false;
     }
 
@@ -66,7 +73,7 @@ bool MPU6050Control::_dmp_init() {
     }
 
     // ⚠️ DMP 固件加载完成后
-    _loadCalibration(); // 保持静止
+    _load_params(); // 保持静止
 
     mpu_.setDMPEnabled(true);
     mpu_.resetFIFO(); // ✅ 只在这里 reset
@@ -78,7 +85,7 @@ bool MPU6050Control::_dmp_init() {
 }
 
 void MPU6050Control::start_calibration() {
-    if (!init_success_) {
+    if (!init_success_.load()) {
         serial_print("MPU6050模块初始化失败，校准失败.");
         return;
     }
@@ -115,7 +122,46 @@ void MPU6050Control::_start_calibration_task() {
     yGyroOffset_ = mpu_.getYGyroOffset();
     zGyroOffset_ = mpu_.getZGyroOffset();
 
-    preferences_.begin("mpu", false);
+    mpu_.setDMPEnabled(true); // ✅ 最后再重新开启 DMP
+    mpu_.resetFIFO();         // 🧹 再次清空，防止旧数据残留
+
+    serial_print("校准完成!");
+
+    save_params();
+
+    is_calibrating_.store(false);
+}
+
+void MPU6050Control::read_params(motion_settings_service__srv__MotionSettingsService_Response *response) {
+    response->mpu6050_accel_offset_x = xAccelOffset_;
+    response->mpu6050_accel_offset_y = yAccelOffset_;
+    response->mpu6050_accel_offset_z = zAccelOffset_;
+    response->mpu6050_gyro_offset_x = xGyroOffset_;
+    response->mpu6050_gyro_offset_y = yGyroOffset_;
+    response->mpu6050_gyro_offset_z = zGyroOffset_;
+}
+
+void MPU6050Control::set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t zAccOffset, int16_t xGyroOffset, int16_t yGyroOffset, int16_t zGyroOffset) {
+    if (!init_success_.load())
+        return;
+
+    xAccelOffset_ = xAccOffset;
+    yAccelOffset_ = yAccOffset;
+    zAccelOffset_ = zAccOffset;
+    xGyroOffset_ = xGyroOffset;
+    yGyroOffset_ = yGyroOffset;
+    zGyroOffset_ = zGyroOffset;
+
+    mpu_.setXAccelOffset(xAccelOffset_);
+    mpu_.setYAccelOffset(yAccelOffset_);
+    mpu_.setZAccelOffset(zAccelOffset_);
+    mpu_.setXGyroOffset(xGyroOffset_);
+    mpu_.setYGyroOffset(yGyroOffset_);
+    mpu_.setZGyroOffset(zGyroOffset_);
+}
+
+void MPU6050Control::save_params() {
+    preferences_.begin("offset", false);
     preferences_.clear();
     preferences_.putShort("xAccffset", xAccelOffset_);
     preferences_.putShort("yAccOffset", yAccelOffset_);
@@ -123,26 +169,18 @@ void MPU6050Control::_start_calibration_task() {
     preferences_.putShort("xGyroOffset", xGyroOffset_);
     preferences_.putShort("yGyroOffset", yGyroOffset_);
     preferences_.putShort("zGyroOffset", zGyroOffset_);
-
     preferences_.end();
-
-    mpu_.setDMPEnabled(true); // ✅ 最后再重新开启 DMP
-    mpu_.resetFIFO();         // 🧹 再次清空，防止旧数据残留
-
-    serial_print("校准完成!");
-
-    is_calibrating_.store(false);
 }
 
-void MPU6050Control::_loadCalibration() {
-    preferences_.begin("mpu", true); // 只读模式
+void MPU6050Control::_load_params() {
+    preferences_.begin("offset", true); // 只读模式
     // 如果没保存过，会返回0，或你也可以判断是否存在
-    xAccelOffset_ = preferences_.getShort("xAccffset", 0);
-    yAccelOffset_ = preferences_.getShort("yAccOffset", 0);
-    zAccelOffset_ = preferences_.getShort("zAccOffset", 0);
-    xGyroOffset_ = preferences_.getShort("xGyroOffset", 0);
-    yGyroOffset_ = preferences_.getShort("yGyroOffset", 0);
-    zGyroOffset_ = preferences_.getShort("zGyroOffset", 0);
+    xAccelOffset_ = preferences_.getShort("xAccffset", xAccelOffset_);
+    yAccelOffset_ = preferences_.getShort("yAccOffset", yAccelOffset_);
+    zAccelOffset_ = preferences_.getShort("zAccOffset", zAccelOffset_);
+    xGyroOffset_ = preferences_.getShort("xGyroOffset", xGyroOffset_);
+    yGyroOffset_ = preferences_.getShort("yGyroOffset", yGyroOffset_);
+    zGyroOffset_ = preferences_.getShort("zGyroOffset", zGyroOffset_);
     preferences_.end();
 
     mpu_.setXAccelOffset(xAccelOffset_);
@@ -151,14 +189,27 @@ void MPU6050Control::_loadCalibration() {
     mpu_.setXGyroOffset(xGyroOffset_);
     mpu_.setYGyroOffset(yGyroOffset_);
     mpu_.setZGyroOffset(zGyroOffset_);
+}
 
-    // 简单判断：如果都为0，可能没保存过
-    if (xAccelOffset_ == 0 && yAccelOffset_ == 0 && zAccelOffset_ == 0 &&
-        xGyroOffset_ == 0 && yGyroOffset_ == 0 && zGyroOffset_ == 0) {
-        serial_print("未进行校准过，加载默认初始值");
-    } else {
-        serial_print("加载mpu校准值完成");
-    }
+void MPU6050Control::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
+    response->mpu6050_pin_scl = pin_SCL_;
+    response->mpu6050_pin_sda = pin_SDA_;
+}
+
+void MPU6050Control::save_config() {
+    preferences_.begin("mpu", false);
+    preferences_.putInt("pinSDA", pin_SDA_);
+    preferences_.putInt("pinSCL", pin_SCL_);
+    preferences_.end();
+}
+
+void MPU6050Control::_load_config() {
+    preferences_.begin("mpu", true); // 只读模式
+    pin_SDA_ = preferences_.getInt("pinSDA", pin_SDA_);
+    pin_SCL_ = preferences_.getInt("pinSCL", pin_SCL_);
+    preferences_.end();
+
+    set_pins(pin_SDA_, pin_SCL_);
 }
 
 void MPU6050Control::_dmp_read() {

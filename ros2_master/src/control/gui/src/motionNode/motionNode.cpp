@@ -13,19 +13,19 @@ MotionNode::MotionNode(QObject *parent)
 
     service_client_ = node_->create_client<MotionSettingsSrv>(constructNodeName(esp32_motion_node_namespace, esp32_motion_settings_service_name));
     motion_status_subscription_ = node_->create_subscription<MotionStatusMsg>(constructNodeName(esp32_motion_node_namespace, esp32_motion_status_topic_name), best_effort_qos_, std::bind(&MotionNode::recv_motion_status_msg, this, std::placeholders::_1));
-
     twist_publisher_ = node_->create_publisher<geometry_msgs::msg::Twist>(constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name), best_effort_qos_);
-    joint_state_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>("/joint_states", best_effort_qos_);
-    odom_publisher_ = node_->create_publisher<nav_msgs::msg::Odometry>("/odom", reliable_qos_);
-    imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>("/imu", best_effort_qos_);
 
-    current_joint_state_.name = {"left_front_wheel_joint", "left_back_wheel_joint", "right_front_wheel_joint", "right_back_wheel_joint"};
+    joint_state_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>(joint_states_topic_name, best_effort_qos_);
+    odom_publisher_ = node_->create_publisher<nav_msgs::msg::Odometry>(odom_topic_name, reliable_qos_);
+    imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(imu_topic_name, best_effort_qos_);
+
+    current_joint_state_.name = {left_front_wheel_joint_name, left_back_wheel_joint_name, right_front_wheel_joint_name, right_back_wheel_joint_name};
     current_joint_state_.position.resize(4, 0.0);
     current_joint_state_.velocity.resize(4, 0.0);
     current_joint_state_.effort.resize(4, 0.0);
-    current_joint_state_.header.frame_id = "base_footprint";
+    current_joint_state_.header.frame_id = base_footprint_tf_frame_id;
 
-    imu_msg_.header.frame_id = "imu_link";
+    imu_msg_.header.frame_id = imu_tf_frame_id;
     for (int i = 0; i < 9; ++i) {
         imu_msg_.orientation_covariance[i] = 0.0;
         imu_msg_.angular_velocity_covariance[i] = 0.0;
@@ -45,8 +45,8 @@ MotionNode::MotionNode(QObject *parent)
     imu_msg_.linear_acceleration_covariance[4] = -1;
     imu_msg_.linear_acceleration_covariance[8] = -1;
 
-    odom_msg_.header.frame_id = "odom";
-    odom_msg_.child_frame_id = "base_footprint";
+    odom_msg_.header.frame_id = odom_tf_frame_id;
+    odom_msg_.child_frame_id = base_footprint_tf_frame_id;
     odom_msg_.pose.covariance.fill(0.0);
     odom_msg_.pose.covariance[0] = 0.02 * 0.02;
     odom_msg_.pose.covariance[7] = 0.02 * 0.02;
@@ -68,8 +68,8 @@ MotionNode::MotionNode(QObject *parent)
 void MotionNode::_pub_static_odomToBasefootprint_tf() {
     geometry_msgs::msg::TransformStamped odom2base;
     odom2base.header.stamp = node_->now();
-    odom2base.header.frame_id = "odom";
-    odom2base.child_frame_id = "base_footprint";
+    odom2base.header.frame_id = odom_tf_frame_id;
+    odom2base.child_frame_id = base_footprint_tf_frame_id;
     odom2base.transform.translation.x = 0.0;
     odom2base.transform.translation.y = 0.0;
     odom2base.transform.translation.z = 0.0;

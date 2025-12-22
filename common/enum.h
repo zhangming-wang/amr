@@ -23,7 +23,7 @@ namespace MotionService {
         SetSpeedPlanState,
         SetEnablePubMotionStatus,
 
-        CalibrateIMU,
+        CalibrateMPU6050,
 
         ReadParams,
         WriteParams,

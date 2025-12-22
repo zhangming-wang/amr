@@ -3,6 +3,7 @@
 #include "I2Cdev/I2Cdev.h"
 #include "MPU6050/MPU6050_6Axis_MotionApps20.h"
 #include "baseTask.h"
+#include "motion_settings_service/srv/motion_settings_service.h"
 #include "motion_status_msgs/msg/motion_status.h"
 #include "rosidl_runtime_c/string_functions.h"
 #include "system.h"
@@ -18,24 +19,31 @@ class MPU6050Control : public BaseTaskSingleton<MPU6050Control> {
     friend class Singleton<MPU6050Control>;
 
 protected:
-    MPU6050Control() = default;
+    MPU6050Control();
     virtual ~MPU6050Control() = default;
 
 public:
     void update() override;
 
     void set_pins(int pin_SDA, int pin_SCL);
+    void set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t zAccOffset,
+                    int16_t xGyroOffset, int16_t yGyroOffset, int16_t zGyroOffset);
 
     void start_calibration();
 
     void get_motion_status(motion_status_msgs__msg__MotionStatus &msg);
 
+    void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
+    void save_params();
+
+    void read_config(motion_settings_service__srv__MotionSettingsService_Response *response);
+    void save_config();
+
 private:
     int pin_SDA_ = -1, pin_SCL_ = -1;
 
     bool is_dmp_handle_ = true;
-    bool init_success_ = false;
-
+    std::atomic<bool> init_success_{false};
     std::atomic<bool> is_calibrating_{false};
 
     Preferences preferences_;
@@ -63,8 +71,10 @@ private:
     uint16_t packetSize_;
     uint16_t fifoCount_;
 
-    void _loadCalibration();
     void _start_calibration_task();
+
+    void _load_params();
+    void _load_config();
 
     bool _manual_init();
     bool _dmp_init();

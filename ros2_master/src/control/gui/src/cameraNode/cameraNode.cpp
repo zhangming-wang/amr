@@ -11,7 +11,8 @@ CameraNode::CameraNode(QObject *parent)
 
     service_client_ = node_->create_client<CameraSettingsSrv>(constructNodeName(esp32_camera_node_namespace, esp32_camera_settings_service_name));
     compressed_image_subscription_ = node_->create_subscription<sensor_msgs::msg::CompressedImage>(constructNodeName(esp32_camera_node_namespace, esp32_camera_image_topic_name), reliable_qos_, std::bind(&CameraNode::recv_compressed_image_msg, this, std::placeholders::_1));
-    raw_image_publisher_ = node_->create_publisher<sensor_msgs::msg::Image>("/camera/image_raw", best_effort_qos_);
+
+    raw_image_publisher_ = node_->create_publisher<sensor_msgs::msg::Image>(camera_image_raw_topic_name, best_effort_qos_);
 }
 
 CameraNode::~CameraNode() {

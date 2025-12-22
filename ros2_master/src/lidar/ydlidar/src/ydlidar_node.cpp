@@ -13,6 +13,7 @@
 #endif
 #endif
 
+#include ""
 #include "rclcpp/clock.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time_source.hpp"
@@ -53,6 +54,14 @@ int main(int argc, char *argv[]) {
     std::string frame_id = "laser_frame";
     node->declare_parameter("frame_id", frame_id);
     node->get_parameter("frame_id", frame_id);
+
+    std::string scan_topic_name = "/scan";
+    node->declare_parameter("scan_topic_name", scan_topic_name);
+    node->get_parameter("scan_topic_name", scan_topic_name);
+
+    std::string points_topic_name = "/scan/points";
+    node->declare_parameter("points_topic_name", points_topic_name);
+    node->get_parameter("points_topic_name", points_topic_name);
 
     //////////////////////int property/////////////////
     /// lidar baudrate
@@ -153,8 +162,8 @@ int main(int argc, char *argv[]) {
     node->declare_parameter("invalid_range_is_inf", invalid_range_is_inf);
     node->get_parameter("invalid_range_is_inf", invalid_range_is_inf);
 
-    auto laser_pub = node->create_publisher<sensor_msgs::msg::LaserScan>("/scan", rclcpp::SensorDataQoS());
-    auto pc_pub = node->create_publisher<sensor_msgs::msg::PointCloud>("/scan/points", rclcpp::SensorDataQoS());
+    auto laser_pub = node->create_publisher<sensor_msgs::msg::LaserScan>(scan_topic_name, rclcpp::SensorDataQoS());
+    auto pc_pub = node->create_publisher<sensor_msgs::msg::PointCloud>(points_topic_name, rclcpp::SensorDataQoS());
 
     auto stop_scan_service =
         [&laser](const std::shared_ptr<rmw_request_id_t> request_header,

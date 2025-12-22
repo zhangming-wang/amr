@@ -31,7 +31,7 @@ void motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesup
   motion_settings_service__srv__MotionSettingsService_Request__fini(message_memory);
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[60] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[68] = {
   {
     "id",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_UINT64,  // type
@@ -1002,6 +1002,142 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     NULL  // resize(index) function pointer
   },
   {
+    "mpu6050_pin_sda",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_pin_sda),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_pin_scl",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_pin_scl),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_accel_offset_x",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_accel_offset_x),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_accel_offset_y",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_accel_offset_y),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_accel_offset_z",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_accel_offset_z),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_gyro_offset_x",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_gyro_offset_x),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_gyro_offset_y",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_gyro_offset_y),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_gyro_offset_z",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, mpu6050_gyro_offset_z),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
     "motor_enable_flags",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_UINT8,  // type
     0,  // upper bound of string
@@ -1057,7 +1193,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
 static const rosidl_typesupport_introspection_c__MessageMembers motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_members = {
   "motion_settings_service__srv",  // message namespace
   "MotionSettingsService_Request",  // message name
-  60,  // number of fields
+  68,  // number of fields
   sizeof(motion_settings_service__srv__MotionSettingsService_Request),
   motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array,  // message members
   motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_init_function,  // function to initialize message memory (memory has to be allocated)
@@ -1122,7 +1258,7 @@ void motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesu
   motion_settings_service__srv__MotionSettingsService_Response__fini(message_memory);
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[60] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[68] = {
   {
     "id",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_UINT64,  // type
@@ -2093,6 +2229,142 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     NULL  // resize(index) function pointer
   },
   {
+    "mpu6050_pin_sda",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_pin_sda),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_pin_scl",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_pin_scl),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_accel_offset_x",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_accel_offset_x),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_accel_offset_y",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_accel_offset_y),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_accel_offset_z",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_accel_offset_z),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_gyro_offset_x",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_gyro_offset_x),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_gyro_offset_y",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_gyro_offset_y),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "mpu6050_gyro_offset_z",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_INT16,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, mpu6050_gyro_offset_z),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
     "motor_enable_flags",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_UINT8,  // type
     0,  // upper bound of string
@@ -2148,7 +2420,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
 static const rosidl_typesupport_introspection_c__MessageMembers motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_members = {
   "motion_settings_service__srv",  // message namespace
   "MotionSettingsService_Response",  // message name
-  60,  // number of fields
+  68,  // number of fields
   sizeof(motion_settings_service__srv__MotionSettingsService_Response),
   motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array,  // message members
   motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_init_function,  // function to initialize message memory (memory has to be allocated)

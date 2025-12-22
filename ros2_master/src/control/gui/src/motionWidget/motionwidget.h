@@ -77,6 +77,8 @@ public:
 
     void on_update_status();
 
+    void on_calibrate_mpu6050();
+
     void on_connect_changed(bool connect);
     void on_settings_show_changed(bool show);
 
