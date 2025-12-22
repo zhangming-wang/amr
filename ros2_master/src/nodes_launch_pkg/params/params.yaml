@@ -1,7 +1,7 @@
 ydlidar_node:
   ros__parameters:
-    port: /tmp/tty_laser # 激光雷达端口
-    frame_id: laser_link # 坐标系ID
+    port: /tmp/tty_lidar # 激光雷达端口
+    frame_id: lidar_link # 坐标系ID
     scan_topic_name: /scan # 扫描话题名称
     points_topic_name: /scan/points # 点云话题名称
     ignore_array: "" # 忽略的数组
@@ -28,7 +28,7 @@ ydlidar_node:
 tcpserver:
   ros__parameters:
     tcp_port: 8889
-    serial_port: /tmp/tty_laser
+    serial_port: /tmp/tty_lidar
 
 # micro_ros_agent:
 #   arguments: ["udp4", "--port", "8888"]
