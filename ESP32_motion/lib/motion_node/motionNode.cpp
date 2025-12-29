@@ -136,7 +136,7 @@ void MotionNode::motion_settings_service_callback(const void *req, void *res) {
     if (request->mode == MotionService::Type::HeartBeat) {
         ;
     } else if (request->mode == MotionService::Type::Restart) {
-        instance.motionControl_->restart_task();
+        restart_device();
     } else if (request->mode == MotionService::Type::Brake) {
         instance.motionControl_->brake();
     } else if (request->mode == MotionService::Type::StopMove) {

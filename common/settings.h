@@ -33,8 +33,6 @@ static constexpr const char *esp32_motion_heartbeat_topic_name = "motion_heartbe
 static constexpr const char *odom_topic_name = "/odom";
 static constexpr const char *imu_topic_name = "/imu";
 static constexpr const char *cmd_vel_topic_name = "/cmd_vel";
-static constexpr const char *scan_topic_name = "/scan";
-static constexpr const char *scan_points_topic_name = "/scan/points";
 static constexpr const char *joint_states_topic_name = "/joint_states";
 static constexpr const char *camera_image_raw_topic_name = "/camera/image_raw";
 

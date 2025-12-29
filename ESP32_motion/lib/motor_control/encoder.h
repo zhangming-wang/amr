@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <ESP32Encoder.h>
+#include <atomic>
 
 class Encoder {
 
@@ -17,7 +18,7 @@ public:
     long get_count_change();
 
 private:
-    bool init_ = false;
+    std::atomic<bool> init_{false};
     int pin_A_ = -1, pin_B_ = -1;
     volatile long count_ = 0, last_count_ = 0, count_change_ = 0;
     ESP32Encoder encoder_;

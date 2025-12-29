@@ -1,4 +1,3 @@
-#include "esp_tools.h"
 #include "settings.h"
 #include "ydlidarX2.h"
 #include <Arduino.h>

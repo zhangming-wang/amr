@@ -13,6 +13,9 @@ class MasterTask : public BaseTaskSingleton<MasterTask> {
 
 protected:
     MasterTask();
+    ~MasterTask() = default;
+
+    void init_task() override;
 
 public:
     void update() override;

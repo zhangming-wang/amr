@@ -23,7 +23,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_9">
       <attribute name="title">
@@ -2463,7 +2463,7 @@
             <item>
              <widget class="QLabel" name="label_57">
               <property name="text">
-               <string>引脚1:</string>
+               <string>SDA引脚:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -2487,7 +2487,7 @@
             <item>
              <widget class="QLabel" name="label_56">
               <property name="text">
-               <string>引脚2:</string>
+               <string>SCL引脚:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

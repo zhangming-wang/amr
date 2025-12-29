@@ -20,11 +20,11 @@ void setup() {
     WiFi.mode(WIFI_STA);
     WiFi.persistent(false);
 
-    masterTask = &MasterTask::instance();
     motionNode = &MotionNode::instance();
-
-    masterTask->start_task();
     motionNode->start_task();
+
+    masterTask = &MasterTask::instance();
+    masterTask->start_task();
 }
 
 void loop() {

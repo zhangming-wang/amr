@@ -82,6 +82,7 @@ void YdlidarX2::readData() {
                             // Serial.println("");
                             Serial.printf("雷达数据发送失败，总共数据大小:%d\n", data_vector_.size());
                         }
+                        delay(5);
                         data_vector_.clear();
                     }
                     data_vector_.push_back(0xaa);
@@ -105,6 +106,7 @@ void YdlidarX2::readData() {
                         if (client_.write(data_vector_.data(), data_vector_.size()) != data_vector_.size()) {
                             Serial.printf("雷达上电信息发送失败，总共数据大小:%d\n", data_vector_.size());
                         }
+                        delay(5);
                         data_vector_.clear();
                     }
                     data_vector_.push_back(0xa5);

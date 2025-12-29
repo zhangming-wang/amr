@@ -16,7 +16,6 @@ extern "C" {
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
-#include "mpu6050Control.h"
 #include <Arduino.h>
 #include <Preferences.h>
 #include <deque>

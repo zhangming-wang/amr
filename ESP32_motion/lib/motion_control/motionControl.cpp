@@ -260,6 +260,8 @@ void MotionControl::_plan_wheel_speed(const WheelSpeed &target_wheel_speed) { //
     running_ = true;
     std::deque<WheelSpeed> speed_deque;
 
+    Serial.printf("Target Wheel Speed - LF: %.2f, LB: %.2f, RF: %.2f, RB: %.2f \n", target_wheel_speed.left_front_v, target_wheel_speed.left_back_v, target_wheel_speed.right_front_v, target_wheel_speed.right_back_v);
+
     if (enable_speed_plan_) {
         float MIN_V_CHANGE = 0.001;
         auto changed_left_front_v = target_wheel_speed.left_front_v - target_wheel_v_.left_front_v;
@@ -418,8 +420,8 @@ geometry_msgs__msg__Twist MotionControl::_forwardKinematics(const WheelSpeed &wh
         double v_left = (wheelSpeed.left_front_v + wheelSpeed.left_back_v) / 2.0;
         double v_right = (wheelSpeed.right_front_v + wheelSpeed.right_back_v) / 2.0;
 
-        twist.linear.x = (v_left + v_right) / 2.0;
-        twist.linear.y = 0.0; // 非麦克纳姆没有侧向速度
+        twist.linear.x = 0.0; // 非麦克纳姆没有侧向速度
+        twist.linear.y = (v_left + v_right) / 2.0;
         twist.angular.z = (v_right - v_left) / track_width_;
     }
     return twist;
@@ -442,12 +444,12 @@ WheelSpeed MotionControl::_inverseKinematics(const geometry_msgs__msg__Twist &tw
             wheelSpeed.right_back_v *= scale;
         }
     } else {
-        double v = twist.linear.x;  // 前进线速度
-        double w = twist.angular.z; // 角速度（绕 z 轴）
+        float v = twist.linear.y;  // 前进线速度
+        float w = twist.angular.z; // 角速度（绕 z 轴）
 
         // 左右轮速度
-        double v_left = v - w * track_width_ / 2.0;
-        double v_right = v + w * track_width_ / 2.0;
+        float v_left = v - w * track_width_ / 2.0;
+        float v_right = v + w * track_width_ / 2.0;
 
         // 赋值给四个轮子（左右分别相等）
         wheelSpeed.left_front_v = v_left;

@@ -35,9 +35,11 @@ public:
 
     void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
     void save_params();
+    void load_params();
 
     void read_config(motion_settings_service__srv__MotionSettingsService_Response *response);
     void save_config();
+    void load_config();
 
 private:
     int pin_SDA_ = -1, pin_SCL_ = -1;
@@ -72,9 +74,6 @@ private:
     uint16_t fifoCount_;
 
     void _start_calibration_task();
-
-    void _load_params();
-    void _load_config();
 
     bool _manual_init();
     bool _dmp_init();

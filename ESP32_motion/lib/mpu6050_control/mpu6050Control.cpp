@@ -1,7 +1,7 @@
 #include "mpu6050Control.h"
 
 MPU6050Control::MPU6050Control() {
-    _load_config();
+    // _load_config();
 }
 
 void MPU6050Control::update() {
@@ -15,13 +15,23 @@ void MPU6050Control::update() {
 }
 
 void MPU6050Control::set_pins(int pin_SDA, int pin_SCL) {
-    if (pin_SDA != pin_SDA_ || pin_SCL != pin_SCL_) {
-        pin_SDA_ = pin_SDA;
-        pin_SCL_ = pin_SCL;
-    } else {
+    if (pin_SDA <= 0 || pin_SCL <= 0) {
+        serial_print("设置MPU6050引脚失败，SDA和SCL引脚号必须大于0.");
         return;
     }
+
+    if (init_success_.load() && pin_SDA == pin_SDA_ && pin_SCL == pin_SCL_) {
+        serial_print("MPU6050引脚未更改，跳过初始化.");
+        return;
+    }
+
+    Wire.end(); // 关闭（即使没 init 也安全）
+    delay(100);
+
     init_success_.store(false);
+
+    pin_SDA_ = pin_SDA;
+    pin_SCL_ = pin_SCL;
 
     if (is_dmp_handle_) {
         init_success_.store(_dmp_init());
@@ -49,12 +59,16 @@ bool MPU6050Control::_manual_init() {
 }
 
 bool MPU6050Control::_dmp_init() {
-    if (pin_SDA_ < 0 || pin_SCL_ < 0)
+    if (pin_SDA_ < 0 || pin_SCL_ < 0) {
+        serial_print("MPU6050 引脚未设置，初始化失败.");
         return false;
+    }
 
-    Wire.begin(pin_SDA_, pin_SCL_);
-    Wire.setClock(400000);
-    delay(200);
+    if (!Wire.begin(pin_SDA_, pin_SCL_, 400000)) {
+        serial_print("初始化 I2C 总线失败.");
+        return false;
+    }
+    delay(100);
 
     mpu_.initialize();
     delay(100);
@@ -73,14 +87,14 @@ bool MPU6050Control::_dmp_init() {
     }
 
     // ⚠️ DMP 固件加载完成后
-    _load_params(); // 保持静止
+    load_params(); // 保持静止
 
     mpu_.setDMPEnabled(true);
     mpu_.resetFIFO(); // ✅ 只在这里 reset
 
     packetSize_ = mpu_.dmpGetFIFOPacketSize();
+    serial_print("MPU6050 DMP 初始化成功, 包的大小: " + std::to_string(packetSize_));
 
-    serial_print("DMP 初始化成功！");
     return true;
 }
 
@@ -172,7 +186,7 @@ void MPU6050Control::save_params() {
     preferences_.end();
 }
 
-void MPU6050Control::_load_params() {
+void MPU6050Control::load_params() {
     preferences_.begin("offset", true); // 只读模式
     // 如果没保存过，会返回0，或你也可以判断是否存在
     xAccelOffset_ = preferences_.getShort("xAccffset", xAccelOffset_);
@@ -189,6 +203,8 @@ void MPU6050Control::_load_params() {
     mpu_.setXGyroOffset(xGyroOffset_);
     mpu_.setYGyroOffset(yGyroOffset_);
     mpu_.setZGyroOffset(zGyroOffset_);
+
+    serial_print("MPU6050偏移参数已加载.");
 }
 
 void MPU6050Control::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
@@ -198,18 +214,20 @@ void MPU6050Control::read_config(motion_settings_service__srv__MotionSettingsSer
 
 void MPU6050Control::save_config() {
     preferences_.begin("mpu", false);
+    preferences_.clear();
     preferences_.putInt("pinSDA", pin_SDA_);
     preferences_.putInt("pinSCL", pin_SCL_);
     preferences_.end();
+    serial_print("MPU6050配置已保存.");
 }
 
-void MPU6050Control::_load_config() {
+void MPU6050Control::load_config() {
     preferences_.begin("mpu", true); // 只读模式
-    pin_SDA_ = preferences_.getInt("pinSDA", pin_SDA_);
-    pin_SCL_ = preferences_.getInt("pinSCL", pin_SCL_);
+    auto pin_SDA = preferences_.getInt("pinSDA", -1);
+    auto pin_SCL = preferences_.getInt("pinSCL", -1);
     preferences_.end();
 
-    set_pins(pin_SDA_, pin_SCL_);
+    set_pins(pin_SDA, pin_SCL);
 }
 
 void MPU6050Control::_dmp_read() {

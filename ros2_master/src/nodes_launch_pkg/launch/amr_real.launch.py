@@ -8,9 +8,15 @@ from launch.actions import DeclareLaunchArgument
 import os
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+import subprocess
+import os
+import signal
+import time
 
 
 def generate_launch_description():
+    system_clean()
+
     share_dir = get_package_share_directory("nodes_launch_pkg")
 
     params_file_path = os.path.join(share_dir, "params", "params.yaml")
@@ -45,6 +51,8 @@ def generate_launch_description():
             output="screen",
             emulate_tty=True,
             parameters=[params_file_path],
+            respawn=True,
+            respawn_delay=1.0,
         ),
     ]
 
@@ -68,9 +76,47 @@ def generate_launch_description():
     ]
 
     nodes_list = [
-        *control_panel_nodes,
-        # *lidar_nodes,
+        # *control_panel_nodes,
+        *lidar_nodes,
         # *amr_nodes,
     ]
 
     return LaunchDescription(nodes_list)
+
+
+def system_clean():
+    keywords = [
+        "micro_ros_agent",
+        "serial2wifi/tcpserver",
+        "ydlidar",
+    ]
+
+    pids = set()
+
+    for kw in keywords:
+        try:
+            out = subprocess.check_output(["pgrep", "-f", kw], stderr=subprocess.DEVNULL, text=True)
+            print(f"找到进程 {kw} : {out.strip()}")
+            for pid in out.split():
+                pids.add(int(pid))
+        except subprocess.CalledProcessError:
+            pass
+
+    # 先优雅关闭
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+
+    time.sleep(0.5)
+
+    # 再强制兜底
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+
+    # 清理资源
+    os.system("rm -f /tmp/tty_lidar")

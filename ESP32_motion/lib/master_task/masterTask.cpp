@@ -7,10 +7,9 @@ MasterTask::MasterTask() {
 
     task_tick_count_ = xTaskGetTickCount();
 
+    mpu6050Control_ = &MPU6050Control::instance();
     motionControl_ = &MotionControl::instance();
     motionNode_ = &MotionNode::instance();
-    mpu6050Control_ = &MPU6050Control::instance();
-    mpu6050Control_->set_pins(8, 9);
 }
 
 void MasterTask::update() {
@@ -20,4 +19,8 @@ void MasterTask::update() {
     motionControl_->move();
 
     vTaskDelayUntil(&task_tick_count_, motionControl_->get_milliseconds());
+}
+
+void MasterTask::init_task() {
+    mpu6050Control_->load_config();
 }
