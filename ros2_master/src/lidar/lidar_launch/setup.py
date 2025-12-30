@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 import os
 
-package_name = "nodes_launch_pkg"
+package_name = "lidar_launch"
 
 setup(
     name=package_name,

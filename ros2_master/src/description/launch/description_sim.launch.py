@@ -11,7 +11,7 @@ from launch.event_handlers import OnProcessStart, OnProcessExit
 
 
 def generate_launch_description():
-    pkg_share = get_package_share_directory("amr_launch")
+    pkg_share = get_package_share_directory("description")
 
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
 

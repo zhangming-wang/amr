@@ -9,32 +9,17 @@ import os
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 import subprocess
-import os
 import signal
 import time
 
 
 def generate_launch_description():
-    system_clean()
 
-    share_dir = get_package_share_directory("nodes_launch_pkg")
+    system_clean(["tcpserver", "ydlidar_node"])
+
+    share_dir = get_package_share_directory("lidar_launch")
 
     params_file_path = os.path.join(share_dir, "params", "params.yaml")
-
-    control_panel_nodes = [
-        Node(
-            package="micro_ros_agent",
-            executable="micro_ros_agent",
-            name="micro_ros_agent",
-            output="screen",
-            arguments=["udp4", "--port", "8888"],
-        ),
-        Node(
-            package="control_panel",
-            executable="control_panel",
-            output="screen",
-        ),
-    ]
 
     lidar_nodes = [
         Node(
@@ -55,45 +40,18 @@ def generate_launch_description():
             respawn_delay=1.0,
         ),
     ]
-
-    amr_nodes = [
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                os.path.join(get_package_share_directory("amr_launch"), "launch", "amr_real.launch.py")
-            )
-        ),
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(
-        #         os.path.join(get_package_share_directory("amr_nav2"), "launch", "amr_nav2.launch.py")
-        #     )
-        # ),
-        # Node(
-        #     package="amr_cmd",
-        #     executable="init_pose",
-        #     output="screen",
-        #     parameters=[{"use_sim_time": False}],
-        # ),
-    ]
-
     nodes_list = [
-        # *control_panel_nodes,
         *lidar_nodes,
-        # *amr_nodes,
     ]
 
     return LaunchDescription(nodes_list)
 
 
-def system_clean():
-    keywords = [
-        "micro_ros_agent",
-        "serial2wifi/tcpserver",
-        "ydlidar",
-    ]
+def system_clean(process_list: list):
 
     pids = set()
 
-    for kw in keywords:
+    for kw in process_list:
         try:
             out = subprocess.check_output(["pgrep", "-f", kw], stderr=subprocess.DEVNULL, text=True)
             print(f"找到进程 {kw} : {out.strip()}")
@@ -117,6 +75,3 @@ def system_clean():
             os.kill(pid, signal.SIGKILL)
         except ProcessLookupError:
             pass
-
-    # 清理资源
-    os.system("rm -f /tmp/tty_lidar")

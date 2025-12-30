@@ -8,7 +8,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
-    pkg_share_dir = get_package_share_directory("amr_nav2")
+    pkg_share_dir = get_package_share_directory("nav2_launch")
     nav2_bringup_dir = get_package_share_directory("nav2_bringup")
     rviz_config_dir = os.path.join(nav2_bringup_dir, "rviz", "nav2_default_view.rviz")
 

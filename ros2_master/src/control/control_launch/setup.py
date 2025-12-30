@@ -1,6 +1,7 @@
 from setuptools import find_packages, setup
+import os
 
-package_name = "amr_cmd"
+package_name = "control_launch"
 
 setup(
     name=package_name,
@@ -9,11 +10,12 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
+        (os.path.join("share", package_name, "launch"), [os.path.join("launch", f) for f in os.listdir("launch")]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="root",
-    maintainer_email="zmwang@visionnav.com",
+    maintainer="linux",
+    maintainer_email="18279657653@139.com",
     description="TODO: Package description",
     license="Apache-2.0",
     extras_require={
@@ -22,10 +24,6 @@ setup(
         ],
     },
     entry_points={
-        "console_scripts": [
-            "init_pose = amr_cmd.init_pose:main",
-            "goto_pose = amr_cmd.goto_pose:main",
-            "waypoints_follow = amr_cmd.waypoints_follow:main",
-        ],
+        "console_scripts": [],
     },
 )
