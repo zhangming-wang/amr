@@ -4,7 +4,11 @@
 #include "../common/settings.h"
 #include "../common/system.h"
 #include "camera_settings_service/srv/camera_settings_service.hpp"
+#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <filesystem>
+#include <memory>
+#include <opencv2/dnn.hpp>
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -15,7 +19,7 @@ class CameraNode : public NodeThread {
     Q_OBJECT
 public:
     CameraNode(QObject *parent = nullptr);
-    ~CameraNode();
+    ~CameraNode() = default;
 
     void ask_service_response(CameraSettingsSrv::Request::SharedPtr request);
 
@@ -33,4 +37,8 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_subscription_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr raw_image_publisher_;
     rclcpp::Client<CameraSettingsSrv>::SharedPtr service_client_;
+
+    std::shared_ptr<cv::dnn::Net> net_{nullptr};
+
+    void _detectYOLO(cv::Mat &img);
 };
