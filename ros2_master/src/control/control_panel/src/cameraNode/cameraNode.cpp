@@ -40,8 +40,6 @@ void CameraNode::recv_compressed_image_msg(const sensor_msgs::msg::CompressedIma
 }
 
 void CameraNode::recv_yolo_detect_image(const sensor_msgs::msg::Image::SharedPtr msg) {
-
-    std::cout << "Received YOLO detected image." << std::endl;
     emit rawImageMsgReceived(msg);
 }
 

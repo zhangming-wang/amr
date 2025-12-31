@@ -59,7 +59,6 @@ private:
     QElapsedTimer fps_timer_;
     std::shared_ptr<QVector<double>> fps_vector_;
     cv_bridge::CvImagePtr cv_ptr_ = nullptr;
-    sensor_msgs::msg::Image::SharedPtr image_msg_ = nullptr;
 
     static constexpr const char *OK_STYLESHEET = "color:green;font-size:20px;"; // background-color:green;
     static constexpr const char *ERROR_STYLESHEET = "color:red;font-size:20px;";

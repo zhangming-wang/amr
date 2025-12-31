@@ -292,7 +292,7 @@ void CameraWidget::on_recv_connected_changed(bool connected) {
         ui->label_status->setStyleSheet(OK_STYLESHEET);
         ui->label_status->setText("相机节点已连接");
     } else {
-        pixmapItem_->setPixmap(QPixmap::fromImage(QImage()));
+        // pixmapItem_->setPixmap(QPixmap::fromImage(QImage()));
         ui->label_status->setStyleSheet(ERROR_STYLESHEET);
         ui->label_status->setText("相机节点未连接");
     }
@@ -309,14 +309,13 @@ void CameraWidget::on_recv_compressed_image_msg(const sensor_msgs::msg::Compress
 }
 
 void CameraWidget::on_recv_raw_image_msg(const sensor_msgs::msg::Image::SharedPtr msg) {
-    image_msg_ = msg;
-    if (image_msg_->data.empty()) {
+    if (msg->data.empty()) {
         std::cerr << "Received empty image data" << std::endl;
         return;
     }
 
     try {
-        cv_ptr_ = cv_bridge::toCvCopy(image_msg_, sensor_msgs::image_encodings::BGR8);
+        cv_ptr_ = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     } catch (cv_bridge::Exception &e) {
         std::cerr << "cv_bridge转换失败:" << e.what() << std::endl;
         return;

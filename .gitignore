@@ -50,3 +50,4 @@ log/
 install/
 firmware/
 my_build/
+.python-env
