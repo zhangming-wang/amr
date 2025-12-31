@@ -6,9 +6,6 @@ static constexpr const char *wifi_IP = "192.168.1.102";
 
 static constexpr const int micro_ros_port = 8888;
 
-static constexpr const int ydlidar_tcp_client_port = 8889;
-static constexpr const int ydlidar_baudrate = 115200;
-
 static constexpr const char *pc_camera_node_name = "pc_camera_node";
 static constexpr const char *pc_camera_node_namespace = "pc";
 
@@ -34,7 +31,14 @@ static constexpr const char *odom_topic_name = "/odom";
 static constexpr const char *imu_topic_name = "/imu";
 static constexpr const char *cmd_vel_topic_name = "/cmd_vel";
 static constexpr const char *joint_states_topic_name = "/joint_states";
+
+static constexpr const int ydlidar_tcp_client_port = 8889;
+static constexpr const int ydlidar_baudrate = 115200;
+static constexpr const char *laser_scan_topic_name = "/scan";
+static constexpr const char *laser_points_topic_name = "/scan/points";
+
 static constexpr const char *camera_image_raw_topic_name = "/camera/image_raw";
+static constexpr const char *yolo_detect_image_topic_name = "/yolo/detect_image";
 
 static constexpr const char *base_footprint_tf_frame_id = "base_footprint";
 static constexpr const char *base_link_tf_frame_id = "base_link";

@@ -1,6 +1,7 @@
 from setuptools import find_packages, setup
+import os
 
-package_name = "nav2_cmd"
+package_name = "image_detect"
 
 setup(
     name=package_name,
@@ -9,10 +10,11 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
+        (os.path.join("share", package_name, "model"), [os.path.join("model", f) for f in os.listdir("model")]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="root",
+    maintainer="dev",
     maintainer_email="18279657653@139.com",
     description="TODO: Package description",
     license="Apache-2.0",
@@ -23,9 +25,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "init_pose = nav2_cmd.init_pose:main",
-            "goto_pose = nav2_cmd.goto_pose:main",
-            "waypoints_follow = nav2_cmd.waypoints_follow:main",
+            "yolo_detect = image_detect.yolo_detect:main",
         ],
     },
 )

@@ -12,8 +12,6 @@ CameraWidget::CameraWidget(QWidget *parent)
     pixmapItem_ = ui->graphicsView->scene()->addPixmap(QPixmap());
     pixmapItem_->setTransformationMode(Qt::SmoothTransformation);
 
-    ui->graphicsView->setFixedSize(1280, 720);
-
     connect(ui->pushButton_capture, &QPushButton::clicked, this, &CameraWidget::capture_image);
     connect(ui->pushButton_read_config, &QPushButton::clicked, this, &CameraWidget::read_config);
     connect(ui->pushButton_write_config, &QPushButton::clicked, this, &CameraWidget::write_config);
@@ -32,11 +30,11 @@ CameraWidget::CameraWidget(QWidget *parent)
     connect(camera_node_.get(), &CameraNode::connectChanged, this, &CameraWidget::on_recv_connected_changed);
     connect(camera_node_.get(), &CameraNode::nodeClosed, this, &CameraWidget::nodeClosed);
     connect(camera_node_.get(), &CameraNode::rawImageMsgReceived, this, &CameraWidget::on_recv_raw_image_msg);
-    connect(camera_node_.get(), &CameraNode::CompressedImageMsgReceived, this, &CameraWidget::on_recv_compressed_image_msg);
+    connect(camera_node_.get(), &CameraNode::compressedImageMsgReceived, this, &CameraWidget::on_recv_compressed_image_msg);
     camera_node_->start();
 
     connect(&status_timer_, &QTimer::timeout, this, &CameraWidget::on_update_status);
-    status_timer_.setInterval(500);
+    status_timer_.setInterval(1000);
     status_timer_.start();
 
     ui->checkBox_open_settings->setChecked(false);
@@ -307,34 +305,48 @@ void CameraWidget::on_recv_compressed_image_msg(const sensor_msgs::msg::Compress
         return;
     }
 
-    pixmapItem_->setPixmap(QPixmap::fromImage(image));
-    ui->graphicsView->scene()->setSceneRect(pixmapItem_->boundingRect());
-    if (ui->graphicsView->width() != image.width() || ui->graphicsView->height() != image.height()) {
-        ui->graphicsView->setFixedSize(image.width(), image.height());
-        ui->graphicsView->fitInView(pixmapItem_, Qt::KeepAspectRatio);
-    }
-
-    fps_vector_->push_back(1000.0 / fps_timer_.restart());
+    _update_image_display(image);
 }
 
 void CameraWidget::on_recv_raw_image_msg(const sensor_msgs::msg::Image::SharedPtr msg) {
-    cv_bridge::CvImagePtr cv_ptr;
-    try {
-        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    } catch (cv_bridge::Exception &e) {
-        qDebug() << "cv_bridge转换失败: " << e.what();
+    image_msg_ = msg;
+    if (image_msg_->data.empty()) {
+        std::cerr << "Received empty image data" << std::endl;
         return;
     }
 
-    cv::Mat cv_img = cv_ptr->image;
-    QImage image(cv_img.data, cv_img.cols, cv_img.rows, static_cast<int>(cv_img.step), QImage::Format_BGR888);
-
-    pixmapItem_->setPixmap(QPixmap::fromImage(image));
-    ui->graphicsView->scene()->setSceneRect(pixmapItem_->boundingRect());
-    if (ui->graphicsView->width() != image.width() || ui->graphicsView->height() != image.height()) {
-        ui->graphicsView->setFixedSize(image.width(), image.height());
-        ui->graphicsView->fitInView(pixmapItem_, Qt::KeepAspectRatio);
+    try {
+        cv_ptr_ = cv_bridge::toCvCopy(image_msg_, sensor_msgs::image_encodings::BGR8);
+    } catch (cv_bridge::Exception &e) {
+        std::cerr << "cv_bridge转换失败:" << e.what() << std::endl;
+        return;
     }
+
+    cv::Mat rgb;
+    cv::cvtColor(cv_ptr_->image, rgb, cv::COLOR_BGR2RGB);
+
+    QImage image(rgb.data, rgb.cols, rgb.rows, static_cast<int>(rgb.step), QImage::Format_RGB888);
+    _update_image_display(image);
+}
+
+void CameraWidget::_update_image_display(const QImage &image) {
+    static int width_maxSize = 720, height_maxSize = 1280;
+
+    QPixmap pixmap = QPixmap::fromImage(image.copy());
+    qreal scaleFactor = qMin(static_cast<qreal>(width_maxSize) / pixmap.width(),
+                             static_cast<qreal>(height_maxSize) / pixmap.height());
+    if (scaleFactor > 1.0) {
+        scaleFactor = 1.0;
+    }
+
+    pixmap = pixmap.scaled(pixmap.size() * scaleFactor,
+                           Qt::KeepAspectRatio,
+                           Qt::SmoothTransformation);
+    pixmapItem_->setPixmap(pixmap);
+
+    ui->graphicsView->scene()->setSceneRect(pixmapItem_->boundingRect());
+    ui->graphicsView->setFixedSize(pixmap.size());
+    ui->graphicsView->fitInView(pixmapItem_, Qt::KeepAspectRatio);
 
     fps_vector_->push_back(1000.0 / fps_timer_.restart());
 }

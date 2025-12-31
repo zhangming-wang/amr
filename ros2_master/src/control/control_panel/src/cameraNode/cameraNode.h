@@ -8,7 +8,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <filesystem>
 #include <memory>
-#include <opencv2/dnn.hpp>
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -25,20 +24,16 @@ public:
 
 protected:
     void recv_compressed_image_msg(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
-    void publish_raw_image(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
-    void publish_compressed_image(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
+    void recv_yolo_detect_image(const sensor_msgs::msg::Image::SharedPtr msg);
 
 signals:
-    void CompressedImageMsgReceived(const sensor_msgs::msg::CompressedImage::SharedPtr);
+    void compressedImageMsgReceived(const sensor_msgs::msg::CompressedImage::SharedPtr);
     void rawImageMsgReceived(const sensor_msgs::msg::Image::SharedPtr);
     void serviceResponsed(uint64_t id, CameraSettingsSrv::Response::SharedPtr);
 
 private:
     rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_image_subscription_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr raw_image_publisher_;
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr yolo_detect_image_subscription_;
     rclcpp::Client<CameraSettingsSrv>::SharedPtr service_client_;
-
-    std::shared_ptr<cv::dnn::Net> net_{nullptr};
-
-    void _detectYOLO(cv::Mat &img);
 };

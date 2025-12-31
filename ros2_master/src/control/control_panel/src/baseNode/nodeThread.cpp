@@ -29,12 +29,7 @@ bool NodeThread::connected() {
 }
 
 void NodeThread::run() {
-    rclcpp::Rate rate(200);
-
-    while (rclcpp::ok()) {
-        rclcpp::spin_some(node_);
-        rate.sleep();
-    }
+    rclcpp::spin(node_);
 
     connected_.store(false);
     emit nodeClosed();

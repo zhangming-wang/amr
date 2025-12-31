@@ -19,7 +19,7 @@ def generate_launch_description():
 
     share_dir = get_package_share_directory("lidar_launch")
 
-    params_file_path = os.path.join(share_dir, "params", "params.yaml")
+    params_file_path = os.path.join(share_dir, "config", "lidar_params.yaml")
 
     lidar_nodes = [
         Node(

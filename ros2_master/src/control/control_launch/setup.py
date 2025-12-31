@@ -11,6 +11,7 @@ setup(
         ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
         (os.path.join("share", package_name, "launch"), [os.path.join("launch", f) for f in os.listdir("launch")]),
+        (os.path.join("share", package_name, "config"), [os.path.join("config", f) for f in os.listdir("config")]),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

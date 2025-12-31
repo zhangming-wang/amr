@@ -1,0 +1,10 @@
+yolo_detect_node:
+  ros__parameters:
+    sub_image_topic_name: "/camera/image_raw"
+    pub_image_topic_name: "/yolo/detect_image"
+    model_path: "" #使用默认模型时留空
+    device: "cuda:0" # or "cpu"
+    image_size: 640
+    conf_threshold: 0.25
+    iou_threshold: 0.45
+    verbose: false

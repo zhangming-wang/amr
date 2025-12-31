@@ -16,7 +16,10 @@ import time
 
 def generate_launch_description():
 
-    system_clean(["micro_ros_agent", "control_panel"])
+    system_clean(["micro_ros_agent", "control_panel", "yolo_detect"])
+    time.sleep(1)
+
+    current_share_directory = get_package_share_directory("control_launch")
 
     control_panel_nodes = [
         Node(
@@ -30,6 +33,12 @@ def generate_launch_description():
             package="control_panel",
             executable="control_panel",
             output="screen",
+        ),
+        Node(
+            package="image_detect",
+            executable="yolo_detect",
+            output="screen",
+            parameters=[current_share_directory + "/config/yolo_detect.yaml"],
         ),
     ]
 
