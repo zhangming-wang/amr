@@ -64,7 +64,12 @@ void MotionControl::set_speed_plan_parms(float max_v, float max_acc, float jerk)
     jerk_ = jerk;
 
     speed_percent_ = max_v_ / target_max_v_;
-    max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
+
+    if (is_mecanum_wheel_) {
+        max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
+    } else {
+        max_w_ = 2.0 * max_v_ / wheel_width_;
+    }
 
     speedPlan_->set_maxAcc_and_jerk(max_acc_, jerk_);
 }
@@ -91,7 +96,11 @@ void MotionControl::set_speed_percent(float percent) {
         percent = 1;
     speed_percent_ = percent;
     max_v_ = target_max_v_ * speed_percent_;
-    max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
+    if (is_mecanum_wheel_) {
+        max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
+    } else {
+        max_w_ = 2.0 * max_v_ / wheel_width_;
+    }
 }
 
 float MotionControl::get_speed_percent() {
@@ -422,7 +431,7 @@ geometry_msgs__msg__Twist MotionControl::_forwardKinematics(const WheelSpeed &wh
 
         twist.linear.x = 0.0; // 非麦克纳姆没有侧向速度
         twist.linear.y = (v_left + v_right) / 2.0;
-        twist.angular.z = (v_right - v_left) / track_width_;
+        twist.angular.z = (v_right - v_left) / wheel_width_;
     }
     return twist;
 }
@@ -448,8 +457,8 @@ WheelSpeed MotionControl::_inverseKinematics(const geometry_msgs__msg__Twist &tw
         float w = twist.angular.z; // 角速度（绕 z 轴）
 
         // 左右轮速度
-        float v_left = v - w * track_width_ / 2.0;
-        float v_right = v + w * track_width_ / 2.0;
+        float v_left = v - w * wheel_width_ / 2.0;
+        float v_right = v + w * wheel_width_ / 2.0;
 
         // 赋值给四个轮子（左右分别相等）
         wheelSpeed.left_front_v = v_left;

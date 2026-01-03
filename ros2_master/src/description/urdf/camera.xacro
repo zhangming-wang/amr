@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-    <xacro:include filename="$(find amr_launch)/urdf/common_inertia.xacro" />
+    <xacro:include filename="$(find description)/urdf/common_inertia.xacro" />
 
     <xacro:property name="camera_length" value="0.025" />
     <xacro:property name="camera_width" value="0.01" />

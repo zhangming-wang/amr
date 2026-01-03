@@ -1361,7 +1361,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>轮距(mm):</string>
+               <string>左右轮距(mm):</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -1391,7 +1391,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>轴距(mm):</string>
+               <string>前后轴距(mm):</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

@@ -94,14 +94,17 @@ bool CameraNode::get_enable_series_capture() {
 
 void CameraNode::publish_image_msg() {
     if (!connected()) {
+        Serial.println("micro_ros not connected, cannot publish image");
         return;
     }
     if (!image_publisher_initialized_) {
+        Serial.println("image publisher not initialized");
         return;
     }
 
     auto image_ = cameraControl_->capture_image();
     if (!image_) {
+        Serial.println("capture image failed");
         return;
     }
 

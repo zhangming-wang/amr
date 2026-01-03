@@ -11,10 +11,10 @@ NodeThread::NodeThread(rclcpp::Node::SharedPtr node,
 
     connected_.store(false);
 
-    serial_msg_subscription_ = node_->create_subscription<std_msgs::msg::String>(serial_msg_topic_name, best_effort_qos_, std::bind(&NodeThread::recv_serial_msg, this, std::placeholders::_1));
-    heartbeat_subscription_ = node_->create_subscription<std_msgs::msg::Empty>(heartbeat_topic_name, best_effort_qos_, std::bind(&NodeThread::recv_heartbeat_msg, this, std::placeholders::_1));
+    serial_msg_subscription_ = node_->create_subscription<std_msgs::msg::String>(serial_msg_topic_name, reliable_qos_, std::bind(&NodeThread::recv_serial_msg, this, std::placeholders::_1));
+    heartbeat_subscription_ = node_->create_subscription<std_msgs::msg::Empty>(heartbeat_topic_name, reliable_qos_, std::bind(&NodeThread::recv_heartbeat_msg, this, std::placeholders::_1));
 
-    heartbeat_timer_.setInterval(3000);
+    heartbeat_timer_.setInterval(5000);
     heartbeat_timer_.setSingleShot(false);
     connect(&heartbeat_timer_, &QTimer::timeout, this, [this]() { // 心跳超时处理
         connected_.store(false);

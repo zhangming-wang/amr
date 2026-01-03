@@ -1,5 +1,5 @@
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-    <xacro:include filename="$(find amr_launch)/urdf/common_inertia.xacro" />
+    <xacro:include filename="$(find description)/urdf/common_inertia.xacro" />
 
     <xacro:property name="imu_length" value="0.01" />
     <xacro:property name="imu_width" value="0.02" />

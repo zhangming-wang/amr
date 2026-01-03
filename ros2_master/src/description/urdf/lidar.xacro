@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-    <xacro:include filename="$(find amr_launch)/urdf/common_inertia.xacro" />
+    <xacro:include filename="$(find description)/urdf/common_inertia.xacro" />
 
     <xacro:property name="lidar_radius" value="0.015" />
     <xacro:property name="lidar_height" value="0.060" />

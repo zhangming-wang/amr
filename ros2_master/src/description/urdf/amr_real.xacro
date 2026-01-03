@@ -10,11 +10,11 @@
     <xacro:property name="right_front_wheel" value="right_front_wheel" />
     <xacro:property name="right_back_wheel" value="right_back_wheel" />
 
-    <xacro:include filename="$(find amr_launch)/urdf/base.xacro" />
-    <xacro:include filename="$(find amr_launch)/urdf/wheel.xacro" />
-    <xacro:include filename="$(find amr_launch)/urdf/lidar.xacro" />
-    <xacro:include filename="$(find amr_launch)/urdf/camera.xacro" />
-    <xacro:include filename="$(find amr_launch)/urdf/imu.xacro" />
+    <xacro:include filename="$(find description)/urdf/base.xacro" />
+    <xacro:include filename="$(find description)/urdf/wheel.xacro" />
+    <xacro:include filename="$(find description)/urdf/lidar.xacro" />
+    <xacro:include filename="$(find description)/urdf/camera.xacro" />
+    <xacro:include filename="$(find description)/urdf/imu.xacro" />
 
     <xacro:base name="${base_link}" joint_xyz="0 0 ${wheel_radius}" />
     <xacro:lidar name="${lidar_link}" joint_xyz="-${base_width/4} 0 ${lidar_height/2}" parent_name="${base_link}" />

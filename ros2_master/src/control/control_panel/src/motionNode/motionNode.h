@@ -14,7 +14,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
-#include <tf2_ros/static_transform_broadcaster.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 using MotionSettingsSrv = motion_settings_service::srv::MotionSettingsService;
 using MotionStatusMsg = motion_status_msgs::msg::MotionStatus;
@@ -39,7 +39,7 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_publisher_;
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
-    std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
+    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
     sensor_msgs::msg::Imu imu_msg_;
     nav_msgs::msg::Odometry odom_msg_;
@@ -47,15 +47,14 @@ private:
     geometry_msgs::msg::Pose current_pose_;
     geometry_msgs::msg::Twist current_twist_;
     sensor_msgs::msg::JointState current_joint_state_;
+    geometry_msgs::msg::TransformStamped current_tf_;
 
     MotionStatusMsg::SharedPtr last_motion_status_msg_ = nullptr;
 
     double track_width_ = 1.0, wheel_width_ = 1.0;
     bool is_mecanum_wheel_ = false;
 
-    void _construct_imu_msg(const MotionStatusMsg::SharedPtr msg);
-    void _construct_odom_msg(const MotionStatusMsg::SharedPtr msg);
-    void _construct_joint_state_msg(const MotionStatusMsg::SharedPtr msg);
+    void _init_msgs();
 
     void _forwardKinematicsDistance(double left_front_distance, double left_back_distance, double right_front_distance, double right_back_distance);
     void _forwardKinematicsSpeed(double left_front_speed, double left_back_speed, double right_front_speed, double right_back_speed);

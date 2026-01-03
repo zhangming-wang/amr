@@ -56,9 +56,6 @@ void CameraControl::release_image() {
 }
 
 void CameraControl::set_params(const camera_params_t &params) {
-    if (!sensor_)
-        return; // 确保摄像头已初始化
-
     params_ = params;
     _set_params();
 }
@@ -386,9 +383,6 @@ void CameraControl::_set_params() {
 }
 
 void CameraControl::set_config(const camera_config_t &config) {
-    if (!sensor_)
-        return; // 确保摄像头已初始化
-
     config_ = config;
     _set_config();
 }

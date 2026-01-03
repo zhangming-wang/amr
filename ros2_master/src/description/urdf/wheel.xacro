@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-    <xacro:include filename="$(find amr_launch)/urdf/common_inertia.xacro" />
+    <xacro:include filename="$(find description)/urdf/common_inertia.xacro" />
 
     <xacro:property name="wheel_radius" value="0.040" />
     <xacro:property name="wheel_width" value="0.040" />
@@ -16,7 +16,7 @@
                 <origin xyz="${link_xyz}" rpy="${link_rpy}" />
                 <geometry>
                     <cylinder radius="${wheel_radius}" length="${wheel_width}" />
-                    <!-- <mesh filename="file://$(find amr_launch)/mesh/wheel/${name}.dae" /> -->
+                    <!-- <mesh filename="file://$(find description)/mesh/wheel/${name}.dae" /> -->
                 </geometry>
                 <material name="yellow">
                     <color rgba="1.0 1.0 0.0 1" />

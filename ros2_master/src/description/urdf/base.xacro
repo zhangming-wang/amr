@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="base">
 
-    <xacro:include filename="$(find amr_launch)/urdf/common_inertia.xacro" />
+    <xacro:include filename="$(find description)/urdf/common_inertia.xacro" />
 
     <xacro:property name="base_length" value="0.120" />
     <xacro:property name="base_width" value="0.080" />

@@ -32,6 +32,30 @@
     </item>
    </layout>
   </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_cascade"/>
+   <addaction name="action_tile"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="action_cascade">
+   <property name="text">
+    <string>层叠排列</string>
+   </property>
+  </action>
+  <action name="action_tile">
+   <property name="text">
+    <string>平铺排列</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

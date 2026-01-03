@@ -11,6 +11,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
     connect(camera_widget_.get(), &CameraWidget::nodeClosed, this, &MainWindow::on_node_closed_sig);
     connect(motion_widget_.get(), &MotionWidget::nodeClosed, this, &MainWindow::on_node_closed_sig);
 
+    connect(ui->action_cascade, &QAction::triggered, ui->mdiArea, &QMdiArea::cascadeSubWindows);
+    connect(ui->action_tile, &QAction::triggered, ui->mdiArea, &QMdiArea::tileSubWindows);
+
     auto subWin = ui->mdiArea->addSubWindow(motion_widget_.get());
     subWin->setWindowFlags(Qt::SubWindow | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint);
 
