@@ -1,23 +1,24 @@
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.substitutions import Command, LaunchConfiguration
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import TimerAction
+from script.kill_process import kill_process  # type: ignore
+from launch.event_handlers import OnShutdown, OnProcessExit
+from launch.actions import LogInfo
 from launch.actions import RegisterEventHandler
-from launch.event_handlers import OnProcessStart, OnProcessExit
 
 
 def generate_launch_description():
+
+    kill_process(["description_robot_state_publisher", "description_rviz2"])
+
     pkg_share = get_package_share_directory("description")
 
     use_sim_time = LaunchConfiguration("use_sim_time", default="false")
 
-    urdf_path = os.path.join(pkg_share, "urdf", "amr_real.xacro")
-    rviz_config_path = os.path.join(pkg_share, "config", "display_settings_real.rviz")
-    # controller_config_path = os.path.join(pkg_share, "config", "ros2_controllers.yaml")
+    urdf_path = os.path.join(pkg_share, "urdf", "amr.xacro")
+    rviz_config_path = os.path.join(pkg_share, "config", "display_settings.rviz")
 
     # 1. Robot State Publisher
     robot_state_publisher_node = Node(
@@ -27,6 +28,7 @@ def generate_launch_description():
             {"robot_description": Command(["xacro", " ", urdf_path])},
             {"use_sim_time": use_sim_time},
         ],
+        name="description_robot_state_publisher",
         output="screen",
     )
 
@@ -36,6 +38,7 @@ def generate_launch_description():
         executable="rviz2",
         arguments=["-d", rviz_config_path],
         output="screen",
+        name="description_rviz2",
         parameters=[{"use_sim_time": use_sim_time}],
     )
 
@@ -43,6 +46,15 @@ def generate_launch_description():
         [
             robot_state_publisher_node,
             rviz_launch_node,
-            # joint_state_publisher_gui_node,
+            # Node(
+            #     package="joint_state_publisher_gui",
+            #     executable="joint_state_publisher_gui",
+            #     output="screen",
+            # ),
+            # Node(
+            #     package="joint_state_publisher",
+            #     executable="joint_state_publisher",
+            #     output="screen",
+            # ),
         ]
     )

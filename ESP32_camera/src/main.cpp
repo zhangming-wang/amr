@@ -26,5 +26,5 @@ void setup() {
 }
 
 void loop() {
-    monitor_wifi();
+    vTaskDelay(pdMS_TO_TICKS(1000));
 }

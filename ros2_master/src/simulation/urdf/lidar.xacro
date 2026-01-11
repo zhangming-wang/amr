@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:include filename="$(find simulation)/urdf/common_inertia.xacro" />
+
+    <xacro:property name="lidar_radius" value="0.015" />
+    <xacro:property name="lidar_height" value="0.060" />
+    <xacro:property name="lidar_mass" value="0.1" />
+    <xacro:property name="lidar_length" value="${lidar_radius/2}" />
+
+    <xacro:property name="lidar_support_radius" value="${lidar_radius/4}" />
+    <xacro:property name="lidar_support_length" value="${lidar_height}" />
+    <xacro:property name="lidar_support_mass" value="0.01" />
+
+    <xacro:macro name="lidar" params="name joint_xyz parent_name">
+        <link name="${name}">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder radius="${lidar_radius}" length="${lidar_length}" />
+                </geometry>
+                <material name="black">
+                    <color rgba="0.0 0.0 1.0 1" />
+                </material>
+            </visual>
+
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder radius="${lidar_radius}" length="${lidar_length}" />
+                </geometry>
+            </collision>
+
+            <xacro:cylinder_inertia m="${lidar_mass}" r="${lidar_radius}" h="${lidar_length}" xyz="0 0 0" rpy="0 0 0" />
+        </link>
+
+        <xacro:property name="support_name" value="support_${name}" />
+
+        <link name="${support_name}">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder radius="${lidar_support_radius}" length="${lidar_support_length}" />
+                </geometry>
+                <material name="grey">
+                    <color rgba="0.5 0.5 0.5 1" />
+                </material>
+            </visual>
+
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder radius="${lidar_support_radius}" length="${lidar_support_length}" />
+                </geometry>
+            </collision>
+
+            <xacro:cylinder_inertia m="${lidar_support_mass}" r="${lidar_support_radius}" h="${lidar_support_length}" xyz="0 0 0" rpy="0 0 0" />
+        </link>
+
+        <joint name="${support_name}_joint" type="fixed">
+            <parent link="${parent_name}" />
+            <child link="${support_name}" />
+            <origin xyz="${joint_xyz}" rpy="0 0 0" />
+        </joint>
+
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${support_name}" />
+            <child link="${name}" />
+            <origin xyz="0 0 ${lidar_height/2}" rpy="0 0 0" />
+        </joint>
+
+
+    </xacro:macro>
+</robot>

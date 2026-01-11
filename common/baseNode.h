@@ -41,7 +41,6 @@ protected:
     rclc_support_t support_;
     rcl_node_t node_;
     micro_ros_agent_locator locator_;
-    rcl_clock_t clock_;
     rclc_executor_t executor_;
     rcl_time_point_value_t now_ns_;
     rcl_publisher_t serial_msg_publisher_, heartbeat_publisher_;
@@ -49,7 +48,6 @@ protected:
     bool support_initialized_ = false;
     bool node_initialized_ = false;
     bool executor_initialized_ = false;
-    bool clock_initialized_ = false;
     bool serial_msg_publisher_initialized_ = false;
     bool heartbeat_timer_initialized_ = false;
     bool heartbeat_publisher_initialized_ = false;
@@ -63,6 +61,10 @@ protected:
         port_ = micro_ros_port;
 
         this->task_name_ = "base_node_task";
+        this->core_id_ = 0;
+        this->priority_ = 9;
+        this->stack_size_ = 16384;
+
         allocator_ = rcl_get_default_allocator();
         IPAddress agent_ip;
         agent_ip.fromString(String(ip_.c_str()));
@@ -74,7 +76,7 @@ protected:
     virtual void clean_micro_ros() {}
 
     uint64_t get_now_ns() {
-        rcl_ret_t ret = rcl_clock_get_now(&clock_, &now_ns_);
+        rcl_ret_t ret = rcl_clock_get_now(&support_.clock, &now_ns_);
         if (ret != RCL_RET_OK) {
             Serial.printf("rcl_clock_get_now error: %d\n", ret);
             now_ns_ = 0;
@@ -84,6 +86,13 @@ protected:
 
 public:
     void update() override {
+        if (monitor_wifi() == false) {
+            connected_.store(false);
+            Serial.printf(".");
+            vTaskDelay(pdMS_TO_TICKS(500));
+            return;
+        }
+
         if (!connected_.load()) {
             if (_init_micro_ros()) {
                 connected_.store(true);
@@ -95,17 +104,14 @@ public:
             }
         }
 
-        rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(5));
-        vTaskDelay(pdMS_TO_TICKS(5));
-    }
-
-    bool check_connect() {
-        if (rmw_uros_ping_agent(100, 10) != RCL_RET_OK) {
+        if (rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(5)) != RCL_RET_OK) {
+            Serial.println("rclc_executor_spin_some error");
+            _clean_micro_ros();
             connected_.store(false);
-            return false;
-        } else {
-            return true;
+            return;
         }
+
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
     static inline void serial_print(const std::string &msg) {
@@ -126,7 +132,7 @@ public:
 
     static inline void heartbeat_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
         auto &instance = BaseNode<T>::instance();
-        if (instance.check_connect() && instance.heartbeat_publisher_initialized_) {
+        if (instance.connected() && instance.heartbeat_publisher_initialized_) {
             std_msgs__msg__Empty msg;
             rcl_ret_t ret = rcl_publish(&instance.heartbeat_publisher_, &msg, NULL);
             if (ret != RCL_RET_OK) {
@@ -175,7 +181,7 @@ private:
             support_initialized_ = true;
         }
 
-        if (rmw_uros_sync_session(100) != RMW_RET_OK) {
+        if (rmw_uros_sync_session(1000) != RMW_RET_OK) {
             Serial.println("rmw_uros_sync_session failed!");
             return false;
         } else {
@@ -201,14 +207,6 @@ private:
                 return false;
             }
             executor_initialized_ = true;
-        }
-        if (!clock_initialized_) {
-            ret = rcl_clock_init(RCL_STEADY_TIME, &clock_, &allocator_);
-            if (ret != RCL_RET_OK) {
-                Serial.printf("rcl_clock_init error: %d\n", ret);
-                return false;
-            }
-            clock_initialized_ = true;
         }
         if (!serial_msg_publisher_initialized_) {
             ret = rclc_publisher_init_default(&serial_msg_publisher_, &node_, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), serial_msg_topic_name_.c_str());
@@ -267,13 +265,6 @@ private:
                 Serial.printf("serial_msg_publisher_:rcl_publisher_fini error: %d\n", ret);
             }
             serial_msg_publisher_initialized_ = false;
-        }
-        if (clock_initialized_) {
-            ret = rcl_clock_fini(&clock_);
-            if (ret != RCL_RET_OK) {
-                Serial.printf("rcl_clock_fini error: %d\n", ret);
-            }
-            clock_initialized_ = false;
         }
         if (executor_initialized_) {
             ret = rclc_executor_fini(&executor_);

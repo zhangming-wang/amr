@@ -30,6 +30,7 @@ private:
     // static int channel_cnt_;
     // int channel_id_ = 0;
     volatile uint32_t pwm_ = 0;
+    uint32_t dead_pwm_ = 200;
 
     // static const int RESOLUTIONBITS = 12;
     // static const int MINPWM = 0;

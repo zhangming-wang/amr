@@ -1,4 +1,4 @@
-yolo_detect_node:
+yolo_detect:
   ros__parameters:
     sub_image_topic_name: "/camera/image_raw"
     pub_image_topic_name: "/yolo/detect_image"

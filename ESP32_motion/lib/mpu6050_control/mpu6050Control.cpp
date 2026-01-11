@@ -258,13 +258,13 @@ void MPU6050Control::_dmp_read() {
     mpu_.dmpGetYawPitchRoll(ypr, &q, &gravity);
     mpu_.dmpGetGyro(&gyro, fifoBuffer_);
 
-    yaw_ = ypr[0] * 180 / M_PI;
-    pitch_ = ypr[1] * 180 / M_PI;
-    roll_ = ypr[2] * 180 / M_PI;
+    yaw_ = ypr[0];
+    pitch_ = ypr[1];
+    roll_ = ypr[2];
 
-    gyroX_ = gyro.x / 131.0;
-    gyroY_ = gyro.y / 131.0;
-    gyroZ_ = gyro.z / 131.0;
+    gyroX_ = gyro.x / 131.0 * M_PI / 180.0; // 转为弧度制
+    gyroY_ = gyro.y / 131.0 * M_PI / 180.0;
+    gyroZ_ = gyro.z / 131.0 * M_PI / 180.0;
 }
 
 void MPU6050Control::_manual_read() {

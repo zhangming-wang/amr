@@ -16,7 +16,7 @@ MotionNode::MotionNode(QObject *parent)
 
     joint_state_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>(joint_states_topic_name, reliable_qos_);
     odom_publisher_ = node_->create_publisher<nav_msgs::msg::Odometry>(odom_topic_name, reliable_qos_);
-    imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(imu_topic_name, reliable_qos_);
+    imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(imu_topic_name, best_effort_qos_);
 
     _init_msgs();
 }
@@ -77,7 +77,8 @@ void MotionNode::_init_msgs() {
 }
 
 void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
-    auto stamp = rclcpp::Time(msg->stamp / 1000000000, msg->stamp % 1000000000);
+    // auto stamp = rclcpp::Time(msg->stamp / 1000000000, msg->stamp % 1000000000);
+    auto stamp = node_->now();
 
     odom_msg_.header.stamp = stamp;
     imu_msg_.header.stamp = stamp;
@@ -101,17 +102,16 @@ void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
     current_tf_.transform.translation.z = current_pose_.position.z;
     current_tf_.transform.rotation = current_pose_.orientation;
 
-    current_joint_state_.position[0] = msg->left_front_total_distance;
-    current_joint_state_.position[1] = msg->left_back_total_distance;
-    current_joint_state_.position[2] = msg->right_front_total_distance;
-    current_joint_state_.position[3] = msg->right_back_total_distance;
+    current_joint_state_.position[0] = msg->left_front_total_distance / (wheels_diameter_vector_[0] / 2.0);
+    current_joint_state_.position[1] = msg->left_back_total_distance / (wheels_diameter_vector_[1] / 2.0);
+    current_joint_state_.position[2] = msg->right_front_total_distance / (wheels_diameter_vector_[2] / 2.0);
+    current_joint_state_.position[3] = msg->right_back_total_distance / (wheels_diameter_vector_[3] / 2.0);
 
-    current_joint_state_.velocity[0] = msg->left_front_current_v;
-    current_joint_state_.velocity[1] = msg->left_back_current_v;
-    current_joint_state_.velocity[2] = msg->right_front_current_v;
-    current_joint_state_.velocity[3] = msg->right_back_current_v;
+    current_joint_state_.velocity[0] = msg->left_front_current_v / (wheels_diameter_vector_[0] / 2.0);
+    current_joint_state_.velocity[1] = msg->left_back_current_v / (wheels_diameter_vector_[1] / 2.0);
+    current_joint_state_.velocity[2] = msg->right_front_current_v / (wheels_diameter_vector_[2] / 2.0);
+    current_joint_state_.velocity[3] = msg->right_back_current_v / (wheels_diameter_vector_[3] / 2.0);
 
-    // angular velocity
     imu_msg_.angular_velocity.x = msg->imu_gyro_x;
     imu_msg_.angular_velocity.y = msg->imu_gyro_y;
     imu_msg_.angular_velocity.z = msg->imu_gyro_z;
@@ -186,6 +186,12 @@ void MotionNode::set_model_param(double track_width, double wheel_width, bool is
     track_width_ = track_width;
     wheel_width_ = wheel_width;
     is_mecanum_wheel_ = is_mecanum_wheel;
+}
+
+void MotionNode::set_wheels_diameter(const std::vector<double> &wheels_diameter_vector) {
+    if (wheels_diameter_vector.size() == 4) {
+        wheels_diameter_vector_ = wheels_diameter_vector;
+    }
 }
 
 void MotionNode::publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist) {

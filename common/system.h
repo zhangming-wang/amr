@@ -67,23 +67,19 @@ inline void restart_device() {
     restart_device_async();
 }
 
-inline void monitor_wifi() {
+inline bool monitor_wifi() {
+    static unsigned long connect_time = -20000;
     static bool connected = false;
-
     if (WiFi.status() != WL_CONNECTED) {
         connected = false;
-        WiFi.begin(wifi_name, wifi_password);
-        Serial.printf("\nConnecting to WiFi...");
-        unsigned long start = millis();
-        while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
-            vTaskDelay(pdMS_TO_TICKS(500));
-            Serial.print(".");
+        if (millis() - connect_time > 10000) {
+            connect_time = millis();
+            WiFi.begin(wifi_name, wifi_password);
+            Serial.printf("\nConnecting to WiFi...");
         }
-        Serial.println();
-        vTaskDelay(pdMS_TO_TICKS(500));
     } else {
         if (connected == false) {
-            connected = true;
+            Serial.println();
             Serial.println("===== WiFi Info =====");
             Serial.printf("IP      : %s\n", WiFi.localIP().toString().c_str());
             Serial.printf("RSSI    : %d dBm\n", WiFi.RSSI());
@@ -91,9 +87,10 @@ inline void monitor_wifi() {
             Serial.printf("SSID    : %s\n", WiFi.SSID().c_str());
             Serial.println("=====================");
             Serial.println("WiFi connect success!");
+            connected = true;
         }
-        vTaskDelay(pdMS_TO_TICKS(1000));
     }
+    return connected;
 }
 
 #endif // ARDUINO_ARCH_ESP32

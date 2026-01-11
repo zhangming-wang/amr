@@ -82,7 +82,10 @@ void YdlidarX2::readData() {
                             // Serial.println("");
                             Serial.printf("雷达数据发送失败，总共数据大小:%d\n", data_vector_.size());
                         }
-                        delay(5);
+                        // else {
+                        //     Serial.printf("雷达数据发送成功，总共数据大小:%d\n", data_vector_.size());
+                        // }
+                        // delay(5);
                         data_vector_.clear();
                     }
                     data_vector_.push_back(0xaa);
@@ -106,7 +109,10 @@ void YdlidarX2::readData() {
                         if (client_.write(data_vector_.data(), data_vector_.size()) != data_vector_.size()) {
                             Serial.printf("雷达上电信息发送失败，总共数据大小:%d\n", data_vector_.size());
                         }
-                        delay(5);
+                        // else {
+                        //     Serial.printf("雷达上电信息发送成功，总共数据大小:%d\n", data_vector_.size());
+                        // }
+                        // delay(5);
                         data_vector_.clear();
                     }
                     data_vector_.push_back(0xa5);
@@ -116,6 +122,11 @@ void YdlidarX2::readData() {
                 is_power_begin_ = false;
             }
             data_vector_.push_back(current_data_);
+
+            if (data_vector_.size() >= 200) {
+                Serial.printf("雷达数据缓存溢出，清空缓存，总共数据大小:%d\n", data_vector_.size());
+                data_vector_.clear();
+            }
         }
     }
 }

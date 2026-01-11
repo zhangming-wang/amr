@@ -8,18 +8,39 @@ from ament_index_python.packages import get_package_share_directory
 from launch.actions import TimerAction
 from launch.actions import RegisterEventHandler
 from launch.event_handlers import OnProcessStart, OnProcessExit
+from script.kill_process import kill_process  # type: ignore
+from launch.event_handlers import OnShutdown, OnProcessExit
+from launch.actions import LogInfo
 
 
 def generate_launch_description():
-    pkg_share = get_package_share_directory("description")
+
+    kill_process(
+        [
+            "sim_robot_state_publisher",
+            "sim_rviz2",
+            "gazebo_bridge",
+            "gazebo_create",
+            "sim_controller_manager",
+            "joint_state_broadcaster_spawner",
+            "diff_drive_controller_spawner",
+            "controller_state_to_topic",
+            "cmd_vel_to_controller",
+            "controller_state_to_topic",
+            "odometry_to_topic",
+            "tf_to_topic",
+        ]
+    )
+
+    pkg_share = get_package_share_directory("simulation")
 
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
 
-    urdf_path = os.path.join(pkg_share, "urdf", "amr_sim.xacro")
+    urdf_path = os.path.join(pkg_share, "urdf", "amr.xacro")
     gazebo_world_path = os.path.join(pkg_share, "world", "sim_world.sdf")
-    rviz_config_path = os.path.join(pkg_share, "config", "display_settings_sim.rviz")
+    rviz_config_path = os.path.join(pkg_share, "config", "display_settings.rviz")
     gazebo_bridge_config_path = os.path.join(pkg_share, "config", "gazebo_bridge.yaml")
-    controller_config_path = os.path.join(pkg_share, "config", "ros2_controllers_sim.yaml")
+    controller_config_path = os.path.join(pkg_share, "config", "ros2_controllers.yaml")
 
     rviz_nodes = [
         Node(
@@ -29,6 +50,7 @@ def generate_launch_description():
                 {"robot_description": Command(["xacro", " ", urdf_path])},
                 {"use_sim_time": use_sim_time},
             ],
+            name="sim_robot_state_publisher",
             output="screen",
         ),
         # Node(
@@ -44,6 +66,7 @@ def generate_launch_description():
         Node(
             package="rviz2",
             executable="rviz2",
+            name="sim_rviz2",
             arguments=["-d", rviz_config_path],
             output="screen",
             parameters=[{"use_sim_time": use_sim_time}],
@@ -60,12 +83,14 @@ def generate_launch_description():
         Node(
             package="ros_gz_bridge",
             executable="parameter_bridge",
+            name="gazebo_bridge",
             parameters=[{"config_file": gazebo_bridge_config_path}, {"use_sim_time": use_sim_time}],
             output="screen",
         ),
         Node(
             package="ros_gz_sim",
             executable="create",
+            name="gazebo_create",
             parameters=[{"use_sim_time": use_sim_time}],
             arguments=[
                 "-topic",
@@ -84,6 +109,8 @@ def generate_launch_description():
         Node(
             package="controller_manager",
             executable="ros2_control_node",
+            name="sim_controller_manager",
+            output="screen",
             parameters=[controller_config_path, {"use_sim_time": use_sim_time}],
             remappings=[
                 ("~/robot_description", "/robot_description"),
@@ -92,6 +119,7 @@ def generate_launch_description():
         Node(
             package="controller_manager",
             executable="spawner",
+            name="joint_state_broadcaster_spawner",
             arguments=["joint_state_broadcaster"],
             parameters=[{"use_sim_time": use_sim_time}],
         ),
@@ -101,6 +129,7 @@ def generate_launch_description():
         Node(
             package="controller_manager",
             executable="spawner",
+            name="diff_drive_controller_spawner",
             arguments=["diff_drive_controller"],
             parameters=[{"use_sim_time": use_sim_time}],
         ),
@@ -117,6 +146,7 @@ def generate_launch_description():
         Node(
             package="controller_manager",
             executable="spawner",
+            name="mecanum_drive_controller_spawner",
             arguments=["mecanum_drive_controller"],
             parameters=[{"use_sim_time": use_sim_time}],
         ),

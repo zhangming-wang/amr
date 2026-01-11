@@ -15,7 +15,7 @@ find_package(topic_tools REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-install(DIRECTORY urdf launch config world DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY urdf launch config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

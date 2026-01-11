@@ -13,8 +13,8 @@ bool MotorControl::init_success() {
     return encoder_->init_success() && motor_->init_success();
 }
 
-void MotorControl::update(float dt) {
-    encoder_->update(dt);
+void MotorControl::update() {
+    encoder_->update();
 }
 
 void MotorControl::reset() {
@@ -136,22 +136,35 @@ float MotorControl::get_dt_distance() {
         return encoder_->get_count_change() * PI * motorParams_.wheel_diameter / motorParams_.pluses_per_revolution;
 }
 
+long MotorControl::get_encoder_count() {
+    return encoder_->get_count();
+}
+
+long MotorControl::get_encoder_count_change() {
+    return encoder_->get_count_change();
+}
+
 void MotorControl::set_speed(float target_v, float dt, bool pid_adjust) {
     target_v_ = target_v;
-    latest_current_v_ = get_dt_distance() / dt;
-    current_acc_ = (latest_current_v_ - current_v_) / dt;
-    current_v_ = latest_current_v_;
+
+    raw_vel_ = get_dt_distance() / dt;
+    smoothed_v_ = (alpha_ * raw_vel_) + ((1.0 - alpha_) * smoothed_v_);
+    current_acc_ = (smoothed_v_ - current_v_) / dt;
+    current_v_ = smoothed_v_;
+
+    // current_v_ = get_dt_distance() / dt;
+
     if (pid_adjust) {
-        pid_value_ = pidControl_->calculate(current_v_ * 1000, target_v_ * 1000, dt) / 100.0;
-        if (fabs(current_v_) < 0.001 && fabs(target_v_) < 0.001) {
+        if (fabs(target_v_) < 0.001 && fabs(current_v_) < 0.02) {
             pid_value_ = 0;
-            pidControl_->reset();
+            pidControl_->reset(); // 这一步非常重要，清空积分累积
+        } else {
+            pid_value_ = pidControl_->calculate(current_v_ * 1000, target_v_ * 1000, dt) / 100.0;
         }
     } else {
         pid_value_ = target_v_ / max_v_;
         pidControl_->reset();
     }
-
     motor_->set_speed(pid_value_);
 }
 

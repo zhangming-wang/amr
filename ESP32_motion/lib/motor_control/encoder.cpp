@@ -33,7 +33,7 @@ void Encoder::reset() {
     encoder_.clearCount();
 }
 
-void Encoder::update(float dt) {
+void Encoder::update() {
     if (!init_.load())
         return;
 

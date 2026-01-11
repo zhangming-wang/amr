@@ -23,7 +23,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab_9">
       <attribute name="title">
@@ -215,7 +215,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -237,7 +237,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -259,7 +259,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -278,7 +278,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -381,7 +381,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -403,7 +403,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -425,7 +425,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -444,7 +444,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -551,7 +551,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -573,7 +573,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -595,7 +595,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -614,7 +614,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -717,7 +717,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -739,7 +739,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -761,7 +761,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -780,7 +780,7 @@
                  </sizepolicy>
                 </property>
                 <property name="decimals">
-                 <number>3</number>
+                 <number>6</number>
                 </property>
                 <property name="minimum">
                  <double>-99999999.000000000000000</double>
@@ -1440,7 +1440,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_10">
               <property name="title">
-               <string>左上电机</string>
+               <string>左前电机</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1619,7 +1619,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_11">
               <property name="title">
-               <string>右上电机</string>
+               <string>右前电机</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1802,7 +1802,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_14">
               <property name="title">
-               <string>左下电机</string>
+               <string>左后电机</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1981,7 +1981,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_16">
               <property name="title">
-               <string>右下电机</string>
+               <string>右后电机</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2173,7 +2173,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_12">
               <property name="title">
-               <string>左上编码器</string>
+               <string>左前编码器</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2239,7 +2239,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_13">
               <property name="title">
-               <string>右上编码器</string>
+               <string>右前编码器</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2309,7 +2309,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_23">
               <property name="title">
-               <string>左下编码器</string>
+               <string>左后编码器</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2375,7 +2375,7 @@
             <item>
              <widget class="QGroupBox" name="groupBox_26">
               <property name="title">
-               <string>右下编码器</string>
+               <string>右后编码器</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>

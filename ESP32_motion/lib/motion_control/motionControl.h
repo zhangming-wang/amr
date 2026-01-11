@@ -47,7 +47,7 @@ protected:
 public:
     void update() override;
 
-    void move();
+    void move(float dt);
     void stop_move();
     void brake();
 
@@ -119,8 +119,6 @@ private:
     uint8_t motor_enable_flags_ = 0xff;
 
     volatile bool running_ = false, enable_speed_plan_ = false;
-
-    float dt_ = 0;
 
     WheelSpeed current_wheel_v_, target_wheel_v_;
     std::deque<WheelSpeed> wheel_speed_deque_;

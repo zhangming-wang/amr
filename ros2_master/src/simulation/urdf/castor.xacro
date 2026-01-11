@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-    <xacro:include filename="$(find description)/urdf/common_inertia.xacro" />
+    <xacro:include filename="$(find simulation)/urdf/common_inertia.xacro" />
 
     <xacro:property name="castor_radius" value="0.020" />
     <xacro:property name="wheel_mass" value="0.01" />

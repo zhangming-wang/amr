@@ -9,7 +9,7 @@ class Encoder {
 public:
     Encoder();
     void set_pins(int pin_A, int pin_B);
-    void update(float dt);
+    void update();
     void reset();
 
     bool init_success();

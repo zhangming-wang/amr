@@ -119,17 +119,13 @@ uint8_t MotionControl::get_motor_enable_flags() {
 }
 
 void MotionControl::brake() {
+    running_ = false;
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
             wheel_speed_deque_.clear();
-            target_wheel_v_.left_back_v = 0;
-            target_wheel_v_.left_front_v = 0;
-            target_wheel_v_.right_back_v = 0;
-            target_wheel_v_.right_front_v = 0;
         }
         xSemaphoreGive(mutex_);
     }
-    running_ = false;
     left_front_motor_control_->brake();
     left_back_motor_control_->brake();
     right_front_motor_control_->brake();
@@ -269,8 +265,6 @@ void MotionControl::_plan_wheel_speed(const WheelSpeed &target_wheel_speed) { //
     running_ = true;
     std::deque<WheelSpeed> speed_deque;
 
-    Serial.printf("Target Wheel Speed - LF: %.2f, LB: %.2f, RF: %.2f, RB: %.2f \n", target_wheel_speed.left_front_v, target_wheel_speed.left_back_v, target_wheel_speed.right_front_v, target_wheel_speed.right_back_v);
-
     if (enable_speed_plan_) {
         float MIN_V_CHANGE = 0.001;
         auto changed_left_front_v = target_wheel_speed.left_front_v - target_wheel_v_.left_front_v;
@@ -341,42 +335,35 @@ void MotionControl::_plan_wheel_speed(const WheelSpeed &target_wheel_speed) { //
     }
 }
 
-void MotionControl::move() {
-    if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
-        if (!wheel_speed_deque_.empty()) {
-            target_wheel_v_ = wheel_speed_deque_.front();
-            wheel_speed_deque_.pop_front();
-        }
-        xSemaphoreGive(mutex_);
-    }
-
+void MotionControl::move(float dt) {
     if (running_) {
-        if (motor_enable_flags_ & 0x01) {
-            left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt_, true); // running_
-        } else {
-            left_front_motor_control_->set_speed(0, dt_, false);
-        }
-        if (motor_enable_flags_ & 0x02) {
-            left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt_, true);
-        } else {
-            left_back_motor_control_->set_speed(0, dt_, false);
-        }
-        if (motor_enable_flags_ & 0x04) {
-            right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt_, true);
-        } else {
-            right_front_motor_control_->set_speed(0, dt_, false);
-        }
-        if (motor_enable_flags_ & 0x08) {
-            right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt_, true);
-        } else {
-            right_back_motor_control_->set_speed(0, dt_, false);
+        if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
+            if (!wheel_speed_deque_.empty()) {
+                target_wheel_v_ = wheel_speed_deque_.front();
+                wheel_speed_deque_.pop_front();
+            }
+            xSemaphoreGive(mutex_);
+
+            if (!(motor_enable_flags_ & 0x01))
+                target_wheel_v_.left_front_v = 0;
+            if (!(motor_enable_flags_ & 0x02))
+                target_wheel_v_.left_back_v = 0;
+            if (!(motor_enable_flags_ & 0x04))
+                target_wheel_v_.right_front_v = 0;
+            if (!(motor_enable_flags_ & 0x08))
+                target_wheel_v_.right_back_v = 0;
         }
     } else {
-        left_front_motor_control_->set_speed(0, dt_, false);
-        left_back_motor_control_->set_speed(0, dt_, false);
-        right_front_motor_control_->set_speed(0, dt_, false);
-        right_back_motor_control_->set_speed(0, dt_, false);
+        target_wheel_v_.left_front_v = 0;
+        target_wheel_v_.left_back_v = 0;
+        target_wheel_v_.right_front_v = 0;
+        target_wheel_v_.right_back_v = 0;
     }
+
+    left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt, running_);
+    left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt, running_);
+    right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt, running_);
+    right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt, running_);
 
     left_front_motor_control_->move();
     left_back_motor_control_->move();
@@ -385,15 +372,10 @@ void MotionControl::move() {
 }
 
 void MotionControl::update() {
-    static unsigned long last_time = 0, current_time = 0;
-    current_time = millis();
-    dt_ = (current_time - last_time) / 1000.0;
-    last_time = current_time;
-
-    left_front_motor_control_->update(dt_);
-    left_back_motor_control_->update(dt_);
-    right_front_motor_control_->update(dt_);
-    right_back_motor_control_->update(dt_);
+    left_front_motor_control_->update();
+    left_back_motor_control_->update();
+    right_front_motor_control_->update();
+    right_back_motor_control_->update();
 }
 
 void MotionControl::get_motion_status(motion_status_msgs__msg__MotionStatus &msg) {

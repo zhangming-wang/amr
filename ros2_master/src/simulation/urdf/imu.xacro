@@ -1,0 +1,38 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:include filename="$(find simulation)/urdf/common_inertia.xacro" />
+
+    <xacro:property name="imu_length" value="0.01" />
+    <xacro:property name="imu_width" value="0.02" />
+    <xacro:property name="imu_height" value="0.003" />
+    <xacro:property name="imu_mass" value="0.005" />
+
+    <xacro:macro name="imu" params="name joint_xyz parent_name">
+        <link name="${name}">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="${imu_length} ${imu_width} ${imu_height}" />
+                </geometry>
+                <material name="purple">
+                    <color rgba="1.0 0.0 1.0 1" />
+                </material>
+            </visual>
+
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="${imu_length} ${imu_width} ${imu_height}" />
+                </geometry>
+            </collision>
+
+            <xacro:box_inertia m="${imu_mass}" w="${imu_length}" h="${imu_width}" d="${imu_height}" xyz="0 0 0" rpy="0 0 0" />
+        </link>
+
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${parent_name}" />
+            <child link="${name}" />
+            <origin xyz="${joint_xyz}" rpy="0 0 0" />
+        </joint>
+
+    </xacro:macro>
+</robot>

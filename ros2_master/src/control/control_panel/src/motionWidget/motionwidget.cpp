@@ -656,10 +656,17 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         ui->horizontalSlider_speed_percent->blockSignals(false);
         ui->doubleSpinBox_max_v->setValue(response->max_v);
         _update_speed_percent_label(response->speed_percent);
-    } else if (response->state == MotionService::Type::ReadConfig || response->state == MotionService::Type::WriteConfig) {
-        motionNode_->set_model_param(ui->spinBox_track_width->value() / 1000.0, ui->spinBox_wheel_width->value() / 1000.0, ui->checkBox_is_mecanum_wheel->isChecked());
     } else if (response->state == MotionService::Type::CalibrateMPU6050) {
         on_read_params();
+    }
+
+    if (response->state == MotionService::Type::ReadConfig || response->state == MotionService::Type::WriteConfig) {
+        motionNode_->set_model_param(ui->spinBox_track_width->value() / 1000.0, ui->spinBox_wheel_width->value() / 1000.0, ui->checkBox_is_mecanum_wheel->isChecked());
+
+        motionNode_->set_wheels_diameter({ui->spinBox_left_front_motor_wheel_diameter->value() / 1000.0,
+                                          ui->spinBox_left_back_motor_wheel_diameter->value() / 1000.0,
+                                          ui->spinBox_right_front_motor_wheel_diameter->value() / 1000.0,
+                                          ui->spinBox_right_back_motor_wheel_diameter->value() / 1000.0});
     }
 }
 

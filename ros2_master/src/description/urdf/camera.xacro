@@ -1,16 +1,8 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-    <xacro:include filename="$(find description)/urdf/common_inertia.xacro" />
-
-    <xacro:property name="camera_length" value="0.025" />
-    <xacro:property name="camera_width" value="0.01" />
-    <xacro:property name="camera_height" value="0.01" />
-    <xacro:property name="camera_mass" value="0.1" />
-
-    <xacro:property name="camera_support_length" value="0.005" />
-    <xacro:property name="camera_support_width" value="0.005" />
-    <xacro:property name="camera_support_height" value="0.04" />
-    <xacro:property name="camera_support_mass" value="0.01" />
+    <xacro:property name="camera_length" value="0.019" />
+    <xacro:property name="camera_width" value="0.027" />
+    <xacro:property name="camera_height" value="0.042" />
 
     <xacro:macro name="camera" params="name joint_xyz parent_name">
         <link name="${name}">
@@ -31,43 +23,12 @@
                 </geometry>
             </collision>
 
-            <xacro:box_inertia m="${camera_mass}" w="${camera_width}" h="${camera_length}" d="${camera_height}" xyz="0 0 0" rpy="0 0 0" />
         </link>
-
-        <xacro:property name="support_name" value="support_${name}" />
-
-        <link name="${support_name}">
-            <visual>
-                <origin xyz="0 0 0" rpy="0 0 0" />
-                <geometry>
-                    <box size="${camera_support_width} ${camera_support_length} ${camera_support_height}" />
-                </geometry>
-                <material name="grey">
-                    <color rgba="0.5 0.5 0.5 1" />
-                </material>
-            </visual>
-
-            <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
-                <geometry>
-                    <box size="${camera_support_width} ${camera_support_length} ${camera_support_height}" />
-                </geometry>
-            </collision>
-
-            <xacro:box_inertia m="${camera_support_mass}" w="${camera_support_width}" h="${camera_support_length}" d="${camera_support_height}" xyz="0 0 0" rpy="0 0 0" />
-        </link>
-
-        <joint name="${support_name}_joint" type="fixed">
-            <parent link="${parent_name}" />
-            <child link="${support_name}" />
-            <origin xyz="${joint_xyz}" rpy="0 0 0" />
-        </joint>
 
         <joint name="${name}_joint" type="fixed">
-            <parent link="${support_name}" />
+            <parent link="${parent_name}" />
             <child link="${name}" />
-            <origin xyz="0 0 ${camera_support_height/2}" rpy="0 0 0" />
+            <origin xyz="${joint_xyz}" rpy="0 0 0" />
         </joint>
     </xacro:macro>
-
 </robot>

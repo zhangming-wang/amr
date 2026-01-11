@@ -27,6 +27,7 @@ public:
     void publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist);
     void ask_service_response(MotionSettingsSrv::Request::SharedPtr request);
     void set_model_param(double track_width, double wheel_width, bool is_mecanum_wheel);
+    void set_wheels_diameter(const std::vector<double> &wheels_diameter_vector);
 
 signals:
     void motionStatusMsgChanged(MotionStatusMsg::SharedPtr);
@@ -52,6 +53,7 @@ private:
     MotionStatusMsg::SharedPtr last_motion_status_msg_ = nullptr;
 
     double track_width_ = 1.0, wheel_width_ = 1.0;
+    std::vector<double> wheels_diameter_vector_{0.3, 0.3, 0.3, 0.3}; // 左上，左下，右上，右下
     bool is_mecanum_wheel_ = false;
 
     void _init_msgs();

@@ -40,6 +40,7 @@ void Motor::set_pins(int pin_A, int pin_B, int pin_PWM) {
 void Motor::move() {
     if (!init_)
         return;
+
     pwmControl_.write(pwm_);
 }
 
@@ -95,6 +96,9 @@ void Motor::set_speed(float speed_percent) {
         speed_percent = 1;
 
     pwm_ = uint(speed_percent * pwmControl_.get_max_pwm());
+    if (pwm_ > 0 && pwm_ < dead_pwm_) {
+        pwm_ = dead_pwm_;
+    }
 }
 
 void Motor::set_speed(int pwm) {
@@ -108,6 +112,9 @@ void Motor::set_speed(int pwm) {
     }
 
     pwm_ = std::min(uint32_t(fabs(pwm)), pwmControl_.get_max_pwm());
+    if (pwm_ > 0 && pwm_ < dead_pwm_) {
+        pwm_ = dead_pwm_;
+    }
 }
 
 void Motor::_set_direction(bool forward) {

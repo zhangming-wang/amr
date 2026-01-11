@@ -50,7 +50,7 @@ public:
     MotorControl(const std::string &name = std::string());
     bool init_success();
 
-    void update(float dt);
+    void update();
     void reset();
 
     void move();
@@ -82,6 +82,9 @@ public:
     float get_dt_distance();
     float get_total_distance();
 
+    long get_encoder_count();
+    long get_encoder_count_change();
+
 private:
     //-------------保存参数-------------
     const std::string name_;
@@ -91,6 +94,7 @@ private:
     volatile float current_v_ = 0, target_v_ = 0, current_acc_ = 0, target_acc_ = 0;
     volatile float latest_target_v_ = 0, latest_current_v_ = 0, max_v_ = 0;
 
+    float raw_vel_ = 0, smoothed_v_ = 0, alpha_ = 0.25;
     float pid_value_ = 0;
 
     std::shared_ptr<Encoder> encoder_;

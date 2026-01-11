@@ -5,9 +5,13 @@ import os
 from launch.substitutions import LaunchConfiguration
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from script.kill_process import kill_process  # type: ignore
 
 
 def generate_launch_description():
+
+    kill_process(["nav2_rviz2"])
+
     pkg_share_dir = get_package_share_directory("nav2_launch")
     nav2_bringup_dir = get_package_share_directory("nav2_bringup")
     rviz_config_dir = os.path.join(nav2_bringup_dir, "rviz", "nav2_default_view.rviz")
@@ -29,7 +33,7 @@ def generate_launch_description():
             Node(
                 package="rviz2",
                 executable="rviz2",
-                name="rviz2",
+                name="nav2_rviz2",
                 output="screen",
                 arguments=["-d", rviz_config_dir],
                 parameters=[{"use_sim_time": use_sim_time}],
