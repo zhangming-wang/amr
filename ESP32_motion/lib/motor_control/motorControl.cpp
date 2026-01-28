@@ -144,7 +144,7 @@ long MotorControl::get_encoder_count_change() {
     return encoder_->get_count_change();
 }
 
-void MotorControl::set_speed(float target_v, float dt, bool pid_adjust) {
+float MotorControl::calculate(float target_v, float dt, bool pid_adjust) {
     target_v_ = target_v;
 
     raw_vel_ = get_dt_distance() / dt;
@@ -165,7 +165,21 @@ void MotorControl::set_speed(float target_v, float dt, bool pid_adjust) {
         pid_value_ = target_v_ / max_v_;
         pidControl_->reset();
     }
+
+    return pid_value_;
+}
+
+void MotorControl::set_speed(int pwm) {
+    motor_->set_speed(pwm);
+}
+
+void MotorControl::set_speed(float target_v, float dt, bool pid_adjust) {
+    calculate(target_v, dt, pid_adjust);
     motor_->set_speed(pid_value_);
+}
+
+void MotorControl::set_speed(float speed_percent) {
+    motor_->set_speed(speed_percent);
 }
 
 float MotorControl::get_max_speed() {

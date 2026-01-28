@@ -103,6 +103,8 @@ public:
     void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
     void save_params();
 
+    void test_motors();
+
 private:
     //---------需要保存配置---------
     float track_width_ = 10, wheel_width_ = 10;
@@ -131,6 +133,8 @@ private:
     std::shared_ptr<SpeedPlan> speedPlan_;
 
     motion_status_msgs__msg__MotionStatus motion_status_msg_;
+
+    float left_pid_value_ = 0, right_pid_value_ = 0;
 
     geometry_msgs__msg__Twist _forwardKinematics(const WheelSpeed &wheelSpeed);
     WheelSpeed _inverseKinematics(const geometry_msgs__msg__Twist &twist);

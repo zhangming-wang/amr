@@ -360,10 +360,20 @@ void MotionControl::move(float dt) {
         target_wheel_v_.right_back_v = 0;
     }
 
-    left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt, running_);
-    left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt, running_);
-    right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt, running_);
-    right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt, running_);
+    if (is_mecanum_wheel_) {
+        left_pid_value_ = left_front_motor_control_->calculate(target_wheel_v_.left_front_v, dt, running_);
+        right_pid_value_ = right_front_motor_control_->calculate(target_wheel_v_.right_front_v, dt, running_);
+
+        left_front_motor_control_->set_speed(left_pid_value_);
+        left_back_motor_control_->set_speed(left_pid_value_);
+        right_front_motor_control_->set_speed(right_pid_value_);
+        right_back_motor_control_->set_speed(right_pid_value_);
+    } else {
+        left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt, running_);
+        left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt, running_);
+        right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt, running_);
+        right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt, running_);
+    }
 
     left_front_motor_control_->move();
     left_back_motor_control_->move();
@@ -612,4 +622,26 @@ void MotionControl::update_target_max_speed() {
 
     target_max_v_ = std::min({left_front_max_wheel_speed, right_front_max_wheel_speed, left_back_max_wheel_speed, right_back_max_wheel_speed});
     speed_percent_ = max_v_ / target_max_v_;
+}
+
+void MotionControl::test_motors() {
+    for (int pwm = 0; pwm <= 1024; pwm += 25) {
+        left_front_motor_control_->set_speed(pwm);
+        left_back_motor_control_->set_speed(pwm);
+        right_front_motor_control_->set_speed(pwm);
+        right_back_motor_control_->set_speed(pwm);
+
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+
+        auto left_front_current = left_front_motor_control_->get_encoder_count_change();
+        auto left_back_current = left_back_motor_control_->get_encoder_count_change();
+        auto right_front_current = right_front_motor_control_->get_encoder_count_change();
+        auto right_back_current = right_back_motor_control_->get_encoder_count_change();
+        Serial.printf("%d, %d, %d, %d, %d\n", pwm, left_front_current, left_back_current, right_front_current, right_back_current);
+    }
+
+    left_front_motor_control_->set_speed(0);
+    left_back_motor_control_->set_speed(0);
+    right_front_motor_control_->set_speed(0);
+    right_back_motor_control_->set_speed(0);
 }

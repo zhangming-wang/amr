@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = "nav2_cmd"
+package_name = "command"
 
 setup(
     name=package_name,
@@ -23,9 +23,9 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "init_pose = nav2_cmd.init_pose:main",
-            "goto_pose = nav2_cmd.goto_pose:main",
-            "waypoints_follow = nav2_cmd.waypoints_follow:main",
+            "init_pose = command.init_pose:main",
+            "goto_pose = command.goto_pose:main",
+            "waypoints_follow = command.waypoints_follow:main",
         ],
     },
 )

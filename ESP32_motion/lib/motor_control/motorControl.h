@@ -69,7 +69,10 @@ public:
     void save_pid_params();
     void load_pid_params();
 
+    void set_speed(int pwm);
+    void set_speed(float speed_percent);
     void set_speed(float speed, float dt, bool pid_adjust = false);
+    float calculate(float target_v, float dt, bool pid_adjust = false);
 
     float get_max_speed();
 

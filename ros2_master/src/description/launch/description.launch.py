@@ -11,7 +11,7 @@ from launch.actions import RegisterEventHandler
 
 def generate_launch_description():
 
-    kill_process(["description_robot_state_publisher", "description_rviz2"])
+    # kill_process(["description_robot_state_publisher", "description_rviz2"])
 
     pkg_share = get_package_share_directory("description")
 
@@ -28,7 +28,7 @@ def generate_launch_description():
             {"robot_description": Command(["xacro", " ", urdf_path])},
             {"use_sim_time": use_sim_time},
         ],
-        name="description_robot_state_publisher",
+        name="robot_state_publisher",
         output="screen",
     )
 
