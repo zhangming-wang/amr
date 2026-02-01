@@ -66,9 +66,9 @@ void MotionControl::set_speed_plan_parms(float max_v, float max_acc, float jerk)
     speed_percent_ = max_v_ / target_max_v_;
 
     if (is_mecanum_wheel_) {
-        max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_);
+        max_w_ = 2.0 * max_v_ / (track_width_ + wheel_width_) * 0.5;
     } else {
-        max_w_ = 2.0 * max_v_ / wheel_width_;
+        max_w_ = 2.0 * max_v_ / wheel_width_ * 0.5;
     }
 
     speedPlan_->set_maxAcc_and_jerk(max_acc_, jerk_);
@@ -257,13 +257,13 @@ void MotionControl::set_twist(const geometry_msgs__msg__Twist &twist) {
     _plan_wheel_speed(_inverseKinematics(twist));
 }
 
-void MotionControl::set_wheels_speed(const WheelSpeed &target_wheel_speed) {
+void MotionControl::set_wheels_speed(const MotionControl::WheelSpeed &target_wheel_speed) {
     _plan_wheel_speed(target_wheel_speed);
 }
 
-void MotionControl::_plan_wheel_speed(const WheelSpeed &target_wheel_speed) { // WheelSpeed &target_wheel_speed
+void MotionControl::_plan_wheel_speed(const MotionControl::WheelSpeed &target_wheel_speed) { // MotionControl::WheelSpeed &target_wheel_speed
     running_ = true;
-    std::deque<WheelSpeed> speed_deque;
+    std::deque<MotionControl::WheelSpeed> speed_deque;
 
     if (enable_speed_plan_) {
         float MIN_V_CHANGE = 0.001;
@@ -280,7 +280,7 @@ void MotionControl::_plan_wheel_speed(const WheelSpeed &target_wheel_speed) { //
             wheel_change_map[std::fabs(changed_right_back_v)] = 3;
 
             float planned_current_v = 0, planned_target_v = 0, changed_v = 0;
-            WheelSpeed wheel_speed;
+            MotionControl::WheelSpeed wheel_speed;
 
             if (wheel_change_map.rbegin()->second == 0) {
                 planned_current_v = target_wheel_v_.left_front_v;
@@ -360,20 +360,10 @@ void MotionControl::move(float dt) {
         target_wheel_v_.right_back_v = 0;
     }
 
-    if (is_mecanum_wheel_) {
-        left_pid_value_ = left_front_motor_control_->calculate(target_wheel_v_.left_front_v, dt, running_);
-        right_pid_value_ = right_front_motor_control_->calculate(target_wheel_v_.right_front_v, dt, running_);
-
-        left_front_motor_control_->set_speed(left_pid_value_);
-        left_back_motor_control_->set_speed(left_pid_value_);
-        right_front_motor_control_->set_speed(right_pid_value_);
-        right_back_motor_control_->set_speed(right_pid_value_);
-    } else {
-        left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt, running_);
-        left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt, running_);
-        right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt, running_);
-        right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt, running_);
-    }
+    left_front_motor_control_->set_speed(target_wheel_v_.left_front_v, dt, running_);
+    left_back_motor_control_->set_speed(target_wheel_v_.left_back_v, dt, running_);
+    right_front_motor_control_->set_speed(target_wheel_v_.right_front_v, dt, running_);
+    right_back_motor_control_->set_speed(target_wheel_v_.right_back_v, dt, running_);
 
     left_front_motor_control_->move();
     left_back_motor_control_->move();
@@ -408,7 +398,7 @@ void MotionControl::get_motion_status(motion_status_msgs__msg__MotionStatus &msg
     msg.right_back_dt_distance = right_back_motor_control_->get_dt_distance();
 }
 
-geometry_msgs__msg__Twist MotionControl::_forwardKinematics(const WheelSpeed &wheelSpeed) {
+geometry_msgs__msg__Twist MotionControl::_forwardKinematics(const MotionControl::WheelSpeed &wheelSpeed) {
     geometry_msgs__msg__Twist twist;
     if (is_mecanum_wheel_) {
         twist.linear.x = (wheelSpeed.left_front_v - wheelSpeed.left_back_v - wheelSpeed.right_front_v + wheelSpeed.right_back_v) / 4.0;
@@ -428,8 +418,8 @@ geometry_msgs__msg__Twist MotionControl::_forwardKinematics(const WheelSpeed &wh
     return twist;
 }
 
-WheelSpeed MotionControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
-    WheelSpeed wheelSpeed;
+MotionControl::WheelSpeed MotionControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
+    MotionControl::WheelSpeed wheelSpeed;
     if (is_mecanum_wheel_) {
         wheelSpeed.left_front_v = twist.linear.x + twist.linear.y - twist.angular.z * (track_width_ + wheel_width_) / 2.0;
         wheelSpeed.left_back_v = -twist.linear.x + twist.linear.y - twist.angular.z * (track_width_ + wheel_width_) / 2.0;
@@ -625,19 +615,86 @@ void MotionControl::update_target_max_speed() {
 }
 
 void MotionControl::test_motors() {
-    for (int pwm = 0; pwm <= 1024; pwm += 25) {
-        left_front_motor_control_->set_speed(pwm);
-        left_back_motor_control_->set_speed(pwm);
-        right_front_motor_control_->set_speed(pwm);
-        right_back_motor_control_->set_speed(pwm);
+    // left_front_motor_control_->set_pwm_fix(0.920);
+    // left_back_motor_control_->set_pwm_fix(0.963);
+    // right_front_motor_control_->set_pwm_fix(1.079);
+    // right_back_motor_control_->set_pwm_fix(1.055);
+
+    long left_front_current = 0;
+    long left_back_current = 0;
+    long right_front_current = 0;
+    long right_back_current = 0;
+
+    int left_front_pwm = 0;
+    int left_back_pwm = 0;
+    int right_front_pwm = 0;
+    int right_back_pwm = 0;
+
+    uint left_front_dead_pwm = 200;
+    uint left_back_dead_pwm = 200;
+    uint right_front_dead_pwm = 300;
+    uint right_back_dead_pwm = 250;
+
+    left_front_motor_control_->set_dead_pwm(left_front_dead_pwm);
+    left_back_motor_control_->set_dead_pwm(left_back_dead_pwm);
+    right_front_motor_control_->set_dead_pwm(right_front_dead_pwm);
+    right_back_motor_control_->set_dead_pwm(right_back_dead_pwm);
+
+    long current_time = millis();
+    long previous_time = current_time;
+
+    float dt = 0.0;
+
+    for (float target_y = 1500; target_y <= 3000; target_y += 50) {
+        left_front_pwm = (target_y + 1234.3) / 6.3719;
+        left_back_pwm = (target_y + 714.61) / 5.0837;
+        right_front_pwm = (target_y + 911.19) / 4.769;
+        right_back_pwm = (target_y + 839.27) / 5.0709;
+
+        left_front_motor_control_->set_speed(left_front_pwm);
+        left_back_motor_control_->set_speed(left_back_pwm);
+        right_front_motor_control_->set_speed(right_front_pwm);
+        right_back_motor_control_->set_speed(right_back_pwm);
+        // }
+
+        // for (int pwm = 400; pwm <= 768; pwm += 4) {
+        //     left_front_pwm = pwm;
+        //     left_back_pwm = pwm;
+        //     right_front_pwm = pwm;
+        //     right_back_pwm = pwm;
+
+        left_front_motor_control_->set_speed(left_front_pwm);
+        left_back_motor_control_->set_speed(left_back_pwm);
+        right_front_motor_control_->set_speed(right_front_pwm);
+        right_back_motor_control_->set_speed(right_back_pwm);
+
+        left_front_motor_control_->move();
+        left_back_motor_control_->move();
+        right_front_motor_control_->move();
+        right_back_motor_control_->move();
 
         vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-        auto left_front_current = left_front_motor_control_->get_encoder_count_change();
-        auto left_back_current = left_back_motor_control_->get_encoder_count_change();
-        auto right_front_current = right_front_motor_control_->get_encoder_count_change();
-        auto right_back_current = right_back_motor_control_->get_encoder_count_change();
-        Serial.printf("%d, %d, %d, %d, %d\n", pwm, left_front_current, left_back_current, right_front_current, right_back_current);
+        left_front_motor_control_->update();
+        left_back_motor_control_->update();
+        right_front_motor_control_->update();
+        right_back_motor_control_->update();
+
+        current_time = millis();
+        dt = (current_time - previous_time) / 1000.0;
+        previous_time = current_time;
+
+        left_front_motor_control_->calculate(0.0, dt, false);
+        left_back_motor_control_->calculate(0.0, dt, false);
+        right_front_motor_control_->calculate(0.0, dt, false);
+        right_back_motor_control_->calculate(0.0, dt, false);
+
+        left_front_current = left_front_motor_control_->get_encoder_count_change();
+        left_back_current = left_back_motor_control_->get_encoder_count_change();
+        right_front_current = right_front_motor_control_->get_encoder_count_change();
+        right_back_current = right_back_motor_control_->get_encoder_count_change();
+
+        Serial.printf("%d, %d, %d, %d, %d, %d, %d, %d, %d, %f, %f, %f, %f\n", int(target_y), left_front_pwm, left_back_pwm, right_front_pwm, right_back_pwm, left_front_current, left_back_current, right_front_current, right_back_current, left_front_motor_control_->get_current_speed(), left_back_motor_control_->get_current_speed(), right_front_motor_control_->get_current_speed(), right_back_motor_control_->get_current_speed());
     }
 
     left_front_motor_control_->set_speed(0);

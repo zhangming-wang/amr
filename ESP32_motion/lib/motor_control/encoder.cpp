@@ -19,7 +19,10 @@ void Encoder::set_pins(int pin_A, int pin_B) {
             if (encoder_.isAttached()) {
                 encoder_.detach();
             }
+            ESP32Encoder::useInternalWeakPullResistors = puType::up;
             encoder_.attachFullQuad(pin_A, pin_B);
+            encoder_.setFilter(1023); // 设置滤波器，消抖动
+            reset();
         } else {
             init_.store(false);
         }
@@ -31,13 +34,16 @@ void Encoder::reset() {
         return;
 
     encoder_.clearCount();
+    count_ = 0;
+    last_count_ = 0;
+    count_change_ = 0;
 }
 
 void Encoder::update() {
     if (!init_.load())
         return;
 
-    count_ = encoder_.getCount() / 4;
+    count_ = encoder_.getCount();
     count_change_ = count_ - last_count_;
     last_count_ = count_;
 }

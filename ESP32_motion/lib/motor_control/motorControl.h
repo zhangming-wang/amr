@@ -88,6 +88,9 @@ public:
     long get_encoder_count();
     long get_encoder_count_change();
 
+    void set_dead_pwm(uint dead_pwm);
+    uint get_dead_pwm();
+
 private:
     //-------------保存参数-------------
     const std::string name_;
@@ -99,6 +102,7 @@ private:
 
     float raw_vel_ = 0, smoothed_v_ = 0, alpha_ = 0.25;
     float pid_value_ = 0;
+    uint dead_pwm_ = 0;
 
     std::shared_ptr<Encoder> encoder_;
     std::shared_ptr<Motor> motor_;

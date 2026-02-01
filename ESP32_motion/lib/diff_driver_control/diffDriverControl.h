@@ -28,19 +28,17 @@ extern "C" {
 #include <utility>
 #include <vector>
 
-class MotionControl : public BaseTaskSingleton<MotionControl> {
+class DiffDriverControl : public BaseTaskSingleton<DiffDriverControl> {
 
-    friend class Singleton<MotionControl>;
+    friend class Singleton<DiffDriverControl>;
 
     struct WheelSpeed {
-        float left_front_v = 0;
-        float left_back_v = 0;
-        float right_front_v = 0;
-        float right_back_v = 0;
+        float left_v = 0;
+        float right_v = 0;
     };
 
 protected:
-    MotionControl();
+    DiffDriverControl();
     void init_task() override { brake(); };
     void clean_task() override { brake(); };
 
@@ -74,22 +72,16 @@ public:
 
     void set_model_params(float track_width, float wheel_width);
 
-    void set_left_front_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
-    void set_left_back_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
-    void set_right_front_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
-    void set_right_back_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
+    void set_left_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
+    void set_right_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
 
-    void set_left_front_motor_pid_params(float p, float i, float d, float max_total_integral);
-    void set_left_back_motor_pid_params(float p, float i, float d, float max_total_integral);
-    void set_right_front_motor_pid_params(float p, float i, float d, float max_total_integral);
-    void set_right_back_motor_pid_params(float p, float i, float d, float max_total_integral);
+    void set_left_motor_pid_params(float p, float i, float d, float max_total_integral);
+    void set_right_motor_pid_params(float p, float i, float d, float max_total_integral);
 
     void set_speed_plan_parms(float max_v, float max_acc, float jerk);
 
     void set_milliseconds(int milliseconds);
     int get_milliseconds();
-
-    void set_wheel_type(bool is_mecanum_wheel);
 
     void set_speed_percent(float percent);
     float get_speed_percent();
@@ -107,12 +99,10 @@ public:
 
 private:
     //---------需要保存配置---------
-    float track_width_ = 10, wheel_width_ = 10;
+    float wheel_width_ = 10, track_width_ = 20;
 
     //---------需要保存参数---------
     volatile int milliseconds_ = 10;
-
-    bool is_mecanum_wheel_ = false;
 
     float max_acc_ = 10, jerk_ = 1;
     float target_max_v_ = 1.0, max_v_ = 1, max_w_ = 1.0, speed_percent_ = 1.0;
@@ -129,12 +119,10 @@ private:
 
     SemaphoreHandle_t mutex_; // 互斥量句柄
 
-    std::shared_ptr<MotorControl> left_front_motor_control_, left_back_motor_control_, right_front_motor_control_, right_back_motor_control_;
+    std::shared_ptr<MotorControl> left_motor_control_, right_motor_control_;
     std::shared_ptr<SpeedPlan> speedPlan_;
 
     motion_status_msgs__msg__MotionStatus motion_status_msg_;
-
-    float left_pid_value_ = 0, right_pid_value_ = 0;
 
     geometry_msgs__msg__Twist _forwardKinematics(const WheelSpeed &wheelSpeed);
     WheelSpeed _inverseKinematics(const geometry_msgs__msg__Twist &twist);

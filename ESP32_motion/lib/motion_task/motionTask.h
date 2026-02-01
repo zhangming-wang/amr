@@ -1,19 +1,19 @@
 #pragma once
+
 #include "baseTask.h"
-#include "motionControl.h"
-#include "motionNode.h"
+#include "diffDriverControl.h"
 #include "mpu6050Control.h"
 #include "singleton.h"
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
 
-class MasterTask : public BaseTaskSingleton<MasterTask> {
+class MotionTask : public BaseTaskSingleton<MotionTask> {
 
-    friend class Singleton<MasterTask>;
+    friend class Singleton<MotionTask>;
 
 protected:
-    MasterTask();
-    ~MasterTask() = default;
+    MotionTask();
+    ~MotionTask() = default;
 
     void init_task() override;
 
@@ -21,8 +21,7 @@ public:
     void update() override;
 
 private:
-    MotionControl *motionControl_ = nullptr;
-    MotionNode *motionNode_ = nullptr;
+    DiffDriverControl *diffDriverControl_ = nullptr;
     MPU6050Control *mpu6050Control_ = nullptr;
 
     TickType_t task_tick_count_;

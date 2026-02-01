@@ -6,7 +6,7 @@ from script.kill_process import kill_process  # type: ignore
 
 def generate_launch_description():
 
-    kill_process(["micro_ros_agent", "control_panel", "yolo_detect"])
+    # kill_process(["micro_ros_agent", "control_panel", "yolo_detect"])
 
     current_share_directory = get_package_share_directory("control_launch")
 
@@ -21,7 +21,7 @@ def generate_launch_description():
         Node(
             package="control_panel",
             executable="control_panel",
-            name="control_panel",
+            # name="control_panel",
             output="screen",
         ),
         Node(

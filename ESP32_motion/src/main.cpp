@@ -1,13 +1,15 @@
-#include "masterTask.h"
+#include "lidarTask.h"
 #include "motionNode.h"
+#include "motionTask.h"
 #include "settings.h"
 #include "system.h"
 #include <Arduino.h>
 
 void (*serial_print)(const std::string &) = MotionNode::serial_print;
 
-MasterTask *masterTask = nullptr;
+MotionTask *motionTask = nullptr;
 MotionNode *motionNode = nullptr;
+LidarTask *lidarTask = nullptr;
 
 void setup() {
     Serial.begin(115200);
@@ -23,8 +25,11 @@ void setup() {
     motionNode = &MotionNode::instance();
     motionNode->start_task();
 
-    masterTask = &MasterTask::instance();
-    masterTask->start_task();
+    motionTask = &MotionTask::instance();
+    motionTask->start_task();
+
+    lidarTask = &LidarTask::instance();
+    lidarTask->start_task();
 }
 
 void loop() {

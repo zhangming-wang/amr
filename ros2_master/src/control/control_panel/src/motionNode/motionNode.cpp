@@ -102,15 +102,15 @@ void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
     current_tf_.transform.translation.z = current_pose_.position.z;
     current_tf_.transform.rotation = current_pose_.orientation;
 
-    current_joint_state_.position[0] = msg->left_front_total_distance / (wheels_diameter_vector_[0] / 2.0);
-    current_joint_state_.position[1] = msg->left_back_total_distance / (wheels_diameter_vector_[1] / 2.0);
-    current_joint_state_.position[2] = msg->right_front_total_distance / (wheels_diameter_vector_[2] / 2.0);
-    current_joint_state_.position[3] = msg->right_back_total_distance / (wheels_diameter_vector_[3] / 2.0);
+    current_joint_state_.position[0] = msg->left_front_total_distance / (wheels_diameter_vector_[0] * M_PI);
+    current_joint_state_.position[1] = msg->left_back_total_distance / (wheels_diameter_vector_[1] * M_PI);
+    current_joint_state_.position[2] = msg->right_front_total_distance / (wheels_diameter_vector_[2] * M_PI);
+    current_joint_state_.position[3] = msg->right_back_total_distance / (wheels_diameter_vector_[3] * M_PI);
 
-    current_joint_state_.velocity[0] = msg->left_front_current_v / (wheels_diameter_vector_[0] / 2.0);
-    current_joint_state_.velocity[1] = msg->left_back_current_v / (wheels_diameter_vector_[1] / 2.0);
-    current_joint_state_.velocity[2] = msg->right_front_current_v / (wheels_diameter_vector_[2] / 2.0);
-    current_joint_state_.velocity[3] = msg->right_back_current_v / (wheels_diameter_vector_[3] / 2.0);
+    current_joint_state_.velocity[0] = msg->left_front_current_v / (wheels_diameter_vector_[0] * M_PI);
+    current_joint_state_.velocity[1] = msg->left_back_current_v / (wheels_diameter_vector_[1] * M_PI);
+    current_joint_state_.velocity[2] = msg->right_front_current_v / (wheels_diameter_vector_[2] * M_PI);
+    current_joint_state_.velocity[3] = msg->right_back_current_v / (wheels_diameter_vector_[3] * M_PI);
 
     imu_msg_.angular_velocity.x = msg->imu_gyro_x;
     imu_msg_.angular_velocity.y = msg->imu_gyro_y;

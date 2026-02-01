@@ -194,3 +194,12 @@ void MotorControl::_set_pins_params() {
 void MotorControl::_update_max_v() {
     max_v_ = motorParams_.revolutions_per_minute * PI * motorParams_.wheel_diameter / 60;
 }
+
+void MotorControl::set_dead_pwm(uint dead_pwm) {
+    dead_pwm_ = dead_pwm;
+    motor_->set_dead_pwm(dead_pwm);
+}
+
+uint MotorControl::get_dead_pwm() {
+    return dead_pwm_;
+}
