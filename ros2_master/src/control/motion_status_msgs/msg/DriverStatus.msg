@@ -1,0 +1,4 @@
+float32 total_distance
+float32 dt_distance
+float32 current_v
+float32 target_v

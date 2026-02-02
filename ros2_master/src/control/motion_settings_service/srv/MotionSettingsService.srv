@@ -3,157 +3,37 @@ uint64 id
 int32 mode
 int32 milliseconds
 
+float32 wheel_width
+float32 track_width
+
 float32 speed_percent
 float32 max_v
 float32 max_acc
 float32 jerk
 
-float32 wheel_width
-float32 track_width
-
-int32 left_front_motor_pina
-int32 left_front_motor_pinb
-int32 left_front_motor_pinpwm
-int32 left_front_encoder_pina
-int32 left_front_encoder_pinb
-float32 left_front_motor_p
-float32 left_front_motor_i
-float32 left_front_motor_d
-float32 left_front_motor_max_total_integral
-float32 left_front_motor_wheel_diameter
-int32 left_front_motor_pluses_per_revolution
-int32 left_front_motor_revolutions_per_minute
-
-int32 left_back_motor_pina
-int32 left_back_motor_pinb
-int32 left_back_motor_pinpwm
-int32 left_back_encoder_pina
-int32 left_back_encoder_pinb
-float32 left_back_motor_p
-float32 left_back_motor_i
-float32 left_back_motor_d
-float32 left_back_motor_max_total_integral
-float32 left_back_motor_wheel_diameter
-int32 left_back_motor_pluses_per_revolution
-int32 left_back_motor_revolutions_per_minute
-
-int32 right_front_motor_pina
-int32 right_front_motor_pinb
-int32 right_front_motor_pinpwm
-int32 right_front_encoder_pina
-int32 right_front_encoder_pinb
-float32 right_front_motor_p
-float32 right_front_motor_i
-float32 right_front_motor_d
-float32 right_front_motor_max_total_integral
-float32 right_front_motor_wheel_diameter
-int32 right_front_motor_pluses_per_revolution
-int32 right_front_motor_revolutions_per_minute
-
-int32 right_back_motor_pina
-int32 right_back_motor_pinb
-int32 right_back_motor_pinpwm
-int32 right_back_encoder_pina
-int32 right_back_encoder_pinb
-float32 right_back_motor_p
-float32 right_back_motor_i
-float32 right_back_motor_d
-float32 right_back_motor_max_total_integral
-float32 right_back_motor_wheel_diameter
-int32 right_back_motor_pluses_per_revolution
-int32 right_back_motor_revolutions_per_minute
-
-int32 mpu6050_pin_sda
-int32 mpu6050_pin_scl
-
-int16 mpu6050_accel_offset_x
-int16 mpu6050_accel_offset_y
-int16 mpu6050_accel_offset_z
-int16 mpu6050_gyro_offset_x
-int16 mpu6050_gyro_offset_y
-int16 mpu6050_gyro_offset_z
+motion_settings_service/DriverConfig[2] drivers_config
+motion_settings_service/MpuConfig mpu_config
 
 uint8 motor_enable_flags
 bool enable_speed_plan
-bool is_mecanum_wheel
 
 ---
 
 uint64 id
 
-int32 state
+int32 mode
 int32 milliseconds
+
+float32 wheel_width
+float32 track_width
 
 float32 speed_percent
 float32 max_v
 float32 max_acc
 float32 jerk
 
-float32 wheel_width
-float32 track_width
-
-int32 left_front_motor_pina
-int32 left_front_motor_pinb
-int32 left_front_motor_pinpwm
-int32 left_front_encoder_pina
-int32 left_front_encoder_pinb
-float32 left_front_motor_p
-float32 left_front_motor_i
-float32 left_front_motor_d
-float32 left_front_motor_max_total_integral
-float32 left_front_motor_wheel_diameter
-int32 left_front_motor_pluses_per_revolution
-int32 left_front_motor_revolutions_per_minute
-
-int32 left_back_motor_pina
-int32 left_back_motor_pinb
-int32 left_back_motor_pinpwm
-int32 left_back_encoder_pina
-int32 left_back_encoder_pinb
-float32 left_back_motor_p
-float32 left_back_motor_i
-float32 left_back_motor_d
-float32 left_back_motor_max_total_integral
-float32 left_back_motor_wheel_diameter
-int32 left_back_motor_pluses_per_revolution
-int32 left_back_motor_revolutions_per_minute
-
-int32 right_front_motor_pina
-int32 right_front_motor_pinb
-int32 right_front_motor_pinpwm
-int32 right_front_encoder_pina
-int32 right_front_encoder_pinb
-float32 right_front_motor_p
-float32 right_front_motor_i
-float32 right_front_motor_d
-float32 right_front_motor_max_total_integral
-float32 right_front_motor_wheel_diameter
-int32 right_front_motor_pluses_per_revolution
-int32 right_front_motor_revolutions_per_minute
-
-int32 right_back_motor_pina
-int32 right_back_motor_pinb
-int32 right_back_motor_pinpwm
-int32 right_back_encoder_pina
-int32 right_back_encoder_pinb
-float32 right_back_motor_p
-float32 right_back_motor_i
-float32 right_back_motor_d
-float32 right_back_motor_max_total_integral
-float32 right_back_motor_wheel_diameter
-int32 right_back_motor_pluses_per_revolution
-int32 right_back_motor_revolutions_per_minute
-
-int32 mpu6050_pin_sda
-int32 mpu6050_pin_scl
-
-int16 mpu6050_accel_offset_x
-int16 mpu6050_accel_offset_y
-int16 mpu6050_accel_offset_z
-int16 mpu6050_gyro_offset_x
-int16 mpu6050_gyro_offset_y
-int16 mpu6050_gyro_offset_z
+motion_settings_service/DriverConfig[2] drivers_config
+motion_settings_service/MpuConfig mpu_config
 
 uint8 motor_enable_flags
 bool enable_speed_plan
-bool is_mecanum_wheel

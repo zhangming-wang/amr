@@ -12,7 +12,12 @@ find_package(rosidl_default_generators REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
-rosidl_generate_interfaces(${PROJECT_NAME} "srv/MotionSettingsService.srv")
+
+rosidl_generate_interfaces(${PROJECT_NAME} 
+  "srv/MotionSettingsService.srv"
+  "msg/DriverConfig.msg"
+  "msg/MpuConfig.msg"
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

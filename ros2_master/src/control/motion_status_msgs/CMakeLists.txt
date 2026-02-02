@@ -15,7 +15,11 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(rosidl_typesupport_microxrcedds_c REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME} 
-  "msg/MotionStatus.msg")
+  "msg/MotionStatus.msg"
+  "msg/DriverStatus.msg"
+  "msg/LidarStatus.msg"
+  "msg/MpuStatus.msg"
+  )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

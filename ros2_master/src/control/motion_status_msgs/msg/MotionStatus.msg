@@ -1,29 +1,6 @@
 uint64 stamp
 uint64 seq
 
-float32 left_front_total_distance
-float32 left_front_dt_distance
-float32 left_front_current_v
-float32 left_front_target_v
-
-float32 left_back_total_distance
-float32 left_back_dt_distance
-float32 left_back_current_v
-float32 left_back_target_v
-
-float32 right_front_total_distance
-float32 right_front_dt_distance
-float32 right_front_current_v
-float32 right_front_target_v
-
-float32 right_back_total_distance
-float32 right_back_dt_distance
-float32 right_back_current_v
-float32 right_back_target_v
-
-float32 imu_roll
-float32 imu_pitch
-float32 imu_yaw
-float32 imu_gyro_x
-float32 imu_gyro_y
-float32 imu_gyro_z
+motion_status_msgs/DriverStatus[2] drivers_status
+motion_status_msgs/MpuStatus mpu_status
+motion_status_msgs/LidarStatus lidar_status
