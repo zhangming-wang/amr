@@ -340,8 +340,8 @@ geometry_msgs__msg__Twist MotionControlTask::_forwardKinematics(const MotionCont
     double v_left = wheelSpeed.left_v;
     double v_right = wheelSpeed.right_v;
 
-    twist.linear.x = 0.0; // 非麦克纳姆没有侧向速度
-    twist.linear.y = (v_left + v_right) / 2.0;
+    twist.linear.x = 0.0f; // 非麦克纳姆没有侧向速度
+    twist.linear.y = (v_left + v_right) / 2.0f;
     twist.angular.z = (v_right - v_left) / wheel_width_;
     return twist;
 }
@@ -352,8 +352,8 @@ MotionControlTask::WheelSpeed MotionControlTask::_inverseKinematics(const geomet
     float w = twist.angular.z; // 角速度（绕 z 轴）
 
     // 左右轮速度
-    float v_left = v - w * wheel_width_ / 2.0;
-    float v_right = v + w * wheel_width_ / 2.0;
+    float v_left = v - w * wheel_width_ / 2.0f;
+    float v_right = v + w * wheel_width_ / 2.0f;
 
     // 赋值给四个轮子（左右分别相等）
     wheelSpeed.left_v = v_left;
@@ -502,21 +502,19 @@ void MotionControlTask::test_motors() {
     long current_time = millis();
     long previous_time = current_time;
 
-    float dt = 0.0;
+    float dt = 0.0f;
 
-    for (float target_y = 1500; target_y <= 3000; target_y += 50) {
-        left_pwm = (target_y + 1234.3) / 6.3719;
-        right_pwm = (target_y + 839.27) / 5.0709;
+    // for (float target_y = 1500; target_y <= 3000; target_y += 50) {
+    //     left_pwm = (target_y + 1234.3) / 6.3719f;
+    //     right_pwm = (target_y + 839.27) / 5.0709f;
 
-        left_motor_control_->set_speed(left_pwm);
-        right_motor_control_->set_speed(right_pwm);
-        // }
+    //     left_motor_control_->set_speed(left_pwm);
+    //     right_motor_control_->set_speed(right_pwm);
+    //     // }
 
-        // for (int pwm = 400; pwm <= 768; pwm += 4) {
-        //     left_front_pwm = pwm;
-        //     left_back_pwm = pwm;
-        //     right_front_pwm = pwm;
-        //     right_back_pwm = pwm;
+    for (int pwm = 400; pwm <= 768; pwm += 4) {
+        left_pwm = pwm * -1;
+        right_pwm = pwm * -1;
 
         left_motor_control_->set_speed(left_pwm);
         right_motor_control_->set_speed(right_pwm);
@@ -533,13 +531,13 @@ void MotionControlTask::test_motors() {
         dt = (current_time - previous_time) / 1000.0;
         previous_time = current_time;
 
-        left_motor_control_->calculate(0.0, dt, false);
-        right_motor_control_->calculate(0.0, dt, false);
+        left_motor_control_->calculate(0.0f, dt, false);
+        right_motor_control_->calculate(0.0f, dt, false);
 
         left_current = left_motor_control_->get_encoder_count_change();
         right_current = right_motor_control_->get_encoder_count_change();
 
-        Serial.printf("%d, %d, %d, %d, %d,  %f, %f\n", int(target_y), left_pwm, right_pwm, left_current, right_current, left_motor_control_->get_current_speed(), right_motor_control_->get_current_speed());
+        Serial.printf(" %d, %d, %d, %d,  %f, %f\n", left_pwm, right_pwm, left_current, right_current, left_motor_control_->get_current_speed(), right_motor_control_->get_current_speed());
     }
 
     left_motor_control_->set_speed(0);
