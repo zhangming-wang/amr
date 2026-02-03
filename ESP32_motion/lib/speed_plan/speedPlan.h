@@ -8,7 +8,7 @@ struct SpdPlanParams {
     volatile float max_v = 1.0;     // 最大速度 m/s
     volatile float max_acc = 5.0;   // 最大加速度 m/s²
     volatile float jerk = 1.0;      // 最大加 jerk m/s³
-    volatile int milliseconds = 10; // 速度规划周期 ms
+    volatile int milliseconds = 20; // 速度规划周期 ms
     volatile bool enable = false;
 };
 

@@ -6,19 +6,19 @@ MotionControlTask::MotionControlTask() {
     core_id_ = 1;
     stack_size_ = 16384;
 
+    mutex_ = xSemaphoreCreateMutex();
+
     task_tick_count_ = xTaskGetTickCount();
 
     speedPlan_ = std::make_shared<SpeedPlan>();
     left_motor_control_ = std::make_shared<MotorControl>("lm");
     right_motor_control_ = std::make_shared<MotorControl>("rm");
 
-    mutex_ = xSemaphoreCreateMutex();
+    // load_config();
+    // load_params();
 
-    load_config();
-    load_params();
-
-    set_left_motor_config_params(11, 12, 10, 9, 13, 0.065, 1320, 310);
-    set_right_motor_config_params(6, 7, 15, 16, 5, 0.065, 1320, 310);
+    set_left_motor_config_params(11, 12, 10, 9, 13, 0.065f, 1320, 310);
+    set_right_motor_config_params(6, 7, 15, 16, 4, 0.065f, 1320, 310);
 
     _refresh_target_max_v();
 }
@@ -319,6 +319,7 @@ void MotionControlTask::update() {
         right_motor_control_->move();
     }
     last_time = current_time;
+    // test_motors();
     vTaskDelayUntil(&task_tick_count_, speedPlan_->get_params().milliseconds);
 }
 

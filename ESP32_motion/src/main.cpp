@@ -9,9 +9,7 @@ void (*serial_print)(const std::string &) = MotionNodeTask::serial_print;
 
 void setup() {
     Serial.begin(115200);
-    while (!Serial) { // 等待主机连接到 CDC 端口
-        delay(50);
-    }
+    delay(500);
 
     test_ram();
 

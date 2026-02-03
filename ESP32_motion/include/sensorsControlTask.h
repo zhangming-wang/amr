@@ -33,4 +33,9 @@ public:
 private:
     std::shared_ptr<MPU6050Control> mpu6050Control_;
     std::shared_ptr<LidarControl> lidarControl_;
+
+    TickType_t task_tick_count_;
+
+    void _load_config();
+    void _load_params();
 };

@@ -1,12 +1,10 @@
 #include "mpu6050Control.h"
 
 MPU6050Control::MPU6050Control() {
-    load_config();
 }
 
 MPU6050Control::MPU6050Control(const std::string &name) {
     name_ = name;
-    load_config();
 }
 
 void MPU6050Control::update() {
