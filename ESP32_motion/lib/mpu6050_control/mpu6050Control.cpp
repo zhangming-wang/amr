@@ -265,9 +265,9 @@ void MPU6050Control::_dmp_read() {
     pitch_ = ypr[1];
     roll_ = ypr[2];
 
-    gyroX_ = gyro.x / 131.0 * M_PI / 180.0; // 转为弧度制
-    gyroY_ = gyro.y / 131.0 * M_PI / 180.0;
-    gyroZ_ = gyro.z / 131.0 * M_PI / 180.0;
+    gyroX_ = gyro.x / 131.0f * M_PI / 180.0f; // 转为弧度制
+    gyroY_ = gyro.y / 131.0f * M_PI / 180.0f;
+    gyroZ_ = gyro.z / 131.0f * M_PI / 180.0f;
 }
 
 void MPU6050Control::_manual_read() {
@@ -284,17 +284,17 @@ void MPU6050Control::_manual_read() {
     }
 
     // 2. 转换物理量
-    float ax = (int16_t)((data_[0] << 8) | data_[1]) / 16384.0;
-    float ay = (int16_t)((data_[2] << 8) | data_[3]) / 16384.0;
-    float az = (int16_t)((data_[4] << 8) | data_[5]) / 16384.0;
+    float ax = (int16_t)((data_[0] << 8) | data_[1]) / 16384.0f;
+    float ay = (int16_t)((data_[2] << 8) | data_[3]) / 16384.0f;
+    float az = (int16_t)((data_[4] << 8) | data_[5]) / 16384.0f;
 
-    gyroX_ = (int16_t)((data_[8] << 8) | data_[9]) / 131.0; // °/s
-    gyroY_ = (int16_t)((data_[10] << 8) | data_[11]) / 131.0;
-    gyroZ_ = (int16_t)((data_[12] << 8) | data_[13]) / 131.0;
+    gyroX_ = (int16_t)((data_[8] << 8) | data_[9]) / 131.0f; // °/s
+    gyroY_ = (int16_t)((data_[10] << 8) | data_[11]) / 131.0f;
+    gyroZ_ = (int16_t)((data_[12] << 8) | data_[13]) / 131.0f;
 
     // 3. 计算时间差
     unsigned long now = micros();
-    float dt = (now - last_update_time_) / 1e6; // 秒
+    float dt = (now - last_update_time_) / 1e6f; // 秒
     last_update_time_ = now;
 
     // 5. 陀螺仪积分更新欧拉角
@@ -303,8 +303,8 @@ void MPU6050Control::_manual_read() {
     yaw_ += gyroZ_ * dt;   // Z轴角速度 → yaw（会漂移）
 
     // 6. 互补滤波融合加速度计（修正漂移）
-    pitch_ = ALPHA * pitch_ + (1 - ALPHA) * atan2(-ax, sqrt(ay * ay + az * az)) * 180.0 / M_PI;
-    roll_ = ALPHA * roll_ + (1 - ALPHA) * atan2(ay, az) * 180.0 / M_PI;
+    pitch_ = ALPHA * pitch_ + (1 - ALPHA) * atan2(-ax, sqrt(ay * ay + az * az)) * 180.0f / M_PI;
+    roll_ = ALPHA * roll_ + (1 - ALPHA) * atan2(ay, az) * 180.0f / M_PI;
 }
 
 void MPU6050Control::get_data(float &gyroX, float &gyroY, float &gyroZ, float &yaw, float &pitch, float &roll) {

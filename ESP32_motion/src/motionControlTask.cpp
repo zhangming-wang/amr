@@ -17,13 +17,10 @@ MotionControlTask::MotionControlTask() {
     load_config();
     load_params();
 
-    update_target_max_speed();
-
-    set_milliseconds(milliseconds_);
-    set_speed_plan_parms(max_v_, max_acc_, jerk_);
-
     set_left_motor_config_params(11, 12, 10, 9, 13, 0.065, 1320, 310);
     set_right_motor_config_params(6, 7, 15, 16, 5, 0.065, 1320, 310);
+
+    _refresh_target_max_v();
 }
 
 void MotionControlTask::set_model_params(float track_width, float wheel_width) {
@@ -32,11 +29,13 @@ void MotionControlTask::set_model_params(float track_width, float wheel_width) {
 }
 
 void MotionControlTask::set_left_motor_config_params(int motor_pinA, int motor_pinB, int encoder_pinA, int encoder_pinB, int motor_pinPWM, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute) {
-    left_motor_control_->set_motor_params(motor_pinA, motor_pinB, encoder_pinA, encoder_pinB, motor_pinPWM, wheel_diameter, pluses_per_revolution, revolutions_per_minute);
+    left_motor_control_->set_motor_config(motor_pinA, motor_pinB, encoder_pinA, encoder_pinB, motor_pinPWM, wheel_diameter, pluses_per_revolution, revolutions_per_minute);
+    _refresh_target_max_v();
 }
 
 void MotionControlTask::set_right_motor_config_params(int motor_pinA, int motor_pinB, int encoder_pinA, int encoder_pinB, int motor_pinPWM, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute) {
-    right_motor_control_->set_motor_params(motor_pinA, motor_pinB, encoder_pinA, encoder_pinB, motor_pinPWM, wheel_diameter, pluses_per_revolution, revolutions_per_minute);
+    right_motor_control_->set_motor_config(motor_pinA, motor_pinB, encoder_pinA, encoder_pinB, motor_pinPWM, wheel_diameter, pluses_per_revolution, revolutions_per_minute);
+    _refresh_target_max_v();
 }
 void MotionControlTask::set_left_motor_pid_params(float p, float i, float d, float max_total_integral) {
     left_motor_control_->set_pid_params(p, i, d, max_total_integral);
@@ -46,30 +45,28 @@ void MotionControlTask::set_right_motor_pid_params(float p, float i, float d, fl
     right_motor_control_->set_pid_params(p, i, d, max_total_integral);
 }
 
-void MotionControlTask::set_speed_plan_parms(float max_v, float max_acc, float jerk) {
+void MotionControlTask::set_left_motor_ff_params(float k, float b) {
+    left_motor_control_->set_ff_params(k, b);
+}
+void MotionControlTask::set_right_motor_ff_params(float k, float b) {
+    right_motor_control_->set_ff_params(k, b);
+}
+
+void MotionControlTask::set_speed_plan_parms(int milliseconds, float max_v, float max_acc, float jerk, bool enable) {
     if (max_v > target_max_v_)
         max_v = target_max_v_;
 
-    max_v_ = max_v;
-    max_acc_ = max_acc;
-    jerk_ = jerk;
-
-    speed_percent_ = max_v_ / target_max_v_;
-    max_w_ = 2.0 * max_v_ / wheel_width_;
-
-    speedPlan_->set_maxAcc_and_jerk(max_acc_, jerk_);
+    speed_percent_ = max_v / target_max_v_;
+    speedPlan_->set_params(milliseconds, max_v, max_acc, jerk, enable);
 }
 
-void MotionControlTask::set_milliseconds(int milliseconds) {
-    milliseconds_ = milliseconds;
+void MotionControlTask::set_speed_plan_parms(const SpdPlanParams &params) {
+    speed_percent_ = params.max_v / target_max_v_;
+    speedPlan_->set_params(params);
 }
 
-int MotionControlTask::get_milliseconds() {
-    return milliseconds_;
-}
-
-float MotionControlTask::get_max_speed() {
-    return max_v_;
+const SpdPlanParams &MotionControlTask::get_speed_plan_parms() {
+    return speedPlan_->get_params();
 }
 
 void MotionControlTask::set_speed_percent(float percent) {
@@ -77,21 +74,19 @@ void MotionControlTask::set_speed_percent(float percent) {
     if (percent >= 1)
         percent = 1;
     speed_percent_ = percent;
-    max_v_ = target_max_v_ * speed_percent_;
-    max_w_ = 2.0 * max_v_ / wheel_width_;
+    auto spd_params = speedPlan_->get_params();
+    spd_params.max_v = target_max_v_ * speed_percent_;
+    speedPlan_->set_params(spd_params);
 }
 
 float MotionControlTask::get_speed_percent() {
     return speed_percent_;
 }
 
-void MotionControlTask::set_speed_plan_state(bool enable) {
-    enable_speed_plan_ = enable;
-}
-
 void MotionControlTask::set_motor_enable_flags(uint8_t flags) {
     motor_enable_flags_ = flags;
 }
+
 uint8_t MotionControlTask::get_motor_enable_flags() {
     return motor_enable_flags_;
 }
@@ -122,7 +117,7 @@ void MotionControlTask::stop_move() {
 void MotionControlTask::move_front() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = 0;
-    target_twist.linear.y = max_v_;
+    target_twist.linear.y = speedPlan_->get_params().max_v;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -133,7 +128,7 @@ void MotionControlTask::move_front() {
 void MotionControlTask::move_back() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = 0;
-    target_twist.linear.y = -max_v_;
+    target_twist.linear.y = -speedPlan_->get_params().max_v;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -143,7 +138,7 @@ void MotionControlTask::move_back() {
 
 void MotionControlTask::move_left() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = -max_v_;
+    target_twist.linear.x = -speedPlan_->get_params().max_v;
     target_twist.linear.y = 0;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
@@ -154,7 +149,7 @@ void MotionControlTask::move_left() {
 
 void MotionControlTask::move_right() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = max_v_;
+    target_twist.linear.x = speedPlan_->get_params().max_v;
     target_twist.linear.y = 0;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
@@ -165,8 +160,8 @@ void MotionControlTask::move_right() {
 
 void MotionControlTask::move_left_front() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = -max_v_;
-    target_twist.linear.y = max_v_;
+    target_twist.linear.x = -speedPlan_->get_params().max_v;
+    target_twist.linear.y = speedPlan_->get_params().max_v;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -176,8 +171,8 @@ void MotionControlTask::move_left_front() {
 
 void MotionControlTask::move_right_back() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = max_v_;
-    target_twist.linear.y = -max_v_;
+    target_twist.linear.x = speedPlan_->get_params().max_v;
+    target_twist.linear.y = -speedPlan_->get_params().max_v;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -187,8 +182,8 @@ void MotionControlTask::move_right_back() {
 
 void MotionControlTask::move_right_front() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = max_v_;
-    target_twist.linear.y = max_v_;
+    target_twist.linear.x = speedPlan_->get_params().max_v;
+    target_twist.linear.y = speedPlan_->get_params().max_v;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -198,8 +193,8 @@ void MotionControlTask::move_right_front() {
 
 void MotionControlTask::move_left_back() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = -max_v_;
-    target_twist.linear.y = -max_v_;
+    target_twist.linear.x = -speedPlan_->get_params().max_v;
+    target_twist.linear.y = -speedPlan_->get_params().max_v;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -214,7 +209,7 @@ void MotionControlTask::turn_left() {
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
-    target_twist.angular.z = max_w_;
+    target_twist.angular.z = 2.0f * speedPlan_->get_params().max_v / wheel_width_;
     set_twist(target_twist);
 }
 
@@ -225,7 +220,8 @@ void MotionControlTask::turn_right() {
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
-    target_twist.angular.z = -max_w_;
+    target_twist.angular.z = -2.0f * speedPlan_->get_params().max_v / wheel_width_;
+
     set_twist(target_twist);
 }
 
@@ -241,7 +237,7 @@ void MotionControlTask::_plan_wheel_speed(const MotionControlTask::WheelSpeed &t
     running_ = true;
     std::deque<MotionControlTask::WheelSpeed> speed_deque;
 
-    if (enable_speed_plan_) {
+    if (speedPlan_->get_params().enable) {
         float MIN_V_CHANGE = 0.001;
         auto changed_left_v = target_wheel_speed.left_v - target_wheel_v_.left_v;
         auto changed_right_v = target_wheel_speed.right_v - target_wheel_v_.right_v;
@@ -264,7 +260,7 @@ void MotionControlTask::_plan_wheel_speed(const MotionControlTask::WheelSpeed &t
                 changed_v = changed_right_v;
             }
 
-            std::deque<float> single_wheel_speed_deque = speedPlan_->plan(planned_current_v, planned_target_v, milliseconds_ / 1000.0f);
+            std::deque<float> single_wheel_speed_deque = speedPlan_->plan(planned_current_v, planned_target_v);
             for (auto value : single_wheel_speed_deque) {
                 auto speed_bi = (value - planned_current_v) / changed_v;
                 if (fabs(changed_left_v) < MIN_V_CHANGE) {
@@ -280,8 +276,9 @@ void MotionControlTask::_plan_wheel_speed(const MotionControlTask::WheelSpeed &t
                 speed_deque.push_back(wheel_speed);
             }
         }
+    } else {
+        speed_deque.push_back(target_wheel_speed);
     }
-    speed_deque.push_back(target_wheel_speed);
 
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         wheel_speed_deque_ = std::move(speed_deque);
@@ -322,7 +319,7 @@ void MotionControlTask::update() {
         right_motor_control_->move();
     }
     last_time = current_time;
-    vTaskDelayUntil(&task_tick_count_, milliseconds_);
+    vTaskDelayUntil(&task_tick_count_, speedPlan_->get_params().milliseconds);
 }
 
 void MotionControlTask::get_data(motion_status_msgs__msg__MotionStatus &msg) {
@@ -363,8 +360,8 @@ MotionControlTask::WheelSpeed MotionControlTask::_inverseKinematics(const geomet
 
     // 限幅（跟麦克纳姆分支同样处理）
     auto max_v = std::max({fabs(wheelSpeed.left_v), fabs(wheelSpeed.right_v)});
-    if (max_v > max_v_) {
-        auto scale = max_v_ / max_v;
+    if (max_v > speedPlan_->get_params().max_v) {
+        auto scale = speedPlan_->get_params().max_v / max_v;
         wheelSpeed.left_v *= scale;
         wheelSpeed.right_v *= scale;
     }
@@ -372,15 +369,14 @@ MotionControlTask::WheelSpeed MotionControlTask::_inverseKinematics(const geomet
 }
 
 void MotionControlTask::read_params(motion_settings_service__srv__MotionSettingsService_Response *response) {
-    response->milliseconds = milliseconds_;
-
     response->motor_enable_flags = motor_enable_flags_;
-    response->enable_speed_plan = enable_speed_plan_;
-
     response->speed_percent = speed_percent_;
-    response->max_v = max_v_;
-    response->max_acc = max_acc_;
-    response->jerk = jerk_;
+
+    response->milliseconds = speedPlan_->get_params().milliseconds;
+    response->enable_speed_plan = speedPlan_->get_params().enable;
+    response->max_v = speedPlan_->get_params().max_v;
+    response->max_acc = speedPlan_->get_params().max_acc;
+    response->jerk = speedPlan_->get_params().jerk;
 
     response->left_front_motor_p = left_motor_control_->get_pid_params().p;
     response->left_front_motor_i = left_motor_control_->get_pid_params().i;
@@ -394,36 +390,37 @@ void MotionControlTask::read_params(motion_settings_service__srv__MotionSettings
 }
 
 void MotionControlTask::save_params() {
-    preferences_.begin("params", false);
+    preferences_.begin("mctparams", false);
     preferences_.clear();
 
-    preferences_.putInt("millisec", milliseconds_);
-    preferences_.putBool("spdPlan", enable_speed_plan_);
+    preferences_.putInt("millisec", speedPlan_->get_params().milliseconds);
+    preferences_.putBool("spdPlan", speedPlan_->get_params().enable);
 
-    preferences_.putFloat("maxV", max_v_);
-    preferences_.putFloat("maxAcc", max_acc_);
-    preferences_.putFloat("jerk", jerk_);
+    preferences_.putFloat("maxV", speedPlan_->get_params().max_v);
+    preferences_.putFloat("maxAcc", speedPlan_->get_params().max_acc);
+    preferences_.putFloat("jerk", speedPlan_->get_params().jerk);
 
     preferences_.end();
 
-    left_motor_control_->save_pid_params();
-    right_motor_control_->save_pid_params();
+    left_motor_control_->save_params();
+    right_motor_control_->save_params();
 }
 
 void MotionControlTask::load_params() {
-    preferences_.begin("params", true); // 只读模式
+    SpdPlanParams params = speedPlan_->get_params();
 
-    milliseconds_ = preferences_.getInt("millisec", milliseconds_);
-    enable_speed_plan_ = preferences_.getBool("spdPlan", enable_speed_plan_);
-
-    max_v_ = preferences_.getFloat("maxV", max_v_);
-    max_acc_ = preferences_.getFloat("maxAcc", max_acc_);
-    jerk_ = preferences_.getFloat("jerk", jerk_);
-
+    preferences_.begin("mctparams", true); // 只读模式
+    params.milliseconds = preferences_.getInt("millisec", params.milliseconds);
+    params.enable = preferences_.getBool("spdPlan", params.enable);
+    params.max_v = preferences_.getFloat("maxV", params.max_v);
+    params.max_acc = preferences_.getFloat("maxAcc", params.max_acc);
+    params.jerk = preferences_.getFloat("jerk", params.jerk);
     preferences_.end();
 
-    left_motor_control_->load_pid_params();
-    right_motor_control_->load_pid_params();
+    speedPlan_->set_params(params);
+
+    left_motor_control_->load_params();
+    right_motor_control_->load_params();
 }
 
 void MotionControlTask::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
@@ -431,27 +428,27 @@ void MotionControlTask::read_config(motion_settings_service__srv__MotionSettings
     response->wheel_width = wheel_width_;
     response->track_width = track_width_;
 
-    response->left_front_motor_pina = left_motor_control_->get_motor_params().motor_AIN1;
-    response->left_front_motor_pinb = left_motor_control_->get_motor_params().motor_AIN2;
-    response->left_front_motor_pinpwm = left_motor_control_->get_motor_params().motor_pwmPin;
-    response->left_front_motor_wheel_diameter = left_motor_control_->get_motor_params().wheel_diameter;
-    response->left_front_motor_pluses_per_revolution = left_motor_control_->get_motor_params().pluses_per_revolution;
-    response->left_front_motor_revolutions_per_minute = left_motor_control_->get_motor_params().revolutions_per_minute;
-    response->left_front_encoder_pina = left_motor_control_->get_motor_params().encoder_pinA;
-    response->left_front_encoder_pinb = left_motor_control_->get_motor_params().encoder_pinB;
+    response->left_front_motor_pina = left_motor_control_->get_motor_config().motor_AIN1;
+    response->left_front_motor_pinb = left_motor_control_->get_motor_config().motor_AIN2;
+    response->left_front_motor_pinpwm = left_motor_control_->get_motor_config().motor_pwmPin;
+    response->left_front_motor_wheel_diameter = left_motor_control_->get_motor_config().wheel_diameter;
+    response->left_front_motor_pluses_per_revolution = left_motor_control_->get_motor_config().pluses_per_revolution;
+    response->left_front_motor_revolutions_per_minute = left_motor_control_->get_motor_config().revolutions_per_minute;
+    response->left_front_encoder_pina = left_motor_control_->get_motor_config().encoder_pinA;
+    response->left_front_encoder_pinb = left_motor_control_->get_motor_config().encoder_pinB;
 
-    response->right_front_motor_pina = right_motor_control_->get_motor_params().motor_AIN1;
-    response->right_front_motor_pinb = right_motor_control_->get_motor_params().motor_AIN2;
-    response->right_front_motor_pinpwm = right_motor_control_->get_motor_params().motor_pwmPin;
-    response->right_front_motor_wheel_diameter = right_motor_control_->get_motor_params().wheel_diameter;
-    response->right_front_motor_pluses_per_revolution = right_motor_control_->get_motor_params().pluses_per_revolution;
-    response->right_front_motor_revolutions_per_minute = right_motor_control_->get_motor_params().revolutions_per_minute;
-    response->right_front_encoder_pina = right_motor_control_->get_motor_params().encoder_pinA;
-    response->right_front_encoder_pinb = right_motor_control_->get_motor_params().encoder_pinB;
+    response->right_front_motor_pina = right_motor_control_->get_motor_config().motor_AIN1;
+    response->right_front_motor_pinb = right_motor_control_->get_motor_config().motor_AIN2;
+    response->right_front_motor_pinpwm = right_motor_control_->get_motor_config().motor_pwmPin;
+    response->right_front_motor_wheel_diameter = right_motor_control_->get_motor_config().wheel_diameter;
+    response->right_front_motor_pluses_per_revolution = right_motor_control_->get_motor_config().pluses_per_revolution;
+    response->right_front_motor_revolutions_per_minute = right_motor_control_->get_motor_config().revolutions_per_minute;
+    response->right_front_encoder_pina = right_motor_control_->get_motor_config().encoder_pinA;
+    response->right_front_encoder_pinb = right_motor_control_->get_motor_config().encoder_pinB;
 }
 
 void MotionControlTask::save_config() {
-    preferences_.begin("settings", false);
+    preferences_.begin("mctsettings", false);
     preferences_.clear();
 
     preferences_.putFloat("wheWid", wheel_width_);
@@ -459,28 +456,33 @@ void MotionControlTask::save_config() {
 
     preferences_.end();
 
-    left_motor_control_->save_motor_params();
-    right_motor_control_->save_motor_params();
+    left_motor_control_->save_config();
+    right_motor_control_->save_config();
 }
 
 void MotionControlTask::load_config() {
-    preferences_.begin("settings", true); // 只读模式
+    preferences_.begin("mctsettings", true); // 只读模式
 
     wheel_width_ = preferences_.getFloat("wheWid", wheel_width_);
     track_width_ = preferences_.getFloat("traWid", track_width_);
 
     preferences_.end();
 
-    left_motor_control_->load_motor_params();
-    right_motor_control_->load_motor_params();
+    left_motor_control_->load_config();
+    right_motor_control_->load_config();
 }
 
-void MotionControlTask::update_target_max_speed() {
+void MotionControlTask::_refresh_target_max_v() {
     auto left_max_wheel_speed = left_motor_control_->get_max_speed();
     auto right_max_wheel_speed = right_motor_control_->get_max_speed();
 
     target_max_v_ = std::min({left_max_wheel_speed, right_max_wheel_speed});
-    speed_percent_ = max_v_ / target_max_v_;
+    auto spd_params = speedPlan_->get_params();
+    if (spd_params.max_v > target_max_v_) {
+        spd_params.max_v = target_max_v_;
+        speedPlan_->set_params(spd_params);
+    }
+    speed_percent_ = speedPlan_->get_params().max_v / target_max_v_;
 }
 
 void MotionControlTask::test_motors() {
@@ -493,8 +495,8 @@ void MotionControlTask::test_motors() {
     uint left_dead_pwm = 200;
     uint right_dead_pwm = 300;
 
-    left_motor_control_->set_dead_pwm(left_dead_pwm);
-    right_motor_control_->set_dead_pwm(right_dead_pwm);
+    // left_motor_control_->set_dead_pwm(left_dead_pwm);
+    // right_motor_control_->set_dead_pwm(right_dead_pwm);
 
     long current_time = millis();
     long previous_time = current_time;

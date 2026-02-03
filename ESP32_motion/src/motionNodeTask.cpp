@@ -171,18 +171,20 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
 
     else if (request->mode == MotionService::Type::SetSpeedPercent) {
         motionControl->set_speed_percent(request->speed_percent);
-        response->max_v = motionControl->get_max_speed();
+        response->max_v = motionControl->get_speed_plan_parms().max_v;
         response->speed_percent = motionControl->get_speed_percent();
     } else if (request->mode == MotionService::Type::SetSpeedPlanState) {
-        motionControl->set_speed_plan_state(request->enable_speed_plan);
+        auto spd_params = motionControl->get_speed_plan_parms();
+        spd_params.enable = request->enable_speed_plan;
+        motionControl->set_speed_plan_parms(spd_params);
+        response->enable_speed_plan = spd_params.enable;
     }
 
     else if (request->mode == MotionService::Type::ReadParams) {
         motionControl->read_params(response);
         sensorsControl->read_params(response);
     } else if (request->mode == MotionService::Type::WriteParams) {
-        if (motionControl->get_milliseconds() != request->milliseconds) {
-            motionControl->set_milliseconds(request->milliseconds);
+        if (motionControl->get_speed_plan_parms().milliseconds != request->milliseconds) {
             instance->_create_publish_motion_status_timer();
         }
 
@@ -192,15 +194,13 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
         // motionControl->set_right_front_motor_pid_params(request->right_front_motor_p, request->right_front_motor_i, request->right_front_motor_d, request->right_front_motor_max_total_integral);
         // motionControl->set_right_back_motor_pid_params(request->right_back_motor_p, request->right_back_motor_i, request->right_back_motor_d, request->right_back_motor_max_total_integral);
 
-        motionControl->set_speed_plan_parms(request->max_v, request->max_acc, request->jerk);
-
+        motionControl->set_speed_plan_parms(request->milliseconds, request->max_v, request->max_acc, request->jerk, request->enable_speed_plan);
         motionControl->set_motor_enable_flags(request->motor_enable_flags);
-
-        response->max_v = motionControl->get_max_speed();
-        response->speed_percent = motionControl->get_speed_percent();
 
         sensorsControl->get_mpu6050_control()->set_offset(request->mpu6050_accel_offset_x, request->mpu6050_accel_offset_y, request->mpu6050_accel_offset_z,
                                                           request->mpu6050_gyro_offset_x, request->mpu6050_gyro_offset_y, request->mpu6050_gyro_offset_z);
+        response->max_v = motionControl->get_speed_plan_parms().max_v;
+        response->speed_percent = motionControl->get_speed_percent();
     } else if (request->mode == MotionService::Type::SaveParams) {
         motionControl->save_params();
         sensorsControl->save_params();
@@ -219,8 +219,6 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
         //                                                    request->right_front_motor_wheel_diameter, request->right_front_motor_pluses_per_revolution, request->right_front_motor_revolutions_per_minute);
         // motionControl->set_right_back_motor_config_params(request->right_back_motor_pina, request->right_back_motor_pinb, request->right_back_encoder_pina, request->right_back_encoder_pinb, request->right_back_motor_pinpwm,
         //                                                   request->right_back_motor_wheel_diameter, request->right_back_motor_pluses_per_revolution, request->right_back_motor_revolutions_per_minute);
-        motionControl->update_target_max_speed();
-
         sensorsControl->get_mpu6050_control()->set_pins(request->mpu6050_pin_sda, request->mpu6050_pin_scl);
     } else if (request->mode == MotionService::Type::SaveConfig) {
         motionControl->save_config();
@@ -260,7 +258,7 @@ bool MotionNodeTask::_create_publish_motion_status_timer() {
     _destroy_publish_motion_status_timer();
 
     if (!publish_motion_status_timer_initialized_) {
-        rcl_ret_t ret = rclc_timer_init_default(&publish_motion_status_timer_, &support_, RCL_MS_TO_NS(MotionControlTask::instance().get_milliseconds()), publish_motion_status_timer_callback);
+        rcl_ret_t ret = rclc_timer_init_default(&publish_motion_status_timer_, &support_, RCL_MS_TO_NS(MotionControlTask::instance().get_speed_plan_parms().milliseconds), publish_motion_status_timer_callback);
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] publish motion status timer init failed: %d\n", ret);
             return false;

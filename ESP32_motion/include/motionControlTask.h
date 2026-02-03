@@ -57,8 +57,6 @@ public:
     void set_twist(const geometry_msgs__msg__Twist &twist);
     void set_wheels_speed(const WheelSpeed &target_wheel_speed);
 
-    void update_target_max_speed();
-
     void set_motor_enable_flags(uint8_t flags);
     uint8_t get_motor_enable_flags();
 
@@ -70,16 +68,15 @@ public:
     void set_left_motor_pid_params(float p, float i, float d, float max_total_integral);
     void set_right_motor_pid_params(float p, float i, float d, float max_total_integral);
 
-    void set_speed_plan_parms(float max_v, float max_acc, float jerk);
+    void set_left_motor_ff_params(float k, float b);
+    void set_right_motor_ff_params(float k, float b);
 
-    void set_milliseconds(int milliseconds);
-    int get_milliseconds();
+    void set_speed_plan_parms(const SpdPlanParams &params);
+    void set_speed_plan_parms(int milliseconds, float max_v, float max_acc, float jerk, bool enable);
+    const SpdPlanParams &get_speed_plan_parms();
 
     void set_speed_percent(float percent);
     float get_speed_percent();
-    float get_max_speed();
-
-    void set_speed_plan_state(bool enable);
 
     void get_data(motion_status_msgs__msg__MotionStatus &msg);
 
@@ -97,16 +94,11 @@ private:
     //---------需要保存配置---------
     float wheel_width_ = 10, track_width_ = 20;
 
-    //---------需要保存参数---------
-    volatile int milliseconds_ = 10;
-
-    float max_acc_ = 10, jerk_ = 1;
-    float target_max_v_ = 1.0, max_v_ = 1, max_w_ = 1.0, speed_percent_ = 1.0;
-
     //---------局部内部参数---------
     uint8_t motor_enable_flags_ = 0xff;
+    float target_max_v_ = 1.0, speed_percent_ = 1.0;
 
-    volatile bool running_ = false, enable_speed_plan_ = false;
+    volatile bool running_ = false;
     volatile float dt_ = 0;
 
     WheelSpeed current_wheel_v_, target_wheel_v_;
@@ -126,4 +118,6 @@ private:
     WheelSpeed _inverseKinematics(const geometry_msgs__msg__Twist &twist);
 
     void _plan_wheel_speed(const WheelSpeed &target_wheel_speed);
+
+    void _refresh_target_max_v();
 };

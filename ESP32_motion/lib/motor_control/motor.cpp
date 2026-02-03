@@ -89,7 +89,6 @@ void Motor::set_speed(float speed_percent) {
         speed_percent = 1;
 
     pwm_ = uint(speed_percent * pwmControl_.get_max_pwm());
-    _fix_pwm();
 }
 
 void Motor::set_speed(int pwm) {
@@ -103,7 +102,6 @@ void Motor::set_speed(int pwm) {
     }
 
     pwm_ = uint32_t(fabs(pwm));
-    _fix_pwm();
 }
 
 void Motor::_set_direction(bool forward) {
@@ -126,20 +124,4 @@ void Motor::_set_direction(bool forward) {
             pwmControl_.attachPin(pin_B_);
         }
     }
-}
-
-void Motor::_fix_pwm() {
-    if (pwm_ > 0 && pwm_ < dead_pwm_) {
-        pwm_ = dead_pwm_;
-    } else if (pwm_ > pwmControl_.get_max_pwm()) {
-        pwm_ = pwmControl_.get_max_pwm();
-    }
-}
-
-void Motor::set_dead_pwm(uint dead_pwm) {
-    dead_pwm_ = dead_pwm;
-}
-
-uint Motor::get_dead_pwm() {
-    return dead_pwm_;
 }
