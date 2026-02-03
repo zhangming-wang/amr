@@ -1,3 +1,7 @@
+int32 pin_rx
+int32 pin_tx
+int32 pin_pwm
+
 int32 pin_sda
 int32 pin_scl
 

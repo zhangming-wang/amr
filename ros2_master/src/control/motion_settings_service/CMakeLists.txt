@@ -14,9 +14,11 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME} 
+  "msg/DriverSettings.msg"
+  "msg/SensorSettings.msg"
+  "msg/SpdPlanSettings.msg"
   "srv/MotionSettingsService.srv"
-  "msg/DriverConfig.msg"
-  "msg/MpuConfig.msg"
+
 )
 
 if(BUILD_TESTING)

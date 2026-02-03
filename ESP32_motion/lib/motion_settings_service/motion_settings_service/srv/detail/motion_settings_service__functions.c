@@ -10,6 +10,14 @@
 
 #include "rcutils/allocator.h"
 
+// Include directives for member types
+// Member `drivers_settings`
+#include "motion_settings_service/msg/detail/driver_settings__functions.h"
+// Member `sensor_settings`
+#include "motion_settings_service/msg/detail/sensor_settings__functions.h"
+// Member `spd_plan_settings`
+#include "motion_settings_service/msg/detail/spd_plan_settings__functions.h"
+
 bool
 motion_settings_service__srv__MotionSettingsService_Request__init(motion_settings_service__srv__MotionSettingsService_Request * msg)
 {
@@ -18,72 +26,27 @@ motion_settings_service__srv__MotionSettingsService_Request__init(motion_setting
   }
   // id
   // mode
-  // milliseconds
-  // speed_percent
-  // max_v
-  // max_acc
-  // jerk
   // wheel_width
   // track_width
-  // left_front_motor_pina
-  // left_front_motor_pinb
-  // left_front_motor_pinpwm
-  // left_front_encoder_pina
-  // left_front_encoder_pinb
-  // left_front_motor_p
-  // left_front_motor_i
-  // left_front_motor_d
-  // left_front_motor_max_total_integral
-  // left_front_motor_wheel_diameter
-  // left_front_motor_pluses_per_revolution
-  // left_front_motor_revolutions_per_minute
-  // left_back_motor_pina
-  // left_back_motor_pinb
-  // left_back_motor_pinpwm
-  // left_back_encoder_pina
-  // left_back_encoder_pinb
-  // left_back_motor_p
-  // left_back_motor_i
-  // left_back_motor_d
-  // left_back_motor_max_total_integral
-  // left_back_motor_wheel_diameter
-  // left_back_motor_pluses_per_revolution
-  // left_back_motor_revolutions_per_minute
-  // right_front_motor_pina
-  // right_front_motor_pinb
-  // right_front_motor_pinpwm
-  // right_front_encoder_pina
-  // right_front_encoder_pinb
-  // right_front_motor_p
-  // right_front_motor_i
-  // right_front_motor_d
-  // right_front_motor_max_total_integral
-  // right_front_motor_wheel_diameter
-  // right_front_motor_pluses_per_revolution
-  // right_front_motor_revolutions_per_minute
-  // right_back_motor_pina
-  // right_back_motor_pinb
-  // right_back_motor_pinpwm
-  // right_back_encoder_pina
-  // right_back_encoder_pinb
-  // right_back_motor_p
-  // right_back_motor_i
-  // right_back_motor_d
-  // right_back_motor_max_total_integral
-  // right_back_motor_wheel_diameter
-  // right_back_motor_pluses_per_revolution
-  // right_back_motor_revolutions_per_minute
-  // mpu6050_pin_sda
-  // mpu6050_pin_scl
-  // mpu6050_accel_offset_x
-  // mpu6050_accel_offset_y
-  // mpu6050_accel_offset_z
-  // mpu6050_gyro_offset_x
-  // mpu6050_gyro_offset_y
-  // mpu6050_gyro_offset_z
+  // speed_percent
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_settings_service__msg__DriverSettings__init(&msg->drivers_settings[i])) {
+      motion_settings_service__srv__MotionSettingsService_Request__fini(msg);
+      return false;
+    }
+  }
+  // sensor_settings
+  if (!motion_settings_service__msg__SensorSettings__init(&msg->sensor_settings)) {
+    motion_settings_service__srv__MotionSettingsService_Request__fini(msg);
+    return false;
+  }
+  // spd_plan_settings
+  if (!motion_settings_service__msg__SpdPlanSettings__init(&msg->spd_plan_settings)) {
+    motion_settings_service__srv__MotionSettingsService_Request__fini(msg);
+    return false;
+  }
   // motor_enable_flags
-  // enable_speed_plan
-  // is_mecanum_wheel
   return true;
 }
 
@@ -95,72 +58,18 @@ motion_settings_service__srv__MotionSettingsService_Request__fini(motion_setting
   }
   // id
   // mode
-  // milliseconds
-  // speed_percent
-  // max_v
-  // max_acc
-  // jerk
   // wheel_width
   // track_width
-  // left_front_motor_pina
-  // left_front_motor_pinb
-  // left_front_motor_pinpwm
-  // left_front_encoder_pina
-  // left_front_encoder_pinb
-  // left_front_motor_p
-  // left_front_motor_i
-  // left_front_motor_d
-  // left_front_motor_max_total_integral
-  // left_front_motor_wheel_diameter
-  // left_front_motor_pluses_per_revolution
-  // left_front_motor_revolutions_per_minute
-  // left_back_motor_pina
-  // left_back_motor_pinb
-  // left_back_motor_pinpwm
-  // left_back_encoder_pina
-  // left_back_encoder_pinb
-  // left_back_motor_p
-  // left_back_motor_i
-  // left_back_motor_d
-  // left_back_motor_max_total_integral
-  // left_back_motor_wheel_diameter
-  // left_back_motor_pluses_per_revolution
-  // left_back_motor_revolutions_per_minute
-  // right_front_motor_pina
-  // right_front_motor_pinb
-  // right_front_motor_pinpwm
-  // right_front_encoder_pina
-  // right_front_encoder_pinb
-  // right_front_motor_p
-  // right_front_motor_i
-  // right_front_motor_d
-  // right_front_motor_max_total_integral
-  // right_front_motor_wheel_diameter
-  // right_front_motor_pluses_per_revolution
-  // right_front_motor_revolutions_per_minute
-  // right_back_motor_pina
-  // right_back_motor_pinb
-  // right_back_motor_pinpwm
-  // right_back_encoder_pina
-  // right_back_encoder_pinb
-  // right_back_motor_p
-  // right_back_motor_i
-  // right_back_motor_d
-  // right_back_motor_max_total_integral
-  // right_back_motor_wheel_diameter
-  // right_back_motor_pluses_per_revolution
-  // right_back_motor_revolutions_per_minute
-  // mpu6050_pin_sda
-  // mpu6050_pin_scl
-  // mpu6050_accel_offset_x
-  // mpu6050_accel_offset_y
-  // mpu6050_accel_offset_z
-  // mpu6050_gyro_offset_x
-  // mpu6050_gyro_offset_y
-  // mpu6050_gyro_offset_z
+  // speed_percent
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    motion_settings_service__msg__DriverSettings__fini(&msg->drivers_settings[i]);
+  }
+  // sensor_settings
+  motion_settings_service__msg__SensorSettings__fini(&msg->sensor_settings);
+  // spd_plan_settings
+  motion_settings_service__msg__SpdPlanSettings__fini(&msg->spd_plan_settings);
   // motor_enable_flags
-  // enable_speed_plan
-  // is_mecanum_wheel
 }
 
 bool
@@ -177,26 +86,6 @@ motion_settings_service__srv__MotionSettingsService_Request__are_equal(const mot
   if (lhs->mode != rhs->mode) {
     return false;
   }
-  // milliseconds
-  if (lhs->milliseconds != rhs->milliseconds) {
-    return false;
-  }
-  // speed_percent
-  if (lhs->speed_percent != rhs->speed_percent) {
-    return false;
-  }
-  // max_v
-  if (lhs->max_v != rhs->max_v) {
-    return false;
-  }
-  // max_acc
-  if (lhs->max_acc != rhs->max_acc) {
-    return false;
-  }
-  // jerk
-  if (lhs->jerk != rhs->jerk) {
-    return false;
-  }
   // wheel_width
   if (lhs->wheel_width != rhs->wheel_width) {
     return false;
@@ -205,240 +94,32 @@ motion_settings_service__srv__MotionSettingsService_Request__are_equal(const mot
   if (lhs->track_width != rhs->track_width) {
     return false;
   }
-  // left_front_motor_pina
-  if (lhs->left_front_motor_pina != rhs->left_front_motor_pina) {
+  // speed_percent
+  if (lhs->speed_percent != rhs->speed_percent) {
     return false;
   }
-  // left_front_motor_pinb
-  if (lhs->left_front_motor_pinb != rhs->left_front_motor_pinb) {
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_settings_service__msg__DriverSettings__are_equal(
+        &(lhs->drivers_settings[i]), &(rhs->drivers_settings[i])))
+    {
+      return false;
+    }
+  }
+  // sensor_settings
+  if (!motion_settings_service__msg__SensorSettings__are_equal(
+      &(lhs->sensor_settings), &(rhs->sensor_settings)))
+  {
     return false;
   }
-  // left_front_motor_pinpwm
-  if (lhs->left_front_motor_pinpwm != rhs->left_front_motor_pinpwm) {
-    return false;
-  }
-  // left_front_encoder_pina
-  if (lhs->left_front_encoder_pina != rhs->left_front_encoder_pina) {
-    return false;
-  }
-  // left_front_encoder_pinb
-  if (lhs->left_front_encoder_pinb != rhs->left_front_encoder_pinb) {
-    return false;
-  }
-  // left_front_motor_p
-  if (lhs->left_front_motor_p != rhs->left_front_motor_p) {
-    return false;
-  }
-  // left_front_motor_i
-  if (lhs->left_front_motor_i != rhs->left_front_motor_i) {
-    return false;
-  }
-  // left_front_motor_d
-  if (lhs->left_front_motor_d != rhs->left_front_motor_d) {
-    return false;
-  }
-  // left_front_motor_max_total_integral
-  if (lhs->left_front_motor_max_total_integral != rhs->left_front_motor_max_total_integral) {
-    return false;
-  }
-  // left_front_motor_wheel_diameter
-  if (lhs->left_front_motor_wheel_diameter != rhs->left_front_motor_wheel_diameter) {
-    return false;
-  }
-  // left_front_motor_pluses_per_revolution
-  if (lhs->left_front_motor_pluses_per_revolution != rhs->left_front_motor_pluses_per_revolution) {
-    return false;
-  }
-  // left_front_motor_revolutions_per_minute
-  if (lhs->left_front_motor_revolutions_per_minute != rhs->left_front_motor_revolutions_per_minute) {
-    return false;
-  }
-  // left_back_motor_pina
-  if (lhs->left_back_motor_pina != rhs->left_back_motor_pina) {
-    return false;
-  }
-  // left_back_motor_pinb
-  if (lhs->left_back_motor_pinb != rhs->left_back_motor_pinb) {
-    return false;
-  }
-  // left_back_motor_pinpwm
-  if (lhs->left_back_motor_pinpwm != rhs->left_back_motor_pinpwm) {
-    return false;
-  }
-  // left_back_encoder_pina
-  if (lhs->left_back_encoder_pina != rhs->left_back_encoder_pina) {
-    return false;
-  }
-  // left_back_encoder_pinb
-  if (lhs->left_back_encoder_pinb != rhs->left_back_encoder_pinb) {
-    return false;
-  }
-  // left_back_motor_p
-  if (lhs->left_back_motor_p != rhs->left_back_motor_p) {
-    return false;
-  }
-  // left_back_motor_i
-  if (lhs->left_back_motor_i != rhs->left_back_motor_i) {
-    return false;
-  }
-  // left_back_motor_d
-  if (lhs->left_back_motor_d != rhs->left_back_motor_d) {
-    return false;
-  }
-  // left_back_motor_max_total_integral
-  if (lhs->left_back_motor_max_total_integral != rhs->left_back_motor_max_total_integral) {
-    return false;
-  }
-  // left_back_motor_wheel_diameter
-  if (lhs->left_back_motor_wheel_diameter != rhs->left_back_motor_wheel_diameter) {
-    return false;
-  }
-  // left_back_motor_pluses_per_revolution
-  if (lhs->left_back_motor_pluses_per_revolution != rhs->left_back_motor_pluses_per_revolution) {
-    return false;
-  }
-  // left_back_motor_revolutions_per_minute
-  if (lhs->left_back_motor_revolutions_per_minute != rhs->left_back_motor_revolutions_per_minute) {
-    return false;
-  }
-  // right_front_motor_pina
-  if (lhs->right_front_motor_pina != rhs->right_front_motor_pina) {
-    return false;
-  }
-  // right_front_motor_pinb
-  if (lhs->right_front_motor_pinb != rhs->right_front_motor_pinb) {
-    return false;
-  }
-  // right_front_motor_pinpwm
-  if (lhs->right_front_motor_pinpwm != rhs->right_front_motor_pinpwm) {
-    return false;
-  }
-  // right_front_encoder_pina
-  if (lhs->right_front_encoder_pina != rhs->right_front_encoder_pina) {
-    return false;
-  }
-  // right_front_encoder_pinb
-  if (lhs->right_front_encoder_pinb != rhs->right_front_encoder_pinb) {
-    return false;
-  }
-  // right_front_motor_p
-  if (lhs->right_front_motor_p != rhs->right_front_motor_p) {
-    return false;
-  }
-  // right_front_motor_i
-  if (lhs->right_front_motor_i != rhs->right_front_motor_i) {
-    return false;
-  }
-  // right_front_motor_d
-  if (lhs->right_front_motor_d != rhs->right_front_motor_d) {
-    return false;
-  }
-  // right_front_motor_max_total_integral
-  if (lhs->right_front_motor_max_total_integral != rhs->right_front_motor_max_total_integral) {
-    return false;
-  }
-  // right_front_motor_wheel_diameter
-  if (lhs->right_front_motor_wheel_diameter != rhs->right_front_motor_wheel_diameter) {
-    return false;
-  }
-  // right_front_motor_pluses_per_revolution
-  if (lhs->right_front_motor_pluses_per_revolution != rhs->right_front_motor_pluses_per_revolution) {
-    return false;
-  }
-  // right_front_motor_revolutions_per_minute
-  if (lhs->right_front_motor_revolutions_per_minute != rhs->right_front_motor_revolutions_per_minute) {
-    return false;
-  }
-  // right_back_motor_pina
-  if (lhs->right_back_motor_pina != rhs->right_back_motor_pina) {
-    return false;
-  }
-  // right_back_motor_pinb
-  if (lhs->right_back_motor_pinb != rhs->right_back_motor_pinb) {
-    return false;
-  }
-  // right_back_motor_pinpwm
-  if (lhs->right_back_motor_pinpwm != rhs->right_back_motor_pinpwm) {
-    return false;
-  }
-  // right_back_encoder_pina
-  if (lhs->right_back_encoder_pina != rhs->right_back_encoder_pina) {
-    return false;
-  }
-  // right_back_encoder_pinb
-  if (lhs->right_back_encoder_pinb != rhs->right_back_encoder_pinb) {
-    return false;
-  }
-  // right_back_motor_p
-  if (lhs->right_back_motor_p != rhs->right_back_motor_p) {
-    return false;
-  }
-  // right_back_motor_i
-  if (lhs->right_back_motor_i != rhs->right_back_motor_i) {
-    return false;
-  }
-  // right_back_motor_d
-  if (lhs->right_back_motor_d != rhs->right_back_motor_d) {
-    return false;
-  }
-  // right_back_motor_max_total_integral
-  if (lhs->right_back_motor_max_total_integral != rhs->right_back_motor_max_total_integral) {
-    return false;
-  }
-  // right_back_motor_wheel_diameter
-  if (lhs->right_back_motor_wheel_diameter != rhs->right_back_motor_wheel_diameter) {
-    return false;
-  }
-  // right_back_motor_pluses_per_revolution
-  if (lhs->right_back_motor_pluses_per_revolution != rhs->right_back_motor_pluses_per_revolution) {
-    return false;
-  }
-  // right_back_motor_revolutions_per_minute
-  if (lhs->right_back_motor_revolutions_per_minute != rhs->right_back_motor_revolutions_per_minute) {
-    return false;
-  }
-  // mpu6050_pin_sda
-  if (lhs->mpu6050_pin_sda != rhs->mpu6050_pin_sda) {
-    return false;
-  }
-  // mpu6050_pin_scl
-  if (lhs->mpu6050_pin_scl != rhs->mpu6050_pin_scl) {
-    return false;
-  }
-  // mpu6050_accel_offset_x
-  if (lhs->mpu6050_accel_offset_x != rhs->mpu6050_accel_offset_x) {
-    return false;
-  }
-  // mpu6050_accel_offset_y
-  if (lhs->mpu6050_accel_offset_y != rhs->mpu6050_accel_offset_y) {
-    return false;
-  }
-  // mpu6050_accel_offset_z
-  if (lhs->mpu6050_accel_offset_z != rhs->mpu6050_accel_offset_z) {
-    return false;
-  }
-  // mpu6050_gyro_offset_x
-  if (lhs->mpu6050_gyro_offset_x != rhs->mpu6050_gyro_offset_x) {
-    return false;
-  }
-  // mpu6050_gyro_offset_y
-  if (lhs->mpu6050_gyro_offset_y != rhs->mpu6050_gyro_offset_y) {
-    return false;
-  }
-  // mpu6050_gyro_offset_z
-  if (lhs->mpu6050_gyro_offset_z != rhs->mpu6050_gyro_offset_z) {
+  // spd_plan_settings
+  if (!motion_settings_service__msg__SpdPlanSettings__are_equal(
+      &(lhs->spd_plan_settings), &(rhs->spd_plan_settings)))
+  {
     return false;
   }
   // motor_enable_flags
   if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
-    return false;
-  }
-  // enable_speed_plan
-  if (lhs->enable_speed_plan != rhs->enable_speed_plan) {
-    return false;
-  }
-  // is_mecanum_wheel
-  if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
     return false;
   }
   return true;
@@ -456,138 +137,34 @@ motion_settings_service__srv__MotionSettingsService_Request__copy(
   output->id = input->id;
   // mode
   output->mode = input->mode;
-  // milliseconds
-  output->milliseconds = input->milliseconds;
-  // speed_percent
-  output->speed_percent = input->speed_percent;
-  // max_v
-  output->max_v = input->max_v;
-  // max_acc
-  output->max_acc = input->max_acc;
-  // jerk
-  output->jerk = input->jerk;
   // wheel_width
   output->wheel_width = input->wheel_width;
   // track_width
   output->track_width = input->track_width;
-  // left_front_motor_pina
-  output->left_front_motor_pina = input->left_front_motor_pina;
-  // left_front_motor_pinb
-  output->left_front_motor_pinb = input->left_front_motor_pinb;
-  // left_front_motor_pinpwm
-  output->left_front_motor_pinpwm = input->left_front_motor_pinpwm;
-  // left_front_encoder_pina
-  output->left_front_encoder_pina = input->left_front_encoder_pina;
-  // left_front_encoder_pinb
-  output->left_front_encoder_pinb = input->left_front_encoder_pinb;
-  // left_front_motor_p
-  output->left_front_motor_p = input->left_front_motor_p;
-  // left_front_motor_i
-  output->left_front_motor_i = input->left_front_motor_i;
-  // left_front_motor_d
-  output->left_front_motor_d = input->left_front_motor_d;
-  // left_front_motor_max_total_integral
-  output->left_front_motor_max_total_integral = input->left_front_motor_max_total_integral;
-  // left_front_motor_wheel_diameter
-  output->left_front_motor_wheel_diameter = input->left_front_motor_wheel_diameter;
-  // left_front_motor_pluses_per_revolution
-  output->left_front_motor_pluses_per_revolution = input->left_front_motor_pluses_per_revolution;
-  // left_front_motor_revolutions_per_minute
-  output->left_front_motor_revolutions_per_minute = input->left_front_motor_revolutions_per_minute;
-  // left_back_motor_pina
-  output->left_back_motor_pina = input->left_back_motor_pina;
-  // left_back_motor_pinb
-  output->left_back_motor_pinb = input->left_back_motor_pinb;
-  // left_back_motor_pinpwm
-  output->left_back_motor_pinpwm = input->left_back_motor_pinpwm;
-  // left_back_encoder_pina
-  output->left_back_encoder_pina = input->left_back_encoder_pina;
-  // left_back_encoder_pinb
-  output->left_back_encoder_pinb = input->left_back_encoder_pinb;
-  // left_back_motor_p
-  output->left_back_motor_p = input->left_back_motor_p;
-  // left_back_motor_i
-  output->left_back_motor_i = input->left_back_motor_i;
-  // left_back_motor_d
-  output->left_back_motor_d = input->left_back_motor_d;
-  // left_back_motor_max_total_integral
-  output->left_back_motor_max_total_integral = input->left_back_motor_max_total_integral;
-  // left_back_motor_wheel_diameter
-  output->left_back_motor_wheel_diameter = input->left_back_motor_wheel_diameter;
-  // left_back_motor_pluses_per_revolution
-  output->left_back_motor_pluses_per_revolution = input->left_back_motor_pluses_per_revolution;
-  // left_back_motor_revolutions_per_minute
-  output->left_back_motor_revolutions_per_minute = input->left_back_motor_revolutions_per_minute;
-  // right_front_motor_pina
-  output->right_front_motor_pina = input->right_front_motor_pina;
-  // right_front_motor_pinb
-  output->right_front_motor_pinb = input->right_front_motor_pinb;
-  // right_front_motor_pinpwm
-  output->right_front_motor_pinpwm = input->right_front_motor_pinpwm;
-  // right_front_encoder_pina
-  output->right_front_encoder_pina = input->right_front_encoder_pina;
-  // right_front_encoder_pinb
-  output->right_front_encoder_pinb = input->right_front_encoder_pinb;
-  // right_front_motor_p
-  output->right_front_motor_p = input->right_front_motor_p;
-  // right_front_motor_i
-  output->right_front_motor_i = input->right_front_motor_i;
-  // right_front_motor_d
-  output->right_front_motor_d = input->right_front_motor_d;
-  // right_front_motor_max_total_integral
-  output->right_front_motor_max_total_integral = input->right_front_motor_max_total_integral;
-  // right_front_motor_wheel_diameter
-  output->right_front_motor_wheel_diameter = input->right_front_motor_wheel_diameter;
-  // right_front_motor_pluses_per_revolution
-  output->right_front_motor_pluses_per_revolution = input->right_front_motor_pluses_per_revolution;
-  // right_front_motor_revolutions_per_minute
-  output->right_front_motor_revolutions_per_minute = input->right_front_motor_revolutions_per_minute;
-  // right_back_motor_pina
-  output->right_back_motor_pina = input->right_back_motor_pina;
-  // right_back_motor_pinb
-  output->right_back_motor_pinb = input->right_back_motor_pinb;
-  // right_back_motor_pinpwm
-  output->right_back_motor_pinpwm = input->right_back_motor_pinpwm;
-  // right_back_encoder_pina
-  output->right_back_encoder_pina = input->right_back_encoder_pina;
-  // right_back_encoder_pinb
-  output->right_back_encoder_pinb = input->right_back_encoder_pinb;
-  // right_back_motor_p
-  output->right_back_motor_p = input->right_back_motor_p;
-  // right_back_motor_i
-  output->right_back_motor_i = input->right_back_motor_i;
-  // right_back_motor_d
-  output->right_back_motor_d = input->right_back_motor_d;
-  // right_back_motor_max_total_integral
-  output->right_back_motor_max_total_integral = input->right_back_motor_max_total_integral;
-  // right_back_motor_wheel_diameter
-  output->right_back_motor_wheel_diameter = input->right_back_motor_wheel_diameter;
-  // right_back_motor_pluses_per_revolution
-  output->right_back_motor_pluses_per_revolution = input->right_back_motor_pluses_per_revolution;
-  // right_back_motor_revolutions_per_minute
-  output->right_back_motor_revolutions_per_minute = input->right_back_motor_revolutions_per_minute;
-  // mpu6050_pin_sda
-  output->mpu6050_pin_sda = input->mpu6050_pin_sda;
-  // mpu6050_pin_scl
-  output->mpu6050_pin_scl = input->mpu6050_pin_scl;
-  // mpu6050_accel_offset_x
-  output->mpu6050_accel_offset_x = input->mpu6050_accel_offset_x;
-  // mpu6050_accel_offset_y
-  output->mpu6050_accel_offset_y = input->mpu6050_accel_offset_y;
-  // mpu6050_accel_offset_z
-  output->mpu6050_accel_offset_z = input->mpu6050_accel_offset_z;
-  // mpu6050_gyro_offset_x
-  output->mpu6050_gyro_offset_x = input->mpu6050_gyro_offset_x;
-  // mpu6050_gyro_offset_y
-  output->mpu6050_gyro_offset_y = input->mpu6050_gyro_offset_y;
-  // mpu6050_gyro_offset_z
-  output->mpu6050_gyro_offset_z = input->mpu6050_gyro_offset_z;
+  // speed_percent
+  output->speed_percent = input->speed_percent;
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_settings_service__msg__DriverSettings__copy(
+        &(input->drivers_settings[i]), &(output->drivers_settings[i])))
+    {
+      return false;
+    }
+  }
+  // sensor_settings
+  if (!motion_settings_service__msg__SensorSettings__copy(
+      &(input->sensor_settings), &(output->sensor_settings)))
+  {
+    return false;
+  }
+  // spd_plan_settings
+  if (!motion_settings_service__msg__SpdPlanSettings__copy(
+      &(input->spd_plan_settings), &(output->spd_plan_settings)))
+  {
+    return false;
+  }
   // motor_enable_flags
   output->motor_enable_flags = input->motor_enable_flags;
-  // enable_speed_plan
-  output->enable_speed_plan = input->enable_speed_plan;
-  // is_mecanum_wheel
-  output->is_mecanum_wheel = input->is_mecanum_wheel;
   return true;
 }
 
@@ -771,6 +348,17 @@ motion_settings_service__srv__MotionSettingsService_Request__Sequence__copy(
 }
 
 
+// Include directives for member types
+// Member `drivers_settings`
+// already included above
+// #include "motion_settings_service/msg/detail/driver_settings__functions.h"
+// Member `sensor_settings`
+// already included above
+// #include "motion_settings_service/msg/detail/sensor_settings__functions.h"
+// Member `spd_plan_settings`
+// already included above
+// #include "motion_settings_service/msg/detail/spd_plan_settings__functions.h"
+
 bool
 motion_settings_service__srv__MotionSettingsService_Response__init(motion_settings_service__srv__MotionSettingsService_Response * msg)
 {
@@ -778,73 +366,28 @@ motion_settings_service__srv__MotionSettingsService_Response__init(motion_settin
     return false;
   }
   // id
-  // state
-  // milliseconds
-  // speed_percent
-  // max_v
-  // max_acc
-  // jerk
+  // mode
   // wheel_width
   // track_width
-  // left_front_motor_pina
-  // left_front_motor_pinb
-  // left_front_motor_pinpwm
-  // left_front_encoder_pina
-  // left_front_encoder_pinb
-  // left_front_motor_p
-  // left_front_motor_i
-  // left_front_motor_d
-  // left_front_motor_max_total_integral
-  // left_front_motor_wheel_diameter
-  // left_front_motor_pluses_per_revolution
-  // left_front_motor_revolutions_per_minute
-  // left_back_motor_pina
-  // left_back_motor_pinb
-  // left_back_motor_pinpwm
-  // left_back_encoder_pina
-  // left_back_encoder_pinb
-  // left_back_motor_p
-  // left_back_motor_i
-  // left_back_motor_d
-  // left_back_motor_max_total_integral
-  // left_back_motor_wheel_diameter
-  // left_back_motor_pluses_per_revolution
-  // left_back_motor_revolutions_per_minute
-  // right_front_motor_pina
-  // right_front_motor_pinb
-  // right_front_motor_pinpwm
-  // right_front_encoder_pina
-  // right_front_encoder_pinb
-  // right_front_motor_p
-  // right_front_motor_i
-  // right_front_motor_d
-  // right_front_motor_max_total_integral
-  // right_front_motor_wheel_diameter
-  // right_front_motor_pluses_per_revolution
-  // right_front_motor_revolutions_per_minute
-  // right_back_motor_pina
-  // right_back_motor_pinb
-  // right_back_motor_pinpwm
-  // right_back_encoder_pina
-  // right_back_encoder_pinb
-  // right_back_motor_p
-  // right_back_motor_i
-  // right_back_motor_d
-  // right_back_motor_max_total_integral
-  // right_back_motor_wheel_diameter
-  // right_back_motor_pluses_per_revolution
-  // right_back_motor_revolutions_per_minute
-  // mpu6050_pin_sda
-  // mpu6050_pin_scl
-  // mpu6050_accel_offset_x
-  // mpu6050_accel_offset_y
-  // mpu6050_accel_offset_z
-  // mpu6050_gyro_offset_x
-  // mpu6050_gyro_offset_y
-  // mpu6050_gyro_offset_z
+  // speed_percent
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_settings_service__msg__DriverSettings__init(&msg->drivers_settings[i])) {
+      motion_settings_service__srv__MotionSettingsService_Response__fini(msg);
+      return false;
+    }
+  }
+  // sensor_settings
+  if (!motion_settings_service__msg__SensorSettings__init(&msg->sensor_settings)) {
+    motion_settings_service__srv__MotionSettingsService_Response__fini(msg);
+    return false;
+  }
+  // spd_plan_settings
+  if (!motion_settings_service__msg__SpdPlanSettings__init(&msg->spd_plan_settings)) {
+    motion_settings_service__srv__MotionSettingsService_Response__fini(msg);
+    return false;
+  }
   // motor_enable_flags
-  // enable_speed_plan
-  // is_mecanum_wheel
   return true;
 }
 
@@ -855,73 +398,19 @@ motion_settings_service__srv__MotionSettingsService_Response__fini(motion_settin
     return;
   }
   // id
-  // state
-  // milliseconds
-  // speed_percent
-  // max_v
-  // max_acc
-  // jerk
+  // mode
   // wheel_width
   // track_width
-  // left_front_motor_pina
-  // left_front_motor_pinb
-  // left_front_motor_pinpwm
-  // left_front_encoder_pina
-  // left_front_encoder_pinb
-  // left_front_motor_p
-  // left_front_motor_i
-  // left_front_motor_d
-  // left_front_motor_max_total_integral
-  // left_front_motor_wheel_diameter
-  // left_front_motor_pluses_per_revolution
-  // left_front_motor_revolutions_per_minute
-  // left_back_motor_pina
-  // left_back_motor_pinb
-  // left_back_motor_pinpwm
-  // left_back_encoder_pina
-  // left_back_encoder_pinb
-  // left_back_motor_p
-  // left_back_motor_i
-  // left_back_motor_d
-  // left_back_motor_max_total_integral
-  // left_back_motor_wheel_diameter
-  // left_back_motor_pluses_per_revolution
-  // left_back_motor_revolutions_per_minute
-  // right_front_motor_pina
-  // right_front_motor_pinb
-  // right_front_motor_pinpwm
-  // right_front_encoder_pina
-  // right_front_encoder_pinb
-  // right_front_motor_p
-  // right_front_motor_i
-  // right_front_motor_d
-  // right_front_motor_max_total_integral
-  // right_front_motor_wheel_diameter
-  // right_front_motor_pluses_per_revolution
-  // right_front_motor_revolutions_per_minute
-  // right_back_motor_pina
-  // right_back_motor_pinb
-  // right_back_motor_pinpwm
-  // right_back_encoder_pina
-  // right_back_encoder_pinb
-  // right_back_motor_p
-  // right_back_motor_i
-  // right_back_motor_d
-  // right_back_motor_max_total_integral
-  // right_back_motor_wheel_diameter
-  // right_back_motor_pluses_per_revolution
-  // right_back_motor_revolutions_per_minute
-  // mpu6050_pin_sda
-  // mpu6050_pin_scl
-  // mpu6050_accel_offset_x
-  // mpu6050_accel_offset_y
-  // mpu6050_accel_offset_z
-  // mpu6050_gyro_offset_x
-  // mpu6050_gyro_offset_y
-  // mpu6050_gyro_offset_z
+  // speed_percent
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    motion_settings_service__msg__DriverSettings__fini(&msg->drivers_settings[i]);
+  }
+  // sensor_settings
+  motion_settings_service__msg__SensorSettings__fini(&msg->sensor_settings);
+  // spd_plan_settings
+  motion_settings_service__msg__SpdPlanSettings__fini(&msg->spd_plan_settings);
   // motor_enable_flags
-  // enable_speed_plan
-  // is_mecanum_wheel
 }
 
 bool
@@ -934,28 +423,8 @@ motion_settings_service__srv__MotionSettingsService_Response__are_equal(const mo
   if (lhs->id != rhs->id) {
     return false;
   }
-  // state
-  if (lhs->state != rhs->state) {
-    return false;
-  }
-  // milliseconds
-  if (lhs->milliseconds != rhs->milliseconds) {
-    return false;
-  }
-  // speed_percent
-  if (lhs->speed_percent != rhs->speed_percent) {
-    return false;
-  }
-  // max_v
-  if (lhs->max_v != rhs->max_v) {
-    return false;
-  }
-  // max_acc
-  if (lhs->max_acc != rhs->max_acc) {
-    return false;
-  }
-  // jerk
-  if (lhs->jerk != rhs->jerk) {
+  // mode
+  if (lhs->mode != rhs->mode) {
     return false;
   }
   // wheel_width
@@ -966,240 +435,32 @@ motion_settings_service__srv__MotionSettingsService_Response__are_equal(const mo
   if (lhs->track_width != rhs->track_width) {
     return false;
   }
-  // left_front_motor_pina
-  if (lhs->left_front_motor_pina != rhs->left_front_motor_pina) {
+  // speed_percent
+  if (lhs->speed_percent != rhs->speed_percent) {
     return false;
   }
-  // left_front_motor_pinb
-  if (lhs->left_front_motor_pinb != rhs->left_front_motor_pinb) {
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_settings_service__msg__DriverSettings__are_equal(
+        &(lhs->drivers_settings[i]), &(rhs->drivers_settings[i])))
+    {
+      return false;
+    }
+  }
+  // sensor_settings
+  if (!motion_settings_service__msg__SensorSettings__are_equal(
+      &(lhs->sensor_settings), &(rhs->sensor_settings)))
+  {
     return false;
   }
-  // left_front_motor_pinpwm
-  if (lhs->left_front_motor_pinpwm != rhs->left_front_motor_pinpwm) {
-    return false;
-  }
-  // left_front_encoder_pina
-  if (lhs->left_front_encoder_pina != rhs->left_front_encoder_pina) {
-    return false;
-  }
-  // left_front_encoder_pinb
-  if (lhs->left_front_encoder_pinb != rhs->left_front_encoder_pinb) {
-    return false;
-  }
-  // left_front_motor_p
-  if (lhs->left_front_motor_p != rhs->left_front_motor_p) {
-    return false;
-  }
-  // left_front_motor_i
-  if (lhs->left_front_motor_i != rhs->left_front_motor_i) {
-    return false;
-  }
-  // left_front_motor_d
-  if (lhs->left_front_motor_d != rhs->left_front_motor_d) {
-    return false;
-  }
-  // left_front_motor_max_total_integral
-  if (lhs->left_front_motor_max_total_integral != rhs->left_front_motor_max_total_integral) {
-    return false;
-  }
-  // left_front_motor_wheel_diameter
-  if (lhs->left_front_motor_wheel_diameter != rhs->left_front_motor_wheel_diameter) {
-    return false;
-  }
-  // left_front_motor_pluses_per_revolution
-  if (lhs->left_front_motor_pluses_per_revolution != rhs->left_front_motor_pluses_per_revolution) {
-    return false;
-  }
-  // left_front_motor_revolutions_per_minute
-  if (lhs->left_front_motor_revolutions_per_minute != rhs->left_front_motor_revolutions_per_minute) {
-    return false;
-  }
-  // left_back_motor_pina
-  if (lhs->left_back_motor_pina != rhs->left_back_motor_pina) {
-    return false;
-  }
-  // left_back_motor_pinb
-  if (lhs->left_back_motor_pinb != rhs->left_back_motor_pinb) {
-    return false;
-  }
-  // left_back_motor_pinpwm
-  if (lhs->left_back_motor_pinpwm != rhs->left_back_motor_pinpwm) {
-    return false;
-  }
-  // left_back_encoder_pina
-  if (lhs->left_back_encoder_pina != rhs->left_back_encoder_pina) {
-    return false;
-  }
-  // left_back_encoder_pinb
-  if (lhs->left_back_encoder_pinb != rhs->left_back_encoder_pinb) {
-    return false;
-  }
-  // left_back_motor_p
-  if (lhs->left_back_motor_p != rhs->left_back_motor_p) {
-    return false;
-  }
-  // left_back_motor_i
-  if (lhs->left_back_motor_i != rhs->left_back_motor_i) {
-    return false;
-  }
-  // left_back_motor_d
-  if (lhs->left_back_motor_d != rhs->left_back_motor_d) {
-    return false;
-  }
-  // left_back_motor_max_total_integral
-  if (lhs->left_back_motor_max_total_integral != rhs->left_back_motor_max_total_integral) {
-    return false;
-  }
-  // left_back_motor_wheel_diameter
-  if (lhs->left_back_motor_wheel_diameter != rhs->left_back_motor_wheel_diameter) {
-    return false;
-  }
-  // left_back_motor_pluses_per_revolution
-  if (lhs->left_back_motor_pluses_per_revolution != rhs->left_back_motor_pluses_per_revolution) {
-    return false;
-  }
-  // left_back_motor_revolutions_per_minute
-  if (lhs->left_back_motor_revolutions_per_minute != rhs->left_back_motor_revolutions_per_minute) {
-    return false;
-  }
-  // right_front_motor_pina
-  if (lhs->right_front_motor_pina != rhs->right_front_motor_pina) {
-    return false;
-  }
-  // right_front_motor_pinb
-  if (lhs->right_front_motor_pinb != rhs->right_front_motor_pinb) {
-    return false;
-  }
-  // right_front_motor_pinpwm
-  if (lhs->right_front_motor_pinpwm != rhs->right_front_motor_pinpwm) {
-    return false;
-  }
-  // right_front_encoder_pina
-  if (lhs->right_front_encoder_pina != rhs->right_front_encoder_pina) {
-    return false;
-  }
-  // right_front_encoder_pinb
-  if (lhs->right_front_encoder_pinb != rhs->right_front_encoder_pinb) {
-    return false;
-  }
-  // right_front_motor_p
-  if (lhs->right_front_motor_p != rhs->right_front_motor_p) {
-    return false;
-  }
-  // right_front_motor_i
-  if (lhs->right_front_motor_i != rhs->right_front_motor_i) {
-    return false;
-  }
-  // right_front_motor_d
-  if (lhs->right_front_motor_d != rhs->right_front_motor_d) {
-    return false;
-  }
-  // right_front_motor_max_total_integral
-  if (lhs->right_front_motor_max_total_integral != rhs->right_front_motor_max_total_integral) {
-    return false;
-  }
-  // right_front_motor_wheel_diameter
-  if (lhs->right_front_motor_wheel_diameter != rhs->right_front_motor_wheel_diameter) {
-    return false;
-  }
-  // right_front_motor_pluses_per_revolution
-  if (lhs->right_front_motor_pluses_per_revolution != rhs->right_front_motor_pluses_per_revolution) {
-    return false;
-  }
-  // right_front_motor_revolutions_per_minute
-  if (lhs->right_front_motor_revolutions_per_minute != rhs->right_front_motor_revolutions_per_minute) {
-    return false;
-  }
-  // right_back_motor_pina
-  if (lhs->right_back_motor_pina != rhs->right_back_motor_pina) {
-    return false;
-  }
-  // right_back_motor_pinb
-  if (lhs->right_back_motor_pinb != rhs->right_back_motor_pinb) {
-    return false;
-  }
-  // right_back_motor_pinpwm
-  if (lhs->right_back_motor_pinpwm != rhs->right_back_motor_pinpwm) {
-    return false;
-  }
-  // right_back_encoder_pina
-  if (lhs->right_back_encoder_pina != rhs->right_back_encoder_pina) {
-    return false;
-  }
-  // right_back_encoder_pinb
-  if (lhs->right_back_encoder_pinb != rhs->right_back_encoder_pinb) {
-    return false;
-  }
-  // right_back_motor_p
-  if (lhs->right_back_motor_p != rhs->right_back_motor_p) {
-    return false;
-  }
-  // right_back_motor_i
-  if (lhs->right_back_motor_i != rhs->right_back_motor_i) {
-    return false;
-  }
-  // right_back_motor_d
-  if (lhs->right_back_motor_d != rhs->right_back_motor_d) {
-    return false;
-  }
-  // right_back_motor_max_total_integral
-  if (lhs->right_back_motor_max_total_integral != rhs->right_back_motor_max_total_integral) {
-    return false;
-  }
-  // right_back_motor_wheel_diameter
-  if (lhs->right_back_motor_wheel_diameter != rhs->right_back_motor_wheel_diameter) {
-    return false;
-  }
-  // right_back_motor_pluses_per_revolution
-  if (lhs->right_back_motor_pluses_per_revolution != rhs->right_back_motor_pluses_per_revolution) {
-    return false;
-  }
-  // right_back_motor_revolutions_per_minute
-  if (lhs->right_back_motor_revolutions_per_minute != rhs->right_back_motor_revolutions_per_minute) {
-    return false;
-  }
-  // mpu6050_pin_sda
-  if (lhs->mpu6050_pin_sda != rhs->mpu6050_pin_sda) {
-    return false;
-  }
-  // mpu6050_pin_scl
-  if (lhs->mpu6050_pin_scl != rhs->mpu6050_pin_scl) {
-    return false;
-  }
-  // mpu6050_accel_offset_x
-  if (lhs->mpu6050_accel_offset_x != rhs->mpu6050_accel_offset_x) {
-    return false;
-  }
-  // mpu6050_accel_offset_y
-  if (lhs->mpu6050_accel_offset_y != rhs->mpu6050_accel_offset_y) {
-    return false;
-  }
-  // mpu6050_accel_offset_z
-  if (lhs->mpu6050_accel_offset_z != rhs->mpu6050_accel_offset_z) {
-    return false;
-  }
-  // mpu6050_gyro_offset_x
-  if (lhs->mpu6050_gyro_offset_x != rhs->mpu6050_gyro_offset_x) {
-    return false;
-  }
-  // mpu6050_gyro_offset_y
-  if (lhs->mpu6050_gyro_offset_y != rhs->mpu6050_gyro_offset_y) {
-    return false;
-  }
-  // mpu6050_gyro_offset_z
-  if (lhs->mpu6050_gyro_offset_z != rhs->mpu6050_gyro_offset_z) {
+  // spd_plan_settings
+  if (!motion_settings_service__msg__SpdPlanSettings__are_equal(
+      &(lhs->spd_plan_settings), &(rhs->spd_plan_settings)))
+  {
     return false;
   }
   // motor_enable_flags
   if (lhs->motor_enable_flags != rhs->motor_enable_flags) {
-    return false;
-  }
-  // enable_speed_plan
-  if (lhs->enable_speed_plan != rhs->enable_speed_plan) {
-    return false;
-  }
-  // is_mecanum_wheel
-  if (lhs->is_mecanum_wheel != rhs->is_mecanum_wheel) {
     return false;
   }
   return true;
@@ -1215,140 +476,36 @@ motion_settings_service__srv__MotionSettingsService_Response__copy(
   }
   // id
   output->id = input->id;
-  // state
-  output->state = input->state;
-  // milliseconds
-  output->milliseconds = input->milliseconds;
-  // speed_percent
-  output->speed_percent = input->speed_percent;
-  // max_v
-  output->max_v = input->max_v;
-  // max_acc
-  output->max_acc = input->max_acc;
-  // jerk
-  output->jerk = input->jerk;
+  // mode
+  output->mode = input->mode;
   // wheel_width
   output->wheel_width = input->wheel_width;
   // track_width
   output->track_width = input->track_width;
-  // left_front_motor_pina
-  output->left_front_motor_pina = input->left_front_motor_pina;
-  // left_front_motor_pinb
-  output->left_front_motor_pinb = input->left_front_motor_pinb;
-  // left_front_motor_pinpwm
-  output->left_front_motor_pinpwm = input->left_front_motor_pinpwm;
-  // left_front_encoder_pina
-  output->left_front_encoder_pina = input->left_front_encoder_pina;
-  // left_front_encoder_pinb
-  output->left_front_encoder_pinb = input->left_front_encoder_pinb;
-  // left_front_motor_p
-  output->left_front_motor_p = input->left_front_motor_p;
-  // left_front_motor_i
-  output->left_front_motor_i = input->left_front_motor_i;
-  // left_front_motor_d
-  output->left_front_motor_d = input->left_front_motor_d;
-  // left_front_motor_max_total_integral
-  output->left_front_motor_max_total_integral = input->left_front_motor_max_total_integral;
-  // left_front_motor_wheel_diameter
-  output->left_front_motor_wheel_diameter = input->left_front_motor_wheel_diameter;
-  // left_front_motor_pluses_per_revolution
-  output->left_front_motor_pluses_per_revolution = input->left_front_motor_pluses_per_revolution;
-  // left_front_motor_revolutions_per_minute
-  output->left_front_motor_revolutions_per_minute = input->left_front_motor_revolutions_per_minute;
-  // left_back_motor_pina
-  output->left_back_motor_pina = input->left_back_motor_pina;
-  // left_back_motor_pinb
-  output->left_back_motor_pinb = input->left_back_motor_pinb;
-  // left_back_motor_pinpwm
-  output->left_back_motor_pinpwm = input->left_back_motor_pinpwm;
-  // left_back_encoder_pina
-  output->left_back_encoder_pina = input->left_back_encoder_pina;
-  // left_back_encoder_pinb
-  output->left_back_encoder_pinb = input->left_back_encoder_pinb;
-  // left_back_motor_p
-  output->left_back_motor_p = input->left_back_motor_p;
-  // left_back_motor_i
-  output->left_back_motor_i = input->left_back_motor_i;
-  // left_back_motor_d
-  output->left_back_motor_d = input->left_back_motor_d;
-  // left_back_motor_max_total_integral
-  output->left_back_motor_max_total_integral = input->left_back_motor_max_total_integral;
-  // left_back_motor_wheel_diameter
-  output->left_back_motor_wheel_diameter = input->left_back_motor_wheel_diameter;
-  // left_back_motor_pluses_per_revolution
-  output->left_back_motor_pluses_per_revolution = input->left_back_motor_pluses_per_revolution;
-  // left_back_motor_revolutions_per_minute
-  output->left_back_motor_revolutions_per_minute = input->left_back_motor_revolutions_per_minute;
-  // right_front_motor_pina
-  output->right_front_motor_pina = input->right_front_motor_pina;
-  // right_front_motor_pinb
-  output->right_front_motor_pinb = input->right_front_motor_pinb;
-  // right_front_motor_pinpwm
-  output->right_front_motor_pinpwm = input->right_front_motor_pinpwm;
-  // right_front_encoder_pina
-  output->right_front_encoder_pina = input->right_front_encoder_pina;
-  // right_front_encoder_pinb
-  output->right_front_encoder_pinb = input->right_front_encoder_pinb;
-  // right_front_motor_p
-  output->right_front_motor_p = input->right_front_motor_p;
-  // right_front_motor_i
-  output->right_front_motor_i = input->right_front_motor_i;
-  // right_front_motor_d
-  output->right_front_motor_d = input->right_front_motor_d;
-  // right_front_motor_max_total_integral
-  output->right_front_motor_max_total_integral = input->right_front_motor_max_total_integral;
-  // right_front_motor_wheel_diameter
-  output->right_front_motor_wheel_diameter = input->right_front_motor_wheel_diameter;
-  // right_front_motor_pluses_per_revolution
-  output->right_front_motor_pluses_per_revolution = input->right_front_motor_pluses_per_revolution;
-  // right_front_motor_revolutions_per_minute
-  output->right_front_motor_revolutions_per_minute = input->right_front_motor_revolutions_per_minute;
-  // right_back_motor_pina
-  output->right_back_motor_pina = input->right_back_motor_pina;
-  // right_back_motor_pinb
-  output->right_back_motor_pinb = input->right_back_motor_pinb;
-  // right_back_motor_pinpwm
-  output->right_back_motor_pinpwm = input->right_back_motor_pinpwm;
-  // right_back_encoder_pina
-  output->right_back_encoder_pina = input->right_back_encoder_pina;
-  // right_back_encoder_pinb
-  output->right_back_encoder_pinb = input->right_back_encoder_pinb;
-  // right_back_motor_p
-  output->right_back_motor_p = input->right_back_motor_p;
-  // right_back_motor_i
-  output->right_back_motor_i = input->right_back_motor_i;
-  // right_back_motor_d
-  output->right_back_motor_d = input->right_back_motor_d;
-  // right_back_motor_max_total_integral
-  output->right_back_motor_max_total_integral = input->right_back_motor_max_total_integral;
-  // right_back_motor_wheel_diameter
-  output->right_back_motor_wheel_diameter = input->right_back_motor_wheel_diameter;
-  // right_back_motor_pluses_per_revolution
-  output->right_back_motor_pluses_per_revolution = input->right_back_motor_pluses_per_revolution;
-  // right_back_motor_revolutions_per_minute
-  output->right_back_motor_revolutions_per_minute = input->right_back_motor_revolutions_per_minute;
-  // mpu6050_pin_sda
-  output->mpu6050_pin_sda = input->mpu6050_pin_sda;
-  // mpu6050_pin_scl
-  output->mpu6050_pin_scl = input->mpu6050_pin_scl;
-  // mpu6050_accel_offset_x
-  output->mpu6050_accel_offset_x = input->mpu6050_accel_offset_x;
-  // mpu6050_accel_offset_y
-  output->mpu6050_accel_offset_y = input->mpu6050_accel_offset_y;
-  // mpu6050_accel_offset_z
-  output->mpu6050_accel_offset_z = input->mpu6050_accel_offset_z;
-  // mpu6050_gyro_offset_x
-  output->mpu6050_gyro_offset_x = input->mpu6050_gyro_offset_x;
-  // mpu6050_gyro_offset_y
-  output->mpu6050_gyro_offset_y = input->mpu6050_gyro_offset_y;
-  // mpu6050_gyro_offset_z
-  output->mpu6050_gyro_offset_z = input->mpu6050_gyro_offset_z;
+  // speed_percent
+  output->speed_percent = input->speed_percent;
+  // drivers_settings
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_settings_service__msg__DriverSettings__copy(
+        &(input->drivers_settings[i]), &(output->drivers_settings[i])))
+    {
+      return false;
+    }
+  }
+  // sensor_settings
+  if (!motion_settings_service__msg__SensorSettings__copy(
+      &(input->sensor_settings), &(output->sensor_settings)))
+  {
+    return false;
+  }
+  // spd_plan_settings
+  if (!motion_settings_service__msg__SpdPlanSettings__copy(
+      &(input->spd_plan_settings), &(output->spd_plan_settings)))
+  {
+    return false;
+  }
   // motor_enable_flags
   output->motor_enable_flags = input->motor_enable_flags;
-  // enable_speed_plan
-  output->enable_speed_plan = input->enable_speed_plan;
-  // is_mecanum_wheel
-  output->is_mecanum_wheel = input->is_mecanum_wheel;
   return true;
 }
 

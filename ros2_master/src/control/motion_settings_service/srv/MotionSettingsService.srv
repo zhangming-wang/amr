@@ -1,39 +1,29 @@
 uint64 id
-
 int32 mode
-int32 milliseconds
 
 float32 wheel_width
 float32 track_width
 
 float32 speed_percent
-float32 max_v
-float32 max_acc
-float32 jerk
 
-motion_settings_service/DriverConfig[2] drivers_config
-motion_settings_service/MpuConfig mpu_config
+motion_settings_service/DriverSettings[2] drivers_settings
+motion_settings_service/SensorSettings sensor_settings
+motion_settings_service/SpdPlanSettings spd_plan_settings
 
 uint8 motor_enable_flags
-bool enable_speed_plan
 
 ---
 
 uint64 id
-
 int32 mode
-int32 milliseconds
 
 float32 wheel_width
 float32 track_width
 
 float32 speed_percent
-float32 max_v
-float32 max_acc
-float32 jerk
 
-motion_settings_service/DriverConfig[2] drivers_config
-motion_settings_service/MpuConfig mpu_config
+motion_settings_service/DriverSettings[2] drivers_settings
+motion_settings_service/SensorSettings sensor_settings
+motion_settings_service/SpdPlanSettings spd_plan_settings
 
 uint8 motor_enable_flags
-bool enable_speed_plan

@@ -171,35 +171,26 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
 
     else if (request->mode == MotionService::Type::SetSpeedPercent) {
         motionControl->set_speed_percent(request->speed_percent);
-        response->max_v = motionControl->get_speed_plan_parms().max_v;
+        response->spd_plan_settings.max_v = motionControl->get_speed_plan_parms().max_v;
         response->speed_percent = motionControl->get_speed_percent();
     } else if (request->mode == MotionService::Type::SetSpeedPlanState) {
         auto spd_params = motionControl->get_speed_plan_parms();
-        spd_params.enable = request->enable_speed_plan;
+        spd_params.enable = request->spd_plan_settings.enable;
         motionControl->set_speed_plan_parms(spd_params);
-        response->enable_speed_plan = spd_params.enable;
+        response->spd_plan_settings.enable = spd_params.enable;
     }
 
     else if (request->mode == MotionService::Type::ReadParams) {
         motionControl->read_params(response);
         sensorsControl->read_params(response);
     } else if (request->mode == MotionService::Type::WriteParams) {
-        if (motionControl->get_speed_plan_parms().milliseconds != request->milliseconds) {
+        if (motionControl->get_speed_plan_parms().milliseconds != request->spd_plan_settings.milliseconds) {
             instance->_create_publish_motion_status_timer();
         }
 
-        // motionControl->set_left_front_motor_pid_params(request->left_front_motor_p, request->left_front_motor_i, request->left_front_motor_d, request->left_front_motor_max_total_integral);
-        // motionControl->set_left_back_motor_pid_params(request->left_back_motor_p, request->left_back_motor_i, request->left_back_motor_d, request->left_back_motor_max_total_integral);
+        motionControl->write_params(request);
+        sensorsControl->write_params(request);
 
-        // motionControl->set_right_front_motor_pid_params(request->right_front_motor_p, request->right_front_motor_i, request->right_front_motor_d, request->right_front_motor_max_total_integral);
-        // motionControl->set_right_back_motor_pid_params(request->right_back_motor_p, request->right_back_motor_i, request->right_back_motor_d, request->right_back_motor_max_total_integral);
-
-        motionControl->set_speed_plan_parms(request->milliseconds, request->max_v, request->max_acc, request->jerk, request->enable_speed_plan);
-        motionControl->set_motor_enable_flags(request->motor_enable_flags);
-
-        sensorsControl->get_mpu6050_control()->set_offset(request->mpu6050_accel_offset_x, request->mpu6050_accel_offset_y, request->mpu6050_accel_offset_z,
-                                                          request->mpu6050_gyro_offset_x, request->mpu6050_gyro_offset_y, request->mpu6050_gyro_offset_z);
-        response->max_v = motionControl->get_speed_plan_parms().max_v;
         response->speed_percent = motionControl->get_speed_percent();
     } else if (request->mode == MotionService::Type::SaveParams) {
         motionControl->save_params();
@@ -210,22 +201,14 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
         motionControl->read_config(response);
         sensorsControl->read_config(response);
     } else if (request->mode == MotionService::Type::WriteConfig) {
-        motionControl->set_model_params(request->track_width, request->wheel_width);
-        // motionControl->set_left_front_motor_config_params(request->left_front_motor_pina, request->left_front_motor_pinb, request->left_front_encoder_pina, request->left_front_encoder_pinb, request->left_front_motor_pinpwm,
-        //                                                   request->left_front_motor_wheel_diameter, request->left_front_motor_pluses_per_revolution, request->left_front_motor_revolutions_per_minute);
-        // motionControl->set_left_back_motor_config_params(request->left_back_motor_pina, request->left_back_motor_pinb, request->left_back_encoder_pina, request->left_back_encoder_pinb, request->left_back_motor_pinpwm,
-        //                                                  request->left_back_motor_wheel_diameter, request->left_back_motor_pluses_per_revolution, request->left_back_motor_revolutions_per_minute);
-        // motionControl->set_right_front_motor_config_params(request->right_front_motor_pina, request->right_front_motor_pinb, request->right_front_encoder_pina, request->right_front_encoder_pinb, request->right_front_motor_pinpwm,
-        //                                                    request->right_front_motor_wheel_diameter, request->right_front_motor_pluses_per_revolution, request->right_front_motor_revolutions_per_minute);
-        // motionControl->set_right_back_motor_config_params(request->right_back_motor_pina, request->right_back_motor_pinb, request->right_back_encoder_pina, request->right_back_encoder_pinb, request->right_back_motor_pinpwm,
-        //                                                   request->right_back_motor_wheel_diameter, request->right_back_motor_pluses_per_revolution, request->right_back_motor_revolutions_per_minute);
-        sensorsControl->get_mpu6050_control()->set_pins(request->mpu6050_pin_sda, request->mpu6050_pin_scl);
+        motionControl->write_config(request);
+        sensorsControl->write_config(request);
     } else if (request->mode == MotionService::Type::SaveConfig) {
         motionControl->save_config();
         sensorsControl->save_config();
     }
 
-    response->state = request->mode;
+    response->mode = request->mode;
     response->id = request->id;
 }
 
@@ -240,6 +223,7 @@ void MotionNodeTask::publish_msgs() {
     }
 
     if (motion_status_publisher_initialized_) {
+        motion_status_msg_.seq++;
         motion_status_msg_.stamp = get_now_ns();
         MotionControlTask::instance().get_data(motion_status_msg_);
         SensorsControlTask::instance().get_data(motion_status_msg_);

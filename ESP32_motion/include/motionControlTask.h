@@ -60,19 +60,7 @@ public:
     void set_motor_enable_flags(uint8_t flags);
     uint8_t get_motor_enable_flags();
 
-    void set_model_params(float track_width, float wheel_width);
-
-    void set_left_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
-    void set_right_motor_config_params(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
-
-    void set_left_motor_pid_params(float p, float i, float d, float max_total_integral);
-    void set_right_motor_pid_params(float p, float i, float d, float max_total_integral);
-
-    void set_left_motor_ff_params(float k, float b);
-    void set_right_motor_ff_params(float k, float b);
-
     void set_speed_plan_parms(const SpdPlanParams &params);
-    void set_speed_plan_parms(int milliseconds, float max_v, float max_acc, float jerk, bool enable);
     const SpdPlanParams &get_speed_plan_parms();
 
     void set_speed_percent(float percent);
@@ -81,11 +69,11 @@ public:
     void get_data(motion_status_msgs__msg__MotionStatus &msg);
 
     void read_config(motion_settings_service__srv__MotionSettingsService_Response *response);
-    void load_config();
+    void write_config(const motion_settings_service__srv__MotionSettingsService_Request *request);
     void save_config();
 
     void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
-    void load_params();
+    void write_params(const motion_settings_service__srv__MotionSettingsService_Request *request);
     void save_params();
 
     void test_motors();
@@ -120,4 +108,6 @@ private:
     void _plan_wheel_speed(const WheelSpeed &target_wheel_speed);
 
     void _refresh_target_max_v();
+    void _load_config();
+    void _load_params();
 };

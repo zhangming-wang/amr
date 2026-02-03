@@ -3,32 +3,63 @@
 LidarControl::LidarControl() {
     baudrate_ = ydlidar_baudrate;
 }
+LidarControl::LidarControl(const std::string &name) {
+    name_ = name;
+    baudrate_ = ydlidar_baudrate;
+}
 
 void LidarControl::save_config() {
+    if (name_.empty()) {
+        serial_print("LidarControl name is empty, cannot save config.");
+        return;
+    }
+
+    preferences_.begin(std::string(name_ + "config").c_str(), false);
+    preferences_.clear();
+    preferences_.putInt("pinRX", pin_rx_);
+    preferences_.putInt("pinTX", pin_tx_);
+    preferences_.putInt("pinPWM", pin_pwm_);
+    preferences_.end();
 }
 
 void LidarControl::load_config() {
-}
+    if (name_.empty()) {
+        serial_print("LidarControl name is empty, cannot load config.");
+        return;
+    }
+    preferences_.begin(std::string(name_ + "config").c_str(), true); // 只读模式
+    auto pin_RX = preferences_.getInt("pinRX", pin_rx_);
+    auto pin_TX = preferences_.getInt("pinTX", pin_tx_);
+    auto pin_PWM = preferences_.getInt("pinPWM", pin_pwm_);
+    preferences_.end();
 
-void LidarControl::save_params() {
-}
-
-void LidarControl::load_params() {
+    set_pins(pin_TX, pin_RX, pin_PWM);
 }
 
 void LidarControl::set_pins(int pin_tx, int pin_rx, int pin_pwm) {
+    pin_pwm_ = pin_pwm;
+    pwmControl_.attachPin(pin_pwm_);
+
+    if (pin_rx_ == pin_rx_ && pin_tx == pin_tx_) {
+        serial_print("LidarControl pins not changed, skip reinit.");
+        return;
+    }
+
     pin_tx_ = pin_tx;
     pin_rx_ = pin_rx;
-    pin_pwm_ = pin_pwm;
 
     if (Serial2) {
         Serial2.end();
     }
-
-    pwmControl_.attachPin(pin_pwm_);
     Serial2.setRxBufferSize(512);
     Serial2.begin(baudrate_, SERIAL_8N1, pin_tx_, pin_rx_);
     delay(500);
+}
+
+void LidarControl::get_pins(int &pin_tx, int &pin_rx, int &pin_pwm) {
+    pin_tx = pin_tx_;
+    pin_rx = pin_rx_;
+    pin_pwm = pin_pwm_;
 }
 
 void LidarControl::get_data(uint8_t *data) {
@@ -50,7 +81,7 @@ void LidarControl::update() {
         if (Serial2.available() >= buffer_size_) {
             auto size = Serial2.readBytes(data_buffer_[1 - current_buffer_index_], buffer_size_);
             if (size != buffer_size_) {
-                Serial.printf("LidarControl read data size error, size: %d\n", size);
+                serial_print("LidarControl read data size error, resyncing.");
                 synce_State = -1;
             }
         }
@@ -59,11 +90,11 @@ void LidarControl::update() {
         if (Serial2.available() >= buffer_size_ - 2) {
             auto size = Serial2.readBytes(data_buffer_[1 - current_buffer_index_] + 2, buffer_size_ - 2);
             if (size != buffer_size_ - 2) {
-                Serial.printf("LidarControl read data size error, size: %d\n", size);
+                serial_print("LidarControl read data size error, resyncing.");
                 synce_State = -1;
             } else {
                 synce_State = 1;
-                Serial.printf("LidarControl synced.\n");
+                serial_print("LidarControl data synced.");
             }
         }
     } else {

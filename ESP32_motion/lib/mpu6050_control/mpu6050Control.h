@@ -41,7 +41,7 @@ public:
 private:
     int pin_SDA_ = -1, pin_SCL_ = -1;
 
-    std::string name_ = "mpu";
+    std::string name_;
 
     bool is_dmp_handle_ = true;
     std::atomic<bool> init_success_{false};

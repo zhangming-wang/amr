@@ -11,6 +11,12 @@
 #include "rcutils/allocator.h"
 
 
+// Include directives for member types
+// Member `drivers_status`
+#include "motion_status_msgs/msg/detail/driver_status__functions.h"
+// Member `sensor_status`
+#include "motion_status_msgs/msg/detail/sensor_status__functions.h"
+
 bool
 motion_status_msgs__msg__MotionStatus__init(motion_status_msgs__msg__MotionStatus * msg)
 {
@@ -19,28 +25,18 @@ motion_status_msgs__msg__MotionStatus__init(motion_status_msgs__msg__MotionStatu
   }
   // stamp
   // seq
-  // left_front_total_distance
-  // left_front_dt_distance
-  // left_front_current_v
-  // left_front_target_v
-  // left_back_total_distance
-  // left_back_dt_distance
-  // left_back_current_v
-  // left_back_target_v
-  // right_front_total_distance
-  // right_front_dt_distance
-  // right_front_current_v
-  // right_front_target_v
-  // right_back_total_distance
-  // right_back_dt_distance
-  // right_back_current_v
-  // right_back_target_v
-  // imu_roll
-  // imu_pitch
-  // imu_yaw
-  // imu_gyro_x
-  // imu_gyro_y
-  // imu_gyro_z
+  // drivers_status
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_status_msgs__msg__DriverStatus__init(&msg->drivers_status[i])) {
+      motion_status_msgs__msg__MotionStatus__fini(msg);
+      return false;
+    }
+  }
+  // sensor_status
+  if (!motion_status_msgs__msg__SensorStatus__init(&msg->sensor_status)) {
+    motion_status_msgs__msg__MotionStatus__fini(msg);
+    return false;
+  }
   return true;
 }
 
@@ -52,28 +48,12 @@ motion_status_msgs__msg__MotionStatus__fini(motion_status_msgs__msg__MotionStatu
   }
   // stamp
   // seq
-  // left_front_total_distance
-  // left_front_dt_distance
-  // left_front_current_v
-  // left_front_target_v
-  // left_back_total_distance
-  // left_back_dt_distance
-  // left_back_current_v
-  // left_back_target_v
-  // right_front_total_distance
-  // right_front_dt_distance
-  // right_front_current_v
-  // right_front_target_v
-  // right_back_total_distance
-  // right_back_dt_distance
-  // right_back_current_v
-  // right_back_target_v
-  // imu_roll
-  // imu_pitch
-  // imu_yaw
-  // imu_gyro_x
-  // imu_gyro_y
-  // imu_gyro_z
+  // drivers_status
+  for (size_t i = 0; i < 2; ++i) {
+    motion_status_msgs__msg__DriverStatus__fini(&msg->drivers_status[i]);
+  }
+  // sensor_status
+  motion_status_msgs__msg__SensorStatus__fini(&msg->sensor_status);
 }
 
 bool
@@ -90,92 +70,18 @@ motion_status_msgs__msg__MotionStatus__are_equal(const motion_status_msgs__msg__
   if (lhs->seq != rhs->seq) {
     return false;
   }
-  // left_front_total_distance
-  if (lhs->left_front_total_distance != rhs->left_front_total_distance) {
-    return false;
+  // drivers_status
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_status_msgs__msg__DriverStatus__are_equal(
+        &(lhs->drivers_status[i]), &(rhs->drivers_status[i])))
+    {
+      return false;
+    }
   }
-  // left_front_dt_distance
-  if (lhs->left_front_dt_distance != rhs->left_front_dt_distance) {
-    return false;
-  }
-  // left_front_current_v
-  if (lhs->left_front_current_v != rhs->left_front_current_v) {
-    return false;
-  }
-  // left_front_target_v
-  if (lhs->left_front_target_v != rhs->left_front_target_v) {
-    return false;
-  }
-  // left_back_total_distance
-  if (lhs->left_back_total_distance != rhs->left_back_total_distance) {
-    return false;
-  }
-  // left_back_dt_distance
-  if (lhs->left_back_dt_distance != rhs->left_back_dt_distance) {
-    return false;
-  }
-  // left_back_current_v
-  if (lhs->left_back_current_v != rhs->left_back_current_v) {
-    return false;
-  }
-  // left_back_target_v
-  if (lhs->left_back_target_v != rhs->left_back_target_v) {
-    return false;
-  }
-  // right_front_total_distance
-  if (lhs->right_front_total_distance != rhs->right_front_total_distance) {
-    return false;
-  }
-  // right_front_dt_distance
-  if (lhs->right_front_dt_distance != rhs->right_front_dt_distance) {
-    return false;
-  }
-  // right_front_current_v
-  if (lhs->right_front_current_v != rhs->right_front_current_v) {
-    return false;
-  }
-  // right_front_target_v
-  if (lhs->right_front_target_v != rhs->right_front_target_v) {
-    return false;
-  }
-  // right_back_total_distance
-  if (lhs->right_back_total_distance != rhs->right_back_total_distance) {
-    return false;
-  }
-  // right_back_dt_distance
-  if (lhs->right_back_dt_distance != rhs->right_back_dt_distance) {
-    return false;
-  }
-  // right_back_current_v
-  if (lhs->right_back_current_v != rhs->right_back_current_v) {
-    return false;
-  }
-  // right_back_target_v
-  if (lhs->right_back_target_v != rhs->right_back_target_v) {
-    return false;
-  }
-  // imu_roll
-  if (lhs->imu_roll != rhs->imu_roll) {
-    return false;
-  }
-  // imu_pitch
-  if (lhs->imu_pitch != rhs->imu_pitch) {
-    return false;
-  }
-  // imu_yaw
-  if (lhs->imu_yaw != rhs->imu_yaw) {
-    return false;
-  }
-  // imu_gyro_x
-  if (lhs->imu_gyro_x != rhs->imu_gyro_x) {
-    return false;
-  }
-  // imu_gyro_y
-  if (lhs->imu_gyro_y != rhs->imu_gyro_y) {
-    return false;
-  }
-  // imu_gyro_z
-  if (lhs->imu_gyro_z != rhs->imu_gyro_z) {
+  // sensor_status
+  if (!motion_status_msgs__msg__SensorStatus__are_equal(
+      &(lhs->sensor_status), &(rhs->sensor_status)))
+  {
     return false;
   }
   return true;
@@ -193,50 +99,20 @@ motion_status_msgs__msg__MotionStatus__copy(
   output->stamp = input->stamp;
   // seq
   output->seq = input->seq;
-  // left_front_total_distance
-  output->left_front_total_distance = input->left_front_total_distance;
-  // left_front_dt_distance
-  output->left_front_dt_distance = input->left_front_dt_distance;
-  // left_front_current_v
-  output->left_front_current_v = input->left_front_current_v;
-  // left_front_target_v
-  output->left_front_target_v = input->left_front_target_v;
-  // left_back_total_distance
-  output->left_back_total_distance = input->left_back_total_distance;
-  // left_back_dt_distance
-  output->left_back_dt_distance = input->left_back_dt_distance;
-  // left_back_current_v
-  output->left_back_current_v = input->left_back_current_v;
-  // left_back_target_v
-  output->left_back_target_v = input->left_back_target_v;
-  // right_front_total_distance
-  output->right_front_total_distance = input->right_front_total_distance;
-  // right_front_dt_distance
-  output->right_front_dt_distance = input->right_front_dt_distance;
-  // right_front_current_v
-  output->right_front_current_v = input->right_front_current_v;
-  // right_front_target_v
-  output->right_front_target_v = input->right_front_target_v;
-  // right_back_total_distance
-  output->right_back_total_distance = input->right_back_total_distance;
-  // right_back_dt_distance
-  output->right_back_dt_distance = input->right_back_dt_distance;
-  // right_back_current_v
-  output->right_back_current_v = input->right_back_current_v;
-  // right_back_target_v
-  output->right_back_target_v = input->right_back_target_v;
-  // imu_roll
-  output->imu_roll = input->imu_roll;
-  // imu_pitch
-  output->imu_pitch = input->imu_pitch;
-  // imu_yaw
-  output->imu_yaw = input->imu_yaw;
-  // imu_gyro_x
-  output->imu_gyro_x = input->imu_gyro_x;
-  // imu_gyro_y
-  output->imu_gyro_y = input->imu_gyro_y;
-  // imu_gyro_z
-  output->imu_gyro_z = input->imu_gyro_z;
+  // drivers_status
+  for (size_t i = 0; i < 2; ++i) {
+    if (!motion_status_msgs__msg__DriverStatus__copy(
+        &(input->drivers_status[i]), &(output->drivers_status[i])))
+    {
+      return false;
+    }
+  }
+  // sensor_status
+  if (!motion_status_msgs__msg__SensorStatus__copy(
+      &(input->sensor_status), &(output->sensor_status)))
+  {
+    return false;
+  }
   return true;
 }
 

@@ -2,5 +2,4 @@ uint64 stamp
 uint64 seq
 
 motion_status_msgs/DriverStatus[2] drivers_status
-motion_status_msgs/MpuStatus mpu_status
-motion_status_msgs/LidarStatus lidar_status
+motion_status_msgs/SensorStatus sensor_status

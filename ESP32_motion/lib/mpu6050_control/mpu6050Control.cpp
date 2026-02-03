@@ -165,8 +165,10 @@ void MPU6050Control::get_offset(int16_t &xAccOffset, int16_t &yAccOffset, int16_
 }
 
 void MPU6050Control::set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t zAccOffset, int16_t xGyroOffset, int16_t yGyroOffset, int16_t zGyroOffset) {
-    if (!init_success_.load())
+    if (!init_success_.load()) {
+        serial_print("MPU6050模块未初始化，无法设置偏移量.");
         return;
+    }
 
     xAccelOffset_ = xAccOffset;
     yAccelOffset_ = yAccOffset;
@@ -184,11 +186,21 @@ void MPU6050Control::set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t 
 }
 
 void MPU6050Control::save_params() {
+    if (!init_success_.load()) {
+        serial_print("MPU6050模块未初始化，无法保存参数.");
+        return;
+    }
+
+    if (name_.empty()) {
+        serial_print("MPU6050Control name is empty, cannot save params.");
+        return;
+    }
+
     preferences_.begin(std::string(name_ + "params").c_str(), false);
     preferences_.clear();
-    preferences_.putShort("xAccffset", xAccelOffset_);
-    preferences_.putShort("yAccOffset", yAccelOffset_);
-    preferences_.putShort("zAccOffset", zAccelOffset_);
+    preferences_.putShort("xAccelOffset", xAccelOffset_);
+    preferences_.putShort("yAccelOffset", yAccelOffset_);
+    preferences_.putShort("zAccelOffset", zAccelOffset_);
     preferences_.putShort("xGyroOffset", xGyroOffset_);
     preferences_.putShort("yGyroOffset", yGyroOffset_);
     preferences_.putShort("zGyroOffset", zGyroOffset_);
@@ -196,11 +208,21 @@ void MPU6050Control::save_params() {
 }
 
 void MPU6050Control::load_params() {
+    if (!init_success_.load()) {
+        serial_print("MPU6050模块未初始化，无法加载参数.");
+        return;
+    }
+
+    if (name_.empty()) {
+        serial_print("MPU6050Control name is empty, cannot load params.");
+        return;
+    }
+
     preferences_.begin(std::string(name_ + "params").c_str(), true); // 只读模式
     // 如果没保存过，会返回0，或你也可以判断是否存在
-    xAccelOffset_ = preferences_.getShort("xAccffset", xAccelOffset_);
-    yAccelOffset_ = preferences_.getShort("yAccOffset", yAccelOffset_);
-    zAccelOffset_ = preferences_.getShort("zAccOffset", zAccelOffset_);
+    xAccelOffset_ = preferences_.getShort("xAccelOffset", xAccelOffset_);
+    yAccelOffset_ = preferences_.getShort("yAccelOffset", yAccelOffset_);
+    zAccelOffset_ = preferences_.getShort("zAccelOffset", zAccelOffset_);
     xGyroOffset_ = preferences_.getShort("xGyroOffset", xGyroOffset_);
     yGyroOffset_ = preferences_.getShort("yGyroOffset", yGyroOffset_);
     zGyroOffset_ = preferences_.getShort("zGyroOffset", zGyroOffset_);
@@ -215,6 +237,11 @@ void MPU6050Control::load_params() {
 }
 
 void MPU6050Control::save_config() {
+    if (name_.empty()) {
+        serial_print("MPU6050Control name is empty, cannot save config.");
+        return;
+    }
+
     preferences_.begin(std::string(name_ + "config").c_str(), false);
     preferences_.clear();
     preferences_.putInt("pinSDA", pin_SDA_);
@@ -223,9 +250,14 @@ void MPU6050Control::save_config() {
 }
 
 void MPU6050Control::load_config() {
+    if (name_.empty()) {
+        serial_print("MPU6050Control name is empty, cannot load config.");
+        return;
+    }
+
     preferences_.begin(std::string(name_ + "config").c_str(), true); // 只读模式
-    auto pin_SDA = preferences_.getInt("pinSDA", -1);
-    auto pin_SCL = preferences_.getInt("pinSCL", -1);
+    auto pin_SDA = preferences_.getInt("pinSDA", pin_SDA_);
+    auto pin_SCL = preferences_.getInt("pinSCL", pin_SCL_);
     preferences_.end();
 
     set_pins(pin_SDA, pin_SCL);

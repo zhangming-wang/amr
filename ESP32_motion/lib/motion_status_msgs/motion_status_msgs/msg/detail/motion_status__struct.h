@@ -17,33 +17,19 @@ extern "C"
 
 // Constants defined in the message
 
+// Include directives for member types
+// Member 'drivers_status'
+#include "motion_status_msgs/msg/detail/driver_status__struct.h"
+// Member 'sensor_status'
+#include "motion_status_msgs/msg/detail/sensor_status__struct.h"
+
 /// Struct defined in msg/MotionStatus in the package motion_status_msgs.
 typedef struct motion_status_msgs__msg__MotionStatus
 {
   uint64_t stamp;
   uint64_t seq;
-  float left_front_total_distance;
-  float left_front_dt_distance;
-  float left_front_current_v;
-  float left_front_target_v;
-  float left_back_total_distance;
-  float left_back_dt_distance;
-  float left_back_current_v;
-  float left_back_target_v;
-  float right_front_total_distance;
-  float right_front_dt_distance;
-  float right_front_current_v;
-  float right_front_target_v;
-  float right_back_total_distance;
-  float right_back_dt_distance;
-  float right_back_current_v;
-  float right_back_target_v;
-  float imu_roll;
-  float imu_pitch;
-  float imu_yaw;
-  float imu_gyro_x;
-  float imu_gyro_y;
-  float imu_gyro_z;
+  motion_status_msgs__msg__DriverStatus drivers_status[2];
+  motion_status_msgs__msg__SensorStatus sensor_status;
 } motion_status_msgs__msg__MotionStatus;
 
 // Struct for a sequence of motion_status_msgs__msg__MotionStatus.

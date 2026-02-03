@@ -8,7 +8,9 @@
 #include <Arduino.h>
 extern "C" {
 #include "motion_settings_service/srv/motion_settings_service.h"
+#include "motion_status_msgs/msg/driver_status.h"
 #include "motion_status_msgs/msg/motion_status.h"
+#include "motion_status_msgs/msg/sensor_status.h"
 }
 
 class SensorsControlTask : public BaseTaskSingleton<SensorsControlTask> {
@@ -24,9 +26,12 @@ public:
     std::shared_ptr<LidarControl> get_lidar_control();
 
     void get_data(motion_status_msgs__msg__MotionStatus &msg);
+
+    void write_params(const motion_settings_service__srv__MotionSettingsService_Request *request);
     void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
     void save_params();
 
+    void write_config(const motion_settings_service__srv__MotionSettingsService_Request *request);
     void read_config(motion_settings_service__srv__MotionSettingsService_Response *response);
     void save_config();
 
