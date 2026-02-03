@@ -1,7 +1,10 @@
-#include "motionNode.h"
+#include "motionNodeTask.h"
 
-MotionNode::MotionNode() {
+MotionNodeTask::MotionNodeTask() {
     task_name_ = "motion_node_task";
+    core_id_ = 0;
+    priority_ = 9;
+    stack_size_ = 16384;
     num_handles_ = 6;
 
     node_name_ = esp32_motion_node_name;
@@ -13,12 +16,9 @@ MotionNode::MotionNode() {
 
     motion_status_topic_name_ = constructNodeName(esp32_motion_node_namespace, esp32_motion_status_topic_name);
     motion_cmd_vel_topic_name_ = constructNodeName(pc_motion_node_namespace, pc_cmd_vel_topic_name);
-
-    motionControl_ = &MotionControl::instance();
-    mpu6050Control_ = &MPU6050Control::instance();
 }
 
-bool MotionNode::init_micro_ros() {
+bool MotionNodeTask::init_micro_ros() {
     rmw_qos_profile_t best_effort_qos = rmw_qos_profile_default;
     best_effort_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
     best_effort_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
@@ -87,7 +87,7 @@ bool MotionNode::init_micro_ros() {
     return _create_publish_motion_status_timer();
 }
 
-void MotionNode::clean_micro_ros() {
+void MotionNodeTask::clean_micro_ros() {
     _destroy_publish_motion_status_timer();
     rcl_ret_t ret;
     if (motion_settings_service_initialized_) {
@@ -127,123 +127,124 @@ void MotionNode::clean_micro_ros() {
     }
 }
 
-void MotionNode::motion_settings_service_callback(const void *req, void *res) {
+void MotionNodeTask::motion_settings_service_callback(const void *req, void *res) {
     const motion_settings_service__srv__MotionSettingsService_Request *request = (const motion_settings_service__srv__MotionSettingsService_Request *)req;
     motion_settings_service__srv__MotionSettingsService_Response *response = (motion_settings_service__srv__MotionSettingsService_Response *)res;
 
-    MotionNode &instance = MotionNode::instance();
+    auto instance = &MotionNodeTask::instance();
+    auto motionControl = &MotionControlTask::instance();
+    auto sensorsControl = &SensorsControlTask::instance();
 
     if (request->mode == MotionService::Type::HeartBeat) {
         ;
     } else if (request->mode == MotionService::Type::Restart) {
         restart_device();
     } else if (request->mode == MotionService::Type::Brake) {
-        instance.motionControl_->brake();
+        motionControl->brake();
     } else if (request->mode == MotionService::Type::StopMove) {
-        instance.motionControl_->stop_move();
+        motionControl->stop_move();
     } else if (request->mode == MotionService::Type::MoveFront) {
-        instance.motionControl_->move_front();
+        motionControl->move_front();
     } else if (request->mode == MotionService::Type::MoveBack) {
-        instance.motionControl_->move_back();
+        motionControl->move_back();
     } else if (request->mode == MotionService::Type::MoveLeft) {
-        instance.motionControl_->move_left();
+        motionControl->move_left();
     } else if (request->mode == MotionService::Type::MoveRight) {
-        instance.motionControl_->move_right();
+        motionControl->move_right();
     } else if (request->mode == MotionService::Type::MoveLeftFront) {
-        instance.motionControl_->move_left_front();
+        motionControl->move_left_front();
     } else if (request->mode == MotionService::Type::MoveRightFront) {
-        instance.motionControl_->move_right_front();
+        motionControl->move_right_front();
     } else if (request->mode == MotionService::Type::MoveLeftBack) {
-        instance.motionControl_->move_left_back();
+        motionControl->move_left_back();
     } else if (request->mode == MotionService::Type::MoveRightBack) {
-        instance.motionControl_->move_right_back();
+        motionControl->move_right_back();
     } else if (request->mode == MotionService::Type::TurnLeft) {
-        instance.motionControl_->turn_left();
+        motionControl->turn_left();
     } else if (request->mode == MotionService::Type::TurnRight) {
-        instance.motionControl_->turn_right();
+        motionControl->turn_right();
     }
 
     else if (request->mode == MotionService::Type::CalibrateMPU6050) {
-        instance.mpu6050Control_->start_calibration();
+        sensorsControl->get_mpu6050_control()->start_calibration();
     }
 
     else if (request->mode == MotionService::Type::SetSpeedPercent) {
-        instance.motionControl_->set_speed_percent(request->speed_percent);
-        response->max_v = instance.motionControl_->get_max_speed();
-        response->speed_percent = instance.motionControl_->get_speed_percent();
+        motionControl->set_speed_percent(request->speed_percent);
+        response->max_v = motionControl->get_max_speed();
+        response->speed_percent = motionControl->get_speed_percent();
     } else if (request->mode == MotionService::Type::SetSpeedPlanState) {
-        instance.motionControl_->set_speed_plan_state(request->enable_speed_plan);
+        motionControl->set_speed_plan_state(request->enable_speed_plan);
     }
 
     else if (request->mode == MotionService::Type::ReadParams) {
-        instance.motionControl_->read_params(response);
-        instance.mpu6050Control_->read_params(response);
+        motionControl->read_params(response);
+        sensorsControl->read_params(response);
     } else if (request->mode == MotionService::Type::WriteParams) {
-        if (instance.motionControl_->get_milliseconds() != request->milliseconds) {
-            instance.motionControl_->set_milliseconds(request->milliseconds);
-            instance._create_publish_motion_status_timer();
+        if (motionControl->get_milliseconds() != request->milliseconds) {
+            motionControl->set_milliseconds(request->milliseconds);
+            instance->_create_publish_motion_status_timer();
         }
 
-        instance.motionControl_->set_left_front_motor_pid_params(request->left_front_motor_p, request->left_front_motor_i, request->left_front_motor_d, request->left_front_motor_max_total_integral);
-        instance.motionControl_->set_left_back_motor_pid_params(request->left_back_motor_p, request->left_back_motor_i, request->left_back_motor_d, request->left_back_motor_max_total_integral);
+        // motionControl->set_left_front_motor_pid_params(request->left_front_motor_p, request->left_front_motor_i, request->left_front_motor_d, request->left_front_motor_max_total_integral);
+        // motionControl->set_left_back_motor_pid_params(request->left_back_motor_p, request->left_back_motor_i, request->left_back_motor_d, request->left_back_motor_max_total_integral);
 
-        instance.motionControl_->set_right_front_motor_pid_params(request->right_front_motor_p, request->right_front_motor_i, request->right_front_motor_d, request->right_front_motor_max_total_integral);
-        instance.motionControl_->set_right_back_motor_pid_params(request->right_back_motor_p, request->right_back_motor_i, request->right_back_motor_d, request->right_back_motor_max_total_integral);
+        // motionControl->set_right_front_motor_pid_params(request->right_front_motor_p, request->right_front_motor_i, request->right_front_motor_d, request->right_front_motor_max_total_integral);
+        // motionControl->set_right_back_motor_pid_params(request->right_back_motor_p, request->right_back_motor_i, request->right_back_motor_d, request->right_back_motor_max_total_integral);
 
-        instance.motionControl_->set_speed_plan_parms(request->max_v, request->max_acc, request->jerk);
+        motionControl->set_speed_plan_parms(request->max_v, request->max_acc, request->jerk);
 
-        instance.motionControl_->set_motor_enable_flags(request->motor_enable_flags);
+        motionControl->set_motor_enable_flags(request->motor_enable_flags);
 
-        response->max_v = instance.motionControl_->get_max_speed();
-        response->speed_percent = instance.motionControl_->get_speed_percent();
+        response->max_v = motionControl->get_max_speed();
+        response->speed_percent = motionControl->get_speed_percent();
 
-        instance.mpu6050Control_->set_offset(request->mpu6050_accel_offset_x, request->mpu6050_accel_offset_y, request->mpu6050_accel_offset_z,
-                                             request->mpu6050_gyro_offset_x, request->mpu6050_gyro_offset_y, request->mpu6050_gyro_offset_z);
+        sensorsControl->get_mpu6050_control()->set_offset(request->mpu6050_accel_offset_x, request->mpu6050_accel_offset_y, request->mpu6050_accel_offset_z,
+                                                          request->mpu6050_gyro_offset_x, request->mpu6050_gyro_offset_y, request->mpu6050_gyro_offset_z);
     } else if (request->mode == MotionService::Type::SaveParams) {
-        instance.motionControl_->save_params();
-        instance.mpu6050Control_->save_params();
+        motionControl->save_params();
+        sensorsControl->save_params();
     }
 
     else if (request->mode == MotionService::Type::ReadConfig) {
-        instance.motionControl_->read_config(response);
-        instance.mpu6050Control_->read_config(response);
+        motionControl->read_config(response);
+        sensorsControl->read_config(response);
     } else if (request->mode == MotionService::Type::WriteConfig) {
-        instance.motionControl_->set_wheel_type(request->is_mecanum_wheel);
-        instance.motionControl_->set_model_params(request->track_width, request->wheel_width);
-        instance.motionControl_->set_left_front_motor_config_params(request->left_front_motor_pina, request->left_front_motor_pinb, request->left_front_encoder_pina, request->left_front_encoder_pinb, request->left_front_motor_pinpwm,
-                                                                    request->left_front_motor_wheel_diameter, request->left_front_motor_pluses_per_revolution, request->left_front_motor_revolutions_per_minute);
-        instance.motionControl_->set_left_back_motor_config_params(request->left_back_motor_pina, request->left_back_motor_pinb, request->left_back_encoder_pina, request->left_back_encoder_pinb, request->left_back_motor_pinpwm,
-                                                                   request->left_back_motor_wheel_diameter, request->left_back_motor_pluses_per_revolution, request->left_back_motor_revolutions_per_minute);
-        instance.motionControl_->set_right_front_motor_config_params(request->right_front_motor_pina, request->right_front_motor_pinb, request->right_front_encoder_pina, request->right_front_encoder_pinb, request->right_front_motor_pinpwm,
-                                                                     request->right_front_motor_wheel_diameter, request->right_front_motor_pluses_per_revolution, request->right_front_motor_revolutions_per_minute);
-        instance.motionControl_->set_right_back_motor_config_params(request->right_back_motor_pina, request->right_back_motor_pinb, request->right_back_encoder_pina, request->right_back_encoder_pinb, request->right_back_motor_pinpwm,
-                                                                    request->right_back_motor_wheel_diameter, request->right_back_motor_pluses_per_revolution, request->right_back_motor_revolutions_per_minute);
-        instance.motionControl_->update_target_max_speed();
+        motionControl->set_model_params(request->track_width, request->wheel_width);
+        // motionControl->set_left_front_motor_config_params(request->left_front_motor_pina, request->left_front_motor_pinb, request->left_front_encoder_pina, request->left_front_encoder_pinb, request->left_front_motor_pinpwm,
+        //                                                   request->left_front_motor_wheel_diameter, request->left_front_motor_pluses_per_revolution, request->left_front_motor_revolutions_per_minute);
+        // motionControl->set_left_back_motor_config_params(request->left_back_motor_pina, request->left_back_motor_pinb, request->left_back_encoder_pina, request->left_back_encoder_pinb, request->left_back_motor_pinpwm,
+        //                                                  request->left_back_motor_wheel_diameter, request->left_back_motor_pluses_per_revolution, request->left_back_motor_revolutions_per_minute);
+        // motionControl->set_right_front_motor_config_params(request->right_front_motor_pina, request->right_front_motor_pinb, request->right_front_encoder_pina, request->right_front_encoder_pinb, request->right_front_motor_pinpwm,
+        //                                                    request->right_front_motor_wheel_diameter, request->right_front_motor_pluses_per_revolution, request->right_front_motor_revolutions_per_minute);
+        // motionControl->set_right_back_motor_config_params(request->right_back_motor_pina, request->right_back_motor_pinb, request->right_back_encoder_pina, request->right_back_encoder_pinb, request->right_back_motor_pinpwm,
+        //                                                   request->right_back_motor_wheel_diameter, request->right_back_motor_pluses_per_revolution, request->right_back_motor_revolutions_per_minute);
+        motionControl->update_target_max_speed();
 
-        instance.mpu6050Control_->set_pins(request->mpu6050_pin_sda, request->mpu6050_pin_scl);
+        sensorsControl->get_mpu6050_control()->set_pins(request->mpu6050_pin_sda, request->mpu6050_pin_scl);
     } else if (request->mode == MotionService::Type::SaveConfig) {
-        instance.motionControl_->save_config();
-        instance.mpu6050Control_->save_config();
+        motionControl->save_config();
+        sensorsControl->save_config();
     }
 
     response->state = request->mode;
     response->id = request->id;
 }
 
-void MotionNode::msg_twist_callback(const void *msg) {
+void MotionNodeTask::msg_twist_callback(const void *msg) {
     const geometry_msgs__msg__Twist *twist_msg = static_cast<const geometry_msgs__msg__Twist *>(msg);
-    MotionNode::instance().motionControl_->set_twist(*twist_msg);
+    MotionControlTask::instance().set_twist(*twist_msg);
 }
 
-void MotionNode::publish_msgs() {
+void MotionNodeTask::publish_msgs() {
     if (!connected()) {
         return;
     }
 
     if (motion_status_publisher_initialized_) {
         motion_status_msg_.stamp = get_now_ns();
-        motionControl_->get_motion_status(motion_status_msg_);
-        mpu6050Control_->get_motion_status(motion_status_msg_);
+        MotionControlTask::instance().get_data(motion_status_msg_);
+        SensorsControlTask::instance().get_data(motion_status_msg_);
         rcl_ret_t ret = rcl_publish(&motion_status_publisher_, &motion_status_msg_, nullptr);
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] motion status publish failed: %d\n", ret);
@@ -251,15 +252,15 @@ void MotionNode::publish_msgs() {
     }
 }
 
-void MotionNode::publish_motion_status_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
-    MotionNode::instance().publish_msgs();
+void MotionNodeTask::publish_motion_status_timer_callback(rcl_timer_t *timer, int64_t last_call_time) {
+    MotionNodeTask::instance().publish_msgs();
 }
 
-bool MotionNode::_create_publish_motion_status_timer() {
+bool MotionNodeTask::_create_publish_motion_status_timer() {
     _destroy_publish_motion_status_timer();
 
     if (!publish_motion_status_timer_initialized_) {
-        rcl_ret_t ret = rclc_timer_init_default(&publish_motion_status_timer_, &support_, RCL_MS_TO_NS(motionControl_->get_milliseconds()), publish_motion_status_timer_callback);
+        rcl_ret_t ret = rclc_timer_init_default(&publish_motion_status_timer_, &support_, RCL_MS_TO_NS(MotionControlTask::instance().get_milliseconds()), publish_motion_status_timer_callback);
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] publish motion status timer init failed: %d\n", ret);
             return false;
@@ -276,7 +277,7 @@ bool MotionNode::_create_publish_motion_status_timer() {
     return true;
 }
 
-void MotionNode::_destroy_publish_motion_status_timer() {
+void MotionNodeTask::_destroy_publish_motion_status_timer() {
     if (publish_motion_status_timer_initialized_) {
         rcl_ret_t ret = rclc_executor_remove_timer(&executor_, &publish_motion_status_timer_);
         if (ret != RCL_RET_OK) {

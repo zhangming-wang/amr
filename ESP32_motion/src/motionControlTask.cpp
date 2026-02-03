@@ -1,14 +1,21 @@
-#include "diffDriverControl.h"
+#include "motionControlTask.h"
 
-DiffDriverControl::DiffDriverControl() {
+MotionControlTask::MotionControlTask() {
+    task_name_ = "motion_control_task";
+    priority_ = 12;
+    core_id_ = 1;
+    stack_size_ = 16384;
+
+    task_tick_count_ = xTaskGetTickCount();
+
     speedPlan_ = std::make_shared<SpeedPlan>();
     left_motor_control_ = std::make_shared<MotorControl>("lm");
     right_motor_control_ = std::make_shared<MotorControl>("rm");
 
     mutex_ = xSemaphoreCreateMutex();
 
-    _load_config();
-    _load_params();
+    load_config();
+    load_params();
 
     update_target_max_speed();
 
@@ -19,27 +26,27 @@ DiffDriverControl::DiffDriverControl() {
     set_right_motor_config_params(6, 7, 15, 16, 5, 0.065, 1320, 310);
 }
 
-void DiffDriverControl::set_model_params(float track_width, float wheel_width) {
+void MotionControlTask::set_model_params(float track_width, float wheel_width) {
     track_width_ = track_width;
     wheel_width_ = wheel_width;
 }
 
-void DiffDriverControl::set_left_motor_config_params(int motor_pinA, int motor_pinB, int encoder_pinA, int encoder_pinB, int motor_pinPWM, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute) {
+void MotionControlTask::set_left_motor_config_params(int motor_pinA, int motor_pinB, int encoder_pinA, int encoder_pinB, int motor_pinPWM, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute) {
     left_motor_control_->set_motor_params(motor_pinA, motor_pinB, encoder_pinA, encoder_pinB, motor_pinPWM, wheel_diameter, pluses_per_revolution, revolutions_per_minute);
 }
 
-void DiffDriverControl::set_right_motor_config_params(int motor_pinA, int motor_pinB, int encoder_pinA, int encoder_pinB, int motor_pinPWM, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute) {
+void MotionControlTask::set_right_motor_config_params(int motor_pinA, int motor_pinB, int encoder_pinA, int encoder_pinB, int motor_pinPWM, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute) {
     right_motor_control_->set_motor_params(motor_pinA, motor_pinB, encoder_pinA, encoder_pinB, motor_pinPWM, wheel_diameter, pluses_per_revolution, revolutions_per_minute);
 }
-void DiffDriverControl::set_left_motor_pid_params(float p, float i, float d, float max_total_integral) {
+void MotionControlTask::set_left_motor_pid_params(float p, float i, float d, float max_total_integral) {
     left_motor_control_->set_pid_params(p, i, d, max_total_integral);
 }
 
-void DiffDriverControl::set_right_motor_pid_params(float p, float i, float d, float max_total_integral) {
+void MotionControlTask::set_right_motor_pid_params(float p, float i, float d, float max_total_integral) {
     right_motor_control_->set_pid_params(p, i, d, max_total_integral);
 }
 
-void DiffDriverControl::set_speed_plan_parms(float max_v, float max_acc, float jerk) {
+void MotionControlTask::set_speed_plan_parms(float max_v, float max_acc, float jerk) {
     if (max_v > target_max_v_)
         max_v = target_max_v_;
 
@@ -53,19 +60,19 @@ void DiffDriverControl::set_speed_plan_parms(float max_v, float max_acc, float j
     speedPlan_->set_maxAcc_and_jerk(max_acc_, jerk_);
 }
 
-void DiffDriverControl::set_milliseconds(int milliseconds) {
+void MotionControlTask::set_milliseconds(int milliseconds) {
     milliseconds_ = milliseconds;
 }
 
-int DiffDriverControl::get_milliseconds() {
+int MotionControlTask::get_milliseconds() {
     return milliseconds_;
 }
 
-float DiffDriverControl::get_max_speed() {
+float MotionControlTask::get_max_speed() {
     return max_v_;
 }
 
-void DiffDriverControl::set_speed_percent(float percent) {
+void MotionControlTask::set_speed_percent(float percent) {
     percent = fabs(percent);
     if (percent >= 1)
         percent = 1;
@@ -74,22 +81,22 @@ void DiffDriverControl::set_speed_percent(float percent) {
     max_w_ = 2.0 * max_v_ / wheel_width_;
 }
 
-float DiffDriverControl::get_speed_percent() {
+float MotionControlTask::get_speed_percent() {
     return speed_percent_;
 }
 
-void DiffDriverControl::set_speed_plan_state(bool enable) {
+void MotionControlTask::set_speed_plan_state(bool enable) {
     enable_speed_plan_ = enable;
 }
 
-void DiffDriverControl::set_motor_enable_flags(uint8_t flags) {
+void MotionControlTask::set_motor_enable_flags(uint8_t flags) {
     motor_enable_flags_ = flags;
 }
-uint8_t DiffDriverControl::get_motor_enable_flags() {
+uint8_t MotionControlTask::get_motor_enable_flags() {
     return motor_enable_flags_;
 }
 
-void DiffDriverControl::brake() {
+void MotionControlTask::brake() {
     running_ = false;
     if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
         if (!wheel_speed_deque_.empty()) {
@@ -101,7 +108,7 @@ void DiffDriverControl::brake() {
     right_motor_control_->brake();
 }
 
-void DiffDriverControl::stop_move() {
+void MotionControlTask::stop_move() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = 0;
     target_twist.linear.y = 0;
@@ -112,7 +119,7 @@ void DiffDriverControl::stop_move() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_front() {
+void MotionControlTask::move_front() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = 0;
     target_twist.linear.y = max_v_;
@@ -123,7 +130,7 @@ void DiffDriverControl::move_front() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_back() {
+void MotionControlTask::move_back() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = 0;
     target_twist.linear.y = -max_v_;
@@ -134,7 +141,7 @@ void DiffDriverControl::move_back() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_left() {
+void MotionControlTask::move_left() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = -max_v_;
     target_twist.linear.y = 0;
@@ -145,7 +152,7 @@ void DiffDriverControl::move_left() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_right() {
+void MotionControlTask::move_right() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = max_v_;
     target_twist.linear.y = 0;
@@ -156,7 +163,7 @@ void DiffDriverControl::move_right() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_left_front() {
+void MotionControlTask::move_left_front() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = -max_v_;
     target_twist.linear.y = max_v_;
@@ -167,7 +174,7 @@ void DiffDriverControl::move_left_front() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_right_back() {
+void MotionControlTask::move_right_back() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = max_v_;
     target_twist.linear.y = -max_v_;
@@ -178,7 +185,7 @@ void DiffDriverControl::move_right_back() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_right_front() {
+void MotionControlTask::move_right_front() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = max_v_;
     target_twist.linear.y = max_v_;
@@ -189,7 +196,7 @@ void DiffDriverControl::move_right_front() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::move_left_back() {
+void MotionControlTask::move_left_back() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = -max_v_;
     target_twist.linear.y = -max_v_;
@@ -200,7 +207,7 @@ void DiffDriverControl::move_left_back() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::turn_left() {
+void MotionControlTask::turn_left() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = 0;
     target_twist.linear.y = 0;
@@ -211,7 +218,7 @@ void DiffDriverControl::turn_left() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::turn_right() {
+void MotionControlTask::turn_right() {
     geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = 0;
     target_twist.linear.y = 0;
@@ -222,17 +229,17 @@ void DiffDriverControl::turn_right() {
     set_twist(target_twist);
 }
 
-void DiffDriverControl::set_twist(const geometry_msgs__msg__Twist &twist) {
+void MotionControlTask::set_twist(const geometry_msgs__msg__Twist &twist) {
     _plan_wheel_speed(_inverseKinematics(twist));
 }
 
-void DiffDriverControl::set_wheels_speed(const DiffDriverControl::WheelSpeed &target_wheel_speed) {
+void MotionControlTask::set_wheels_speed(const MotionControlTask::WheelSpeed &target_wheel_speed) {
     _plan_wheel_speed(target_wheel_speed);
 }
 
-void DiffDriverControl::_plan_wheel_speed(const DiffDriverControl::WheelSpeed &target_wheel_speed) { // DiffDriverControl::WheelSpeed &target_wheel_speed
+void MotionControlTask::_plan_wheel_speed(const MotionControlTask::WheelSpeed &target_wheel_speed) { // MotionControlTask::WheelSpeed &target_wheel_speed
     running_ = true;
-    std::deque<DiffDriverControl::WheelSpeed> speed_deque;
+    std::deque<MotionControlTask::WheelSpeed> speed_deque;
 
     if (enable_speed_plan_) {
         float MIN_V_CHANGE = 0.001;
@@ -245,7 +252,7 @@ void DiffDriverControl::_plan_wheel_speed(const DiffDriverControl::WheelSpeed &t
             wheel_change_map[std::fabs(changed_right_v)] = 1;
 
             float planned_current_v = 0, planned_target_v = 0, changed_v = 0;
-            DiffDriverControl::WheelSpeed wheel_speed;
+            MotionControlTask::WheelSpeed wheel_speed;
 
             if (wheel_change_map.rbegin()->second == 0) {
                 planned_current_v = target_wheel_v_.left_v;
@@ -282,38 +289,43 @@ void DiffDriverControl::_plan_wheel_speed(const DiffDriverControl::WheelSpeed &t
     }
 }
 
-void DiffDriverControl::move(float dt) {
-    if (running_) {
-        if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
-            if (!wheel_speed_deque_.empty()) {
-                target_wheel_v_ = wheel_speed_deque_.front();
-                wheel_speed_deque_.pop_front();
+void MotionControlTask::update() {
+    static unsigned long last_time = 0, current_time = 0;
+    current_time = millis();
+    if (last_time != current_time && last_time != 0) {
+        dt_ = (current_time - last_time) / 1000.0;
+        left_motor_control_->update();
+        right_motor_control_->update();
+
+        if (running_) {
+            if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {
+                if (!wheel_speed_deque_.empty()) {
+                    target_wheel_v_ = wheel_speed_deque_.front();
+                    wheel_speed_deque_.pop_front();
+                }
+                xSemaphoreGive(mutex_);
+
+                if (!(motor_enable_flags_ & 0x01))
+                    target_wheel_v_.left_v = 0;
+                if (!(motor_enable_flags_ & 0x02))
+                    target_wheel_v_.right_v = 0;
             }
-            xSemaphoreGive(mutex_);
-
-            if (!(motor_enable_flags_ & 0x01))
-                target_wheel_v_.left_v = 0;
-            if (!(motor_enable_flags_ & 0x02))
-                target_wheel_v_.right_v = 0;
+        } else {
+            target_wheel_v_.left_v = 0;
+            target_wheel_v_.right_v = 0;
         }
-    } else {
-        target_wheel_v_.left_v = 0;
-        target_wheel_v_.right_v = 0;
+
+        left_motor_control_->set_speed(target_wheel_v_.left_v, dt_, running_);
+        right_motor_control_->set_speed(target_wheel_v_.right_v, dt_, running_);
+
+        left_motor_control_->move();
+        right_motor_control_->move();
     }
-
-    left_motor_control_->set_speed(target_wheel_v_.left_v, dt, running_);
-    right_motor_control_->set_speed(target_wheel_v_.right_v, dt, running_);
-
-    left_motor_control_->move();
-    right_motor_control_->move();
+    last_time = current_time;
+    vTaskDelayUntil(&task_tick_count_, milliseconds_);
 }
 
-void DiffDriverControl::update() {
-    left_motor_control_->update();
-    right_motor_control_->update();
-}
-
-void DiffDriverControl::get_motion_status(motion_status_msgs__msg__MotionStatus &msg) {
+void MotionControlTask::get_data(motion_status_msgs__msg__MotionStatus &msg) {
     msg.left_front_current_v = left_motor_control_->get_current_speed();
     msg.left_front_target_v = left_motor_control_->get_target_speed();
     msg.right_front_current_v = right_motor_control_->get_current_speed();
@@ -325,7 +337,7 @@ void DiffDriverControl::get_motion_status(motion_status_msgs__msg__MotionStatus 
     msg.right_front_dt_distance = right_motor_control_->get_dt_distance();
 }
 
-geometry_msgs__msg__Twist DiffDriverControl::_forwardKinematics(const DiffDriverControl::WheelSpeed &wheelSpeed) {
+geometry_msgs__msg__Twist MotionControlTask::_forwardKinematics(const MotionControlTask::WheelSpeed &wheelSpeed) {
     geometry_msgs__msg__Twist twist;
     double v_left = wheelSpeed.left_v;
     double v_right = wheelSpeed.right_v;
@@ -336,8 +348,8 @@ geometry_msgs__msg__Twist DiffDriverControl::_forwardKinematics(const DiffDriver
     return twist;
 }
 
-DiffDriverControl::WheelSpeed DiffDriverControl::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
-    DiffDriverControl::WheelSpeed wheelSpeed;
+MotionControlTask::WheelSpeed MotionControlTask::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
+    MotionControlTask::WheelSpeed wheelSpeed;
     float v = twist.linear.y;  // 前进线速度
     float w = twist.angular.z; // 角速度（绕 z 轴）
 
@@ -359,7 +371,7 @@ DiffDriverControl::WheelSpeed DiffDriverControl::_inverseKinematics(const geomet
     return wheelSpeed;
 }
 
-void DiffDriverControl::read_params(motion_settings_service__srv__MotionSettingsService_Response *response) {
+void MotionControlTask::read_params(motion_settings_service__srv__MotionSettingsService_Response *response) {
     response->milliseconds = milliseconds_;
 
     response->motor_enable_flags = motor_enable_flags_;
@@ -381,7 +393,7 @@ void DiffDriverControl::read_params(motion_settings_service__srv__MotionSettings
     response->right_front_motor_max_total_integral = right_motor_control_->get_pid_params().max_total_integral;
 }
 
-void DiffDriverControl::save_params() {
+void MotionControlTask::save_params() {
     preferences_.begin("params", false);
     preferences_.clear();
 
@@ -398,7 +410,7 @@ void DiffDriverControl::save_params() {
     right_motor_control_->save_pid_params();
 }
 
-void DiffDriverControl::_load_params() {
+void MotionControlTask::load_params() {
     preferences_.begin("params", true); // 只读模式
 
     milliseconds_ = preferences_.getInt("millisec", milliseconds_);
@@ -414,7 +426,7 @@ void DiffDriverControl::_load_params() {
     right_motor_control_->load_pid_params();
 }
 
-void DiffDriverControl::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
+void MotionControlTask::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
 
     response->wheel_width = wheel_width_;
     response->track_width = track_width_;
@@ -438,7 +450,7 @@ void DiffDriverControl::read_config(motion_settings_service__srv__MotionSettings
     response->right_front_encoder_pinb = right_motor_control_->get_motor_params().encoder_pinB;
 }
 
-void DiffDriverControl::save_config() {
+void MotionControlTask::save_config() {
     preferences_.begin("settings", false);
     preferences_.clear();
 
@@ -451,7 +463,7 @@ void DiffDriverControl::save_config() {
     right_motor_control_->save_motor_params();
 }
 
-void DiffDriverControl::_load_config() {
+void MotionControlTask::load_config() {
     preferences_.begin("settings", true); // 只读模式
 
     wheel_width_ = preferences_.getFloat("wheWid", wheel_width_);
@@ -463,7 +475,7 @@ void DiffDriverControl::_load_config() {
     right_motor_control_->load_motor_params();
 }
 
-void DiffDriverControl::update_target_max_speed() {
+void MotionControlTask::update_target_max_speed() {
     auto left_max_wheel_speed = left_motor_control_->get_max_speed();
     auto right_max_wheel_speed = right_motor_control_->get_max_speed();
 
@@ -471,7 +483,7 @@ void DiffDriverControl::update_target_max_speed() {
     speed_percent_ = max_v_ / target_max_v_;
 }
 
-void DiffDriverControl::test_motors() {
+void MotionControlTask::test_motors() {
     long left_current = 0;
     long right_current = 0;
 

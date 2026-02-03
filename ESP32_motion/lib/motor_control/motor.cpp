@@ -4,9 +4,6 @@
 
 Motor::Motor() {
     init_ = false;
-    // channel_id_ = channel_cnt_;
-    // channel_cnt_ += 1;
-    // ledcSetup(channel_id_, 5000, RESOLUTIONBITS);
 }
 
 bool Motor::init_success() {
@@ -29,9 +26,6 @@ void Motor::set_pins(int pin_A, int pin_B, int pin_PWM) {
 
         if (init_) {
             pwmControl_.attachPin(pin_PWM_);
-            // if (pin_PWM_ > 0) {
-            //     ledcAttachPin(pin_PWM_, channel_id_);
-            // }
             stop();
         }
     }
@@ -64,7 +58,6 @@ void Motor::stop() {
     if (!init_)
         return;
     pwmControl_.write(uint32_t(0));
-    // ledcWrite(channel_id_, 0);
 }
 
 void Motor::brake() {

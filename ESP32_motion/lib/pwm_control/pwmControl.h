@@ -7,7 +7,7 @@ class PWMControl {
 public:
     PWMControl();
     PWMControl(int pin_pwm, uint8_t resolution_bits = 12, uint32_t requency = 5000);
-    ~PWMControl();
+    ~PWMControl() = default;
 
     bool attachPin(int pin_pwm);
     bool write(uint32_t pwm);

@@ -2,7 +2,6 @@
 
 #include "enum.h"
 #include "geometry_msgs/msg/twist.h"
-#include "motionControl.h"
 #include "nav_msgs/msg/odometry.h"
 #include "system.h"
 extern "C" {
@@ -10,15 +9,15 @@ extern "C" {
 #include "motion_status_msgs/msg/motion_status.h"
 }
 #include "baseNode.h"
-#include "mpu6050Control.h"
-#include "settings.h"
+#include "motionControlTask.h"
+#include "sensorsControlTask.h"
 
-class MotionNode : public BaseNode<MotionNode> {
+class MotionNodeTask : public BaseNode<MotionNodeTask> {
 
-    friend class Singleton<MotionNode>;
+    friend class Singleton<MotionNodeTask>;
 
 protected:
-    MotionNode();
+    MotionNodeTask();
     bool init_micro_ros() override;
     void clean_micro_ros() override;
 
@@ -45,9 +44,6 @@ private:
     bool control_cmd_vel_subscription_initialized_ = false;
     bool motion_status_publisher_initialized_ = false;
     bool publish_motion_status_timer_initialized_ = false;
-
-    MotionControl *motionControl_ = nullptr;
-    MPU6050Control *mpu6050Control_ = nullptr;
 
     bool _create_publish_motion_status_timer();
     void _destroy_publish_motion_status_timer();

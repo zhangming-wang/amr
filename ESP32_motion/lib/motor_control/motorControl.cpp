@@ -155,11 +155,11 @@ float MotorControl::calculate(float target_v, float dt, bool pid_adjust) {
     // current_v_ = get_dt_distance() / dt;
 
     if (pid_adjust) {
-        if (fabs(target_v_) < 0.001 && fabs(current_v_) < 0.02) {
-            pid_value_ = 0;
+        if (fabs(target_v_) < 0.001f && fabs(current_v_) < 0.02f) {
+            pid_value_ = 0.0f;
             pidControl_->reset(); // 这一步非常重要，清空积分累积
         } else {
-            pid_value_ = pidControl_->calculate(current_v_ * 1000, target_v_ * 1000, dt) / 100.0;
+            pid_value_ = pidControl_->calculate(current_v_ * 1000.0f, target_v_ * 1000.0f, dt) / 100.0f;
         }
     } else {
         pid_value_ = target_v_ / max_v_;

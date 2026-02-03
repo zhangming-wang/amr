@@ -23,8 +23,6 @@ void PWMControl::_init() {
     ledcSetup(channel_id_, requency_, resolution_bits_);
 }
 
-PWMControl::~PWMControl() {}
-
 bool PWMControl::attachPin(int pin_pwm) {
     if (pin_pwm >= 0) {
         if (pin_pwm_ >= 0) {

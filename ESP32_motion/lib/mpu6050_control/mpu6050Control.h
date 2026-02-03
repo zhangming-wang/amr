@@ -2,9 +2,6 @@
 
 #include "I2Cdev/I2Cdev.h"
 #include "MPU6050/MPU6050_6Axis_MotionApps20.h"
-#include "baseTask.h"
-#include "motion_settings_service/srv/motion_settings_service.h"
-#include "motion_status_msgs/msg/motion_status.h"
 #include "rosidl_runtime_c/string_functions.h"
 #include "system.h"
 #include <Arduino.h>
@@ -14,35 +11,37 @@
 #include <cstdint>
 #include <micro_ros_platformio.h>
 
-class MPU6050Control : public BaseTaskSingleton<MPU6050Control> {
-
-    friend class Singleton<MPU6050Control>;
-
-protected:
-    MPU6050Control();
-    virtual ~MPU6050Control() = default;
+class MPU6050Control {
 
 public:
-    void update() override;
+    MPU6050Control();
+    MPU6050Control(const std::string &name);
+    ~MPU6050Control() = default;
+
+    void update();
 
     void set_pins(int pin_SDA, int pin_SCL);
+    void get_pins(int &pin_SDA, int &pin_SCL);
+
     void set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t zAccOffset,
                     int16_t xGyroOffset, int16_t yGyroOffset, int16_t zGyroOffset);
+    void get_offset(int16_t &xAccOffset, int16_t &yAccOffset, int16_t &zAccOffset,
+                    int16_t &xGyroOffset, int16_t &yGyroOffset, int16_t &zGyroOffset);
 
     void start_calibration();
 
-    void get_motion_status(motion_status_msgs__msg__MotionStatus &msg);
+    void get_data(float &gyroX, float &gyroY, float &gyroZ, float &yaw, float &pitch, float &roll);
 
-    void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
-    void save_params();
-    void load_params();
-
-    void read_config(motion_settings_service__srv__MotionSettingsService_Response *response);
     void save_config();
     void load_config();
 
+    void save_params();
+    void load_params();
+
 private:
     int pin_SDA_ = -1, pin_SCL_ = -1;
+
+    std::string name_ = "mpu";
 
     bool is_dmp_handle_ = true;
     std::atomic<bool> init_success_{false};

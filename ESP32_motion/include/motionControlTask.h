@@ -1,6 +1,5 @@
 #pragma once
 
-#include "esp_timer.h"
 #include "micro_ros_utilities/string_utilities.h"
 #include "motorControl.h"
 #include "nav_msgs/msg/odometry.h"
@@ -11,14 +10,10 @@ extern "C" {
 #include "motion_status_msgs/msg/motion_status.h"
 }
 #include "baseTask.h"
-#include "enum.h"
-#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
 #include "freertos/task.h"
 #include <Arduino.h>
 #include <Preferences.h>
-#include <deque>
 #include <geometry_msgs/msg/quaternion.h>
 #include <geometry_msgs/msg/twist.h>
 #include <map>
@@ -28,9 +23,9 @@ extern "C" {
 #include <utility>
 #include <vector>
 
-class DiffDriverControl : public BaseTaskSingleton<DiffDriverControl> {
+class MotionControlTask : public BaseTaskSingleton<MotionControlTask> {
 
-    friend class Singleton<DiffDriverControl>;
+    friend class Singleton<MotionControlTask>;
 
     struct WheelSpeed {
         float left_v = 0;
@@ -38,14 +33,13 @@ class DiffDriverControl : public BaseTaskSingleton<DiffDriverControl> {
     };
 
 protected:
-    DiffDriverControl();
+    MotionControlTask();
     void init_task() override { brake(); };
     void clean_task() override { brake(); };
 
 public:
     void update() override;
 
-    void move(float dt);
     void stop_move();
     void brake();
 
@@ -64,8 +58,6 @@ public:
     void set_wheels_speed(const WheelSpeed &target_wheel_speed);
 
     void update_target_max_speed();
-
-    void get_motion_status(motion_status_msgs__msg__MotionStatus &msg);
 
     void set_motor_enable_flags(uint8_t flags);
     uint8_t get_motor_enable_flags();
@@ -89,10 +81,14 @@ public:
 
     void set_speed_plan_state(bool enable);
 
+    void get_data(motion_status_msgs__msg__MotionStatus &msg);
+
     void read_config(motion_settings_service__srv__MotionSettingsService_Response *response);
+    void load_config();
     void save_config();
 
     void read_params(motion_settings_service__srv__MotionSettingsService_Response *response);
+    void load_params();
     void save_params();
 
     void test_motors();
@@ -111,6 +107,7 @@ private:
     uint8_t motor_enable_flags_ = 0xff;
 
     volatile bool running_ = false, enable_speed_plan_ = false;
+    volatile float dt_ = 0;
 
     WheelSpeed current_wheel_v_, target_wheel_v_;
     std::deque<WheelSpeed> wheel_speed_deque_;
@@ -118,6 +115,7 @@ private:
     Preferences preferences_;
 
     SemaphoreHandle_t mutex_; // 互斥量句柄
+    TickType_t task_tick_count_;
 
     std::shared_ptr<MotorControl> left_motor_control_, right_motor_control_;
     std::shared_ptr<SpeedPlan> speedPlan_;
@@ -126,9 +124,6 @@ private:
 
     geometry_msgs__msg__Twist _forwardKinematics(const WheelSpeed &wheelSpeed);
     WheelSpeed _inverseKinematics(const geometry_msgs__msg__Twist &twist);
-
-    void _load_params();
-    void _load_config();
 
     void _plan_wheel_speed(const WheelSpeed &target_wheel_speed);
 };

@@ -27,19 +27,12 @@ public:
     void set_dead_pwm(uint dead_pwm);
     uint get_dead_pwm();
 
-    void set_pwm_fix(float pwm_fix);
-    float get_pwm_fix();
-
 private:
     bool init_ = false;
     int pin_A_ = -1, pin_B_ = -1, pin_PWM_ = -1;
-    // static int channel_cnt_;
-    // int channel_id_ = 0;
+
     volatile uint32_t pwm_ = 0;
     uint dead_pwm_ = 400;
-
-    // static const int RESOLUTIONBITS = 12;
-    // static const int MINPWM = 0;
 
     PWMControl pwmControl_;
 

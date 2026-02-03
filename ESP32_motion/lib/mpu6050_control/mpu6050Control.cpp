@@ -1,7 +1,12 @@
 #include "mpu6050Control.h"
 
 MPU6050Control::MPU6050Control() {
-    // _load_config();
+    load_config();
+}
+
+MPU6050Control::MPU6050Control(const std::string &name) {
+    name_ = name;
+    load_config();
 }
 
 void MPU6050Control::update() {
@@ -12,6 +17,11 @@ void MPU6050Control::update() {
             _manual_read();
         }
     }
+}
+
+void MPU6050Control::get_pins(int &pin_SDA, int &pin_SCL) {
+    pin_SDA = pin_SDA_;
+    pin_SCL = pin_SCL_;
 }
 
 void MPU6050Control::set_pins(int pin_SDA, int pin_SCL) {
@@ -139,20 +149,21 @@ void MPU6050Control::_start_calibration_task() {
     mpu_.setDMPEnabled(true); // ✅ 最后再重新开启 DMP
     mpu_.resetFIFO();         // 🧹 再次清空，防止旧数据残留
 
-    serial_print("校准完成!");
-
     save_params();
+
+    serial_print("校准完成!");
 
     is_calibrating_.store(false);
 }
 
-void MPU6050Control::read_params(motion_settings_service__srv__MotionSettingsService_Response *response) {
-    response->mpu6050_accel_offset_x = xAccelOffset_;
-    response->mpu6050_accel_offset_y = yAccelOffset_;
-    response->mpu6050_accel_offset_z = zAccelOffset_;
-    response->mpu6050_gyro_offset_x = xGyroOffset_;
-    response->mpu6050_gyro_offset_y = yGyroOffset_;
-    response->mpu6050_gyro_offset_z = zGyroOffset_;
+void MPU6050Control::get_offset(int16_t &xAccOffset, int16_t &yAccOffset, int16_t &zAccOffset,
+                                int16_t &xGyroOffset, int16_t &yGyroOffset, int16_t &zGyroOffset) {
+    xAccOffset = xAccelOffset_;
+    yAccOffset = yAccelOffset_;
+    zAccOffset = zAccelOffset_;
+    xGyroOffset = xGyroOffset_;
+    yGyroOffset = yGyroOffset_;
+    zGyroOffset = zGyroOffset_;
 }
 
 void MPU6050Control::set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t zAccOffset, int16_t xGyroOffset, int16_t yGyroOffset, int16_t zGyroOffset) {
@@ -175,7 +186,7 @@ void MPU6050Control::set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t 
 }
 
 void MPU6050Control::save_params() {
-    preferences_.begin("offset", false);
+    preferences_.begin(std::string(name_ + "params").c_str(), false);
     preferences_.clear();
     preferences_.putShort("xAccffset", xAccelOffset_);
     preferences_.putShort("yAccOffset", yAccelOffset_);
@@ -187,7 +198,7 @@ void MPU6050Control::save_params() {
 }
 
 void MPU6050Control::load_params() {
-    preferences_.begin("offset", true); // 只读模式
+    preferences_.begin(std::string(name_ + "params").c_str(), true); // 只读模式
     // 如果没保存过，会返回0，或你也可以判断是否存在
     xAccelOffset_ = preferences_.getShort("xAccffset", xAccelOffset_);
     yAccelOffset_ = preferences_.getShort("yAccOffset", yAccelOffset_);
@@ -203,26 +214,18 @@ void MPU6050Control::load_params() {
     mpu_.setXGyroOffset(xGyroOffset_);
     mpu_.setYGyroOffset(yGyroOffset_);
     mpu_.setZGyroOffset(zGyroOffset_);
-
-    serial_print("MPU6050偏移参数已加载.");
-}
-
-void MPU6050Control::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
-    response->mpu6050_pin_scl = pin_SCL_;
-    response->mpu6050_pin_sda = pin_SDA_;
 }
 
 void MPU6050Control::save_config() {
-    preferences_.begin("mpu", false);
+    preferences_.begin(std::string(name_ + "config").c_str(), false);
     preferences_.clear();
     preferences_.putInt("pinSDA", pin_SDA_);
     preferences_.putInt("pinSCL", pin_SCL_);
     preferences_.end();
-    serial_print("MPU6050配置已保存.");
 }
 
 void MPU6050Control::load_config() {
-    preferences_.begin("mpu", true); // 只读模式
+    preferences_.begin(std::string(name_ + "config").c_str(), true); // 只读模式
     auto pin_SDA = preferences_.getInt("pinSDA", -1);
     auto pin_SCL = preferences_.getInt("pinSCL", -1);
     preferences_.end();
@@ -304,11 +307,11 @@ void MPU6050Control::_manual_read() {
     roll_ = ALPHA * roll_ + (1 - ALPHA) * atan2(ay, az) * 180.0 / M_PI;
 }
 
-void MPU6050Control::get_motion_status(motion_status_msgs__msg__MotionStatus &msg) {
-    msg.imu_gyro_x = gyroX_;
-    msg.imu_gyro_y = gyroY_;
-    msg.imu_gyro_z = gyroZ_;
-    msg.imu_roll = roll_;
-    msg.imu_pitch = pitch_;
-    msg.imu_yaw = yaw_;
+void MPU6050Control::get_data(float &gyroX, float &gyroY, float &gyroZ, float &yaw, float &pitch, float &roll) {
+    gyroX = gyroX_;
+    gyroY = gyroY_;
+    gyroZ = gyroZ_;
+    yaw = yaw_;
+    pitch = pitch_;
+    roll = roll_;
 }
