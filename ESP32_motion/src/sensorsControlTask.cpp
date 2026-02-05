@@ -40,7 +40,7 @@ void SensorsControlTask::write_params(const motion_settings_service__srv__Motion
 
 void SensorsControlTask::get_data(motion_status_msgs__msg__MotionStatus &msg) {
     mpu6050Control_->get_data(msg.sensor_status.gyro_x, msg.sensor_status.gyro_y, msg.sensor_status.gyro_z, msg.sensor_status.yaw, msg.sensor_status.pitch, msg.sensor_status.roll);
-    lidarControl_->get_data(msg.sensor_status.data);
+    lidarControl_->get_data(msg.sensor_status.data, msg.sensor_status.size);
 }
 
 void SensorsControlTask::read_params(motion_settings_service__srv__MotionSettingsService_Response *response) {

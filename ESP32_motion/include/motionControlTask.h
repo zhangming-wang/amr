@@ -63,8 +63,8 @@ public:
     void set_speed_plan_parms(const SpdPlanParams &params);
     const SpdPlanParams &get_speed_plan_parms();
 
-    void set_speed_percent(float percent);
-    float get_speed_percent();
+    void set_speed_percent(float linear_percent, float angular_percent);
+    void get_speed_percent(float &linear_percent, float &angular_percent);
 
     void get_data(motion_status_msgs__msg__MotionStatus &msg);
 
@@ -84,7 +84,7 @@ private:
 
     //---------局部内部参数---------
     uint8_t motor_enable_flags_ = 0xff;
-    float target_max_v_ = 1.0, speed_percent_ = 1.0;
+    float target_max_v_ = 1.0, target_max_w_ = 1.0, linear_speed_percent_ = 1.0, angular_speed_percent_ = 1.0;
 
     volatile bool running_ = false;
     volatile float dt_ = 0;

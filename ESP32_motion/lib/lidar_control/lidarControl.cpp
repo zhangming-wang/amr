@@ -1,11 +1,10 @@
 #include "lidarControl.h"
 
 LidarControl::LidarControl() {
-    baudrate_ = ydlidar_baudrate;
 }
+
 LidarControl::LidarControl(const std::string &name) {
     name_ = name;
-    baudrate_ = ydlidar_baudrate;
 }
 
 void LidarControl::save_config() {
@@ -62,8 +61,13 @@ void LidarControl::get_pins(int &pin_tx, int &pin_rx, int &pin_pwm) {
     pin_pwm = pin_pwm_;
 }
 
-void LidarControl::get_data(uint8_t *data) {
-    memcpy(data, data_buffer_[current_buffer_index_], buffer_size_);
+void LidarControl::get_data(uint8_t *data, uint8_t &size) {
+    size = data_buffer_[ready_buffer_index_].size;
+    if (size > 0) {
+        memcpy(data, data_buffer_[ready_buffer_index_].data_buffer, data_buffer_[ready_buffer_index_].size);
+        data_buffer_[ready_buffer_index_].size = 0;
+        data_buffer_[ready_buffer_index_].data_buffer[0] = 0x00;
+    }
 }
 
 void LidarControl::motorOn(float speed_percent) {
@@ -75,42 +79,26 @@ void LidarControl::motorOff() {
 }
 
 void LidarControl::update() {
-    static int synce_State = -1;
-    if (synce_State == 1) {
-        // 已经同步，读取完整数据包
-        if (Serial2.available() >= buffer_size_) {
-            auto size = Serial2.readBytes(data_buffer_[1 - current_buffer_index_], buffer_size_);
-            if (size != buffer_size_) {
-                serial_print("LidarControl read data size error, resyncing.");
-                synce_State = -1;
-            }
-        }
-    } else if (synce_State == 0) {
-        // 已经同步，读取剩余数据
-        if (Serial2.available() >= buffer_size_ - 2) {
-            auto size = Serial2.readBytes(data_buffer_[1 - current_buffer_index_] + 2, buffer_size_ - 2);
-            if (size != buffer_size_ - 2) {
-                serial_print("LidarControl read data size error, resyncing.");
-                synce_State = -1;
-            } else {
-                synce_State = 1;
-                serial_print("LidarControl data synced.");
-            }
-        }
-    } else {
-        // 寻找同步头 0xAA 0x55
-        while (Serial2.available() >= 2) {
-            if (Serial2.peek() == 0xAA) {
-                data_buffer_[1 - current_buffer_index_][0] = Serial2.read(); // 丢弃 0xAA
-                if (Serial2.peek() == 0x55) {
-                    data_buffer_[1 - current_buffer_index_][1] = Serial2.read(); // 丢弃 0x55
-                    synce_State = 0;
-                    break;
+    if (Serial.available()) {
+        while (Serial.available()) {
+            current_data_ = Serial.read();
+            if (current_data_ == 0xaa) {
+                is_data_begin_sig_ = true;
+            } else if (current_data_ == 0x55) {
+                if (is_data_begin_sig_) {
+                    if (data_buffer_[using_buffer_index_].data_buffer[0] == 0xaa) {
+                        data_buffer_[using_buffer_index_].size--;
+                        using_buffer_index_ = 1 - using_buffer_index_;
+                        ready_buffer_index_ = 1 - ready_buffer_index_;
+                    }
+                    data_buffer_[using_buffer_index_].size = 1;
+                    data_buffer_[using_buffer_index_].data_buffer[0] = 0xaa;
+                    is_data_begin_sig_ = false;
                 }
             } else {
-                Serial2.read(); // 丢弃无效数据
+                is_data_begin_sig_ = false;
             }
+            data_buffer_[using_buffer_index_].data_buffer[data_buffer_[using_buffer_index_].size++] = current_data_;
         }
     }
-    current_buffer_index_ = 1 - current_buffer_index_;
 }

@@ -9,9 +9,10 @@ void SpeedPlan::set_params(const SpdPlanParams &params) {
     _update();
 }
 
-void SpeedPlan::set_params(int milliseconds, float max_v, float max_acc, float jerk, bool enable) {
+void SpeedPlan::set_params(int milliseconds, float max_v, float max_w, float max_acc, float jerk, bool enable) {
     params_.milliseconds = milliseconds;
     params_.max_v = max_v;
+    params_.max_w = max_w;
     params_.max_acc = max_acc;
     params_.jerk = jerk;
     params_.enable = enable;

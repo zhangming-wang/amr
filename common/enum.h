@@ -10,18 +10,11 @@ namespace MotionService {
         StopMove,
         MoveFront,
         MoveBack,
-        MoveLeft,
-        MoveRight,
-        MoveLeftFront,
-        MoveLeftBack,
-        MoveRightFront,
-        MoveRightBack,
         TurnLeft,
         TurnRight,
 
         SetSpeedPercent,
         SetSpeedPlanState,
-        SetEnablePubMotionStatus,
 
         CalibrateMPU6050,
 

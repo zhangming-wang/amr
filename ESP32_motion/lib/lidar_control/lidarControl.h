@@ -8,6 +8,11 @@
 #include <WiFi.h>
 #include <vector>
 
+struct LidarData {
+    uint8_t data_buffer[128];
+    uint8_t size = 0;
+};
+
 class LidarControl {
 
 public:
@@ -23,7 +28,7 @@ public:
     void motorOn(float speed_percent = 1.0);
     void motorOff();
 
-    void get_data(uint8_t *data);
+    void get_data(uint8_t *data, uint8_t &size);
 
     void save_config();
     void load_config();
@@ -33,10 +38,13 @@ private:
 
     std::string name_;
     int pin_pwm_ = -1, pin_tx_ = -1, pin_rx_ = -1;
-    unsigned long baudrate_ = 115200;
+    unsigned long baudrate_ = ydlidar_baudrate;
 
-    uint8_t data_buffer_[2][ydlidar_data_size];
-    const int buffer_size_ = ydlidar_data_size;
-    volatile int current_buffer_index_ = 0;
+    LidarData data_buffer_[2];
+    volatile int using_buffer_index_ = 0, ready_buffer_index_ = 1;
+
+    uint8_t current_data_;
+    bool is_data_begin_sig_ = false;
+
     PWMControl pwmControl_;
 };

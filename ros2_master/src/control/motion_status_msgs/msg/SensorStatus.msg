@@ -5,4 +5,5 @@ float32 gyro_x
 float32 gyro_y
 float32 gyro_z
 
-uint8[90] data
+uint8[128] data
+uint8 size

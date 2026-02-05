@@ -32,7 +32,6 @@ static constexpr const char *imu_topic_name = "/imu";
 static constexpr const char *cmd_vel_topic_name = "/cmd_vel";
 static constexpr const char *joint_states_topic_name = "/joint_states";
 
-static constexpr const int ydlidar_data_size = 90;
 static constexpr const int ydlidar_baudrate = 115200;
 static constexpr const char *laser_scan_topic_name = "/scan";
 static constexpr const char *laser_points_topic_name = "/scan/points";

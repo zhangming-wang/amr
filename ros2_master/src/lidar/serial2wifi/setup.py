@@ -18,6 +18,10 @@ setup(
     license="TODO: License declaration",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": ["tcpserver=serial2wifi.tcpserver:main", "udpserver=serial2wifi.udpserver:main"],
+        "console_scripts": [
+            "tcpserver=serial2wifi.tcpserver:main",
+            "udpserver=serial2wifi.udpserver:main",
+            "serialserver=serial2wifi.serialserver:main",
+        ],
     },
 )

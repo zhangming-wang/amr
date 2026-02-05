@@ -23,26 +23,54 @@ MotionControlTask::MotionControlTask() {
     _refresh_target_max_v();
 }
 
+void MotionControlTask::set_motor_enable_flags(uint8_t flags) {
+    motor_enable_flags_ = flags;
+}
+
+uint8_t MotionControlTask::get_motor_enable_flags() {
+    return motor_enable_flags_;
+}
+
 void MotionControlTask::set_speed_plan_parms(const SpdPlanParams &params) {
-    speed_percent_ = params.max_v / target_max_v_;
-    speedPlan_->set_params(params);
+    auto params_copy = params;
+    params_copy.max_v = fabs(params_copy.max_v);
+    params_copy.max_w = fabs(params_copy.max_w);
+
+    if (params_copy.max_v > target_max_v_)
+        params_copy.max_v = target_max_v_;
+    if (params_copy.max_w > target_max_w_)
+        params_copy.max_w = target_max_w_;
+
+    linear_speed_percent_ = params_copy.max_v / target_max_v_;
+    angular_speed_percent_ = params_copy.max_w / target_max_w_;
+
+    speedPlan_->set_params(params_copy);
 }
 const SpdPlanParams &MotionControlTask::get_speed_plan_parms() {
     return speedPlan_->get_params();
 }
 
-void MotionControlTask::set_speed_percent(float percent) {
-    percent = fabs(percent);
-    if (percent >= 1)
-        percent = 1;
-    speed_percent_ = percent;
+void MotionControlTask::set_speed_percent(float linear_percent, float angular_percent) {
+    linear_percent = fabs(linear_percent);
+    angular_percent = fabs(angular_percent);
+    if (linear_percent >= 1)
+        linear_percent = 1;
+    if (angular_percent >= 1)
+        angular_percent = 1;
+
+    linear_speed_percent_ = linear_percent;
+    angular_speed_percent_ = angular_percent;
+
     auto spd_params = speedPlan_->get_params();
-    spd_params.max_v = target_max_v_ * speed_percent_;
+    spd_params.max_v = target_max_v_ * linear_speed_percent_;
+    spd_params.max_w = target_max_w_ * angular_speed_percent_;
+
     speedPlan_->set_params(spd_params);
 }
 
-float MotionControlTask::get_speed_percent() {
-    return speed_percent_;
+void MotionControlTask::get_speed_percent(float &linear_percent, float &angular_percent) {
+    linear_percent = linear_speed_percent_;
+    angular_percent = angular_speed_percent_;
 }
 
 void MotionControlTask::brake() {
@@ -70,8 +98,8 @@ void MotionControlTask::stop_move() {
 
 void MotionControlTask::move_front() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = 0;
-    target_twist.linear.y = speedPlan_->get_params().max_v;
+    target_twist.linear.x = speedPlan_->get_params().max_v;
+    target_twist.linear.y = 0;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -81,74 +109,8 @@ void MotionControlTask::move_front() {
 
 void MotionControlTask::move_back() {
     geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = 0;
-    target_twist.linear.y = -speedPlan_->get_params().max_v;
-    target_twist.linear.z = 0;
-    target_twist.angular.x = 0;
-    target_twist.angular.y = 0;
-    target_twist.angular.z = 0;
-    set_twist(target_twist);
-}
-
-void MotionControlTask::move_left() {
-    geometry_msgs__msg__Twist target_twist;
     target_twist.linear.x = -speedPlan_->get_params().max_v;
     target_twist.linear.y = 0;
-    target_twist.linear.z = 0;
-    target_twist.angular.x = 0;
-    target_twist.angular.y = 0;
-    target_twist.angular.z = 0;
-    set_twist(target_twist);
-}
-
-void MotionControlTask::move_right() {
-    geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = speedPlan_->get_params().max_v;
-    target_twist.linear.y = 0;
-    target_twist.linear.z = 0;
-    target_twist.angular.x = 0;
-    target_twist.angular.y = 0;
-    target_twist.angular.z = 0;
-    set_twist(target_twist);
-}
-
-void MotionControlTask::move_left_front() {
-    geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = -speedPlan_->get_params().max_v;
-    target_twist.linear.y = speedPlan_->get_params().max_v;
-    target_twist.linear.z = 0;
-    target_twist.angular.x = 0;
-    target_twist.angular.y = 0;
-    target_twist.angular.z = 0;
-    set_twist(target_twist);
-}
-
-void MotionControlTask::move_right_back() {
-    geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = speedPlan_->get_params().max_v;
-    target_twist.linear.y = -speedPlan_->get_params().max_v;
-    target_twist.linear.z = 0;
-    target_twist.angular.x = 0;
-    target_twist.angular.y = 0;
-    target_twist.angular.z = 0;
-    set_twist(target_twist);
-}
-
-void MotionControlTask::move_right_front() {
-    geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = speedPlan_->get_params().max_v;
-    target_twist.linear.y = speedPlan_->get_params().max_v;
-    target_twist.linear.z = 0;
-    target_twist.angular.x = 0;
-    target_twist.angular.y = 0;
-    target_twist.angular.z = 0;
-    set_twist(target_twist);
-}
-
-void MotionControlTask::move_left_back() {
-    geometry_msgs__msg__Twist target_twist;
-    target_twist.linear.x = -speedPlan_->get_params().max_v;
-    target_twist.linear.y = -speedPlan_->get_params().max_v;
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
@@ -163,7 +125,7 @@ void MotionControlTask::turn_left() {
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
-    target_twist.angular.z = 2.0f * speedPlan_->get_params().max_v / wheel_width_;
+    target_twist.angular.z = speedPlan_->get_params().max_w;
     set_twist(target_twist);
 }
 
@@ -174,8 +136,7 @@ void MotionControlTask::turn_right() {
     target_twist.linear.z = 0;
     target_twist.angular.x = 0;
     target_twist.angular.y = 0;
-    target_twist.angular.z = -2.0f * speedPlan_->get_params().max_v / wheel_width_;
-
+    target_twist.angular.z = -speedPlan_->get_params().max_w;
     set_twist(target_twist);
 }
 
@@ -302,7 +263,7 @@ geometry_msgs__msg__Twist MotionControlTask::_forwardKinematics(const MotionCont
 
 MotionControlTask::WheelSpeed MotionControlTask::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
     MotionControlTask::WheelSpeed wheelSpeed;
-    float v = twist.linear.y;  // 前进线速度
+    float v = twist.linear.z;  // 前进线速度
     float w = twist.angular.z; // 角速度（绕 z 轴）
 
     // 左右轮速度
@@ -342,20 +303,24 @@ void MotionControlTask::write_params(const motion_settings_service__srv__MotionS
 
     speedPlan_->set_params(request->spd_plan_settings.milliseconds,
                            request->spd_plan_settings.max_v,
+                           request->spd_plan_settings.max_w,
                            request->spd_plan_settings.max_acc,
                            request->spd_plan_settings.jerk,
                            request->spd_plan_settings.enable);
 
-    speed_percent_ = speedPlan_->get_params().max_v / target_max_v_;
+    linear_speed_percent_ = speedPlan_->get_params().max_v / target_max_v_;
+    angular_speed_percent_ = speedPlan_->get_params().max_w / target_max_w_;
 }
 
 void MotionControlTask::read_params(motion_settings_service__srv__MotionSettingsService_Response *response) {
     response->motor_enable_flags = motor_enable_flags_;
-    response->speed_percent = speed_percent_;
+    response->linear_speed_percent = linear_speed_percent_;
+    response->angular_speed_percent = angular_speed_percent_;
 
     response->spd_plan_settings.milliseconds = speedPlan_->get_params().milliseconds;
     response->spd_plan_settings.enable = speedPlan_->get_params().enable;
     response->spd_plan_settings.max_v = speedPlan_->get_params().max_v;
+    response->spd_plan_settings.max_w = speedPlan_->get_params().max_w;
     response->spd_plan_settings.max_acc = speedPlan_->get_params().max_acc;
     response->spd_plan_settings.jerk = speedPlan_->get_params().jerk;
 
@@ -384,6 +349,7 @@ void MotionControlTask::save_params() {
     preferences_.putBool("spdPlan", speedPlan_->get_params().enable);
 
     preferences_.putFloat("maxV", speedPlan_->get_params().max_v);
+    preferences_.putFloat("maxW", speedPlan_->get_params().max_w);
     preferences_.putFloat("maxAcc", speedPlan_->get_params().max_acc);
     preferences_.putFloat("jerk", speedPlan_->get_params().jerk);
 
@@ -400,6 +366,7 @@ void MotionControlTask::_load_params() {
     params.milliseconds = preferences_.getInt("millisec", params.milliseconds);
     params.enable = preferences_.getBool("spdPlan", params.enable);
     params.max_v = preferences_.getFloat("maxV", params.max_v);
+    params.max_w = preferences_.getFloat("maxW", params.max_w);
     params.max_acc = preferences_.getFloat("maxAcc", params.max_acc);
     params.jerk = preferences_.getFloat("jerk", params.jerk);
     preferences_.end();
@@ -412,7 +379,6 @@ void MotionControlTask::_load_params() {
 
 void MotionControlTask::write_config(const motion_settings_service__srv__MotionSettingsService_Request *request) {
     wheel_width_ = request->wheel_width;
-    track_width_ = request->track_width;
 
     left_motor_control_->set_motor_config(request->drivers_settings[0].motor_pina,
                                           request->drivers_settings[0].motor_pinb,
@@ -437,7 +403,6 @@ void MotionControlTask::write_config(const motion_settings_service__srv__MotionS
 
 void MotionControlTask::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
     response->wheel_width = wheel_width_;
-    response->track_width = track_width_;
 
     response->drivers_settings[0].motor_pina = left_motor_control_->get_motor_config().motor_AIN1;
     response->drivers_settings[0].motor_pinb = left_motor_control_->get_motor_config().motor_AIN2;
@@ -461,10 +426,7 @@ void MotionControlTask::read_config(motion_settings_service__srv__MotionSettings
 void MotionControlTask::save_config() {
     preferences_.begin("mctsettings", false);
     preferences_.clear();
-
     preferences_.putFloat("wheWid", wheel_width_);
-    preferences_.putFloat("traWid", track_width_);
-
     preferences_.end();
 
     left_motor_control_->save_config();
@@ -473,10 +435,7 @@ void MotionControlTask::save_config() {
 
 void MotionControlTask::_load_config() {
     preferences_.begin("mctsettings", true); // 只读模式
-
     wheel_width_ = preferences_.getFloat("wheWid", wheel_width_);
-    track_width_ = preferences_.getFloat("traWid", track_width_);
-
     preferences_.end();
 
     left_motor_control_->load_config();
@@ -488,12 +447,19 @@ void MotionControlTask::_refresh_target_max_v() {
     auto right_max_wheel_speed = right_motor_control_->get_max_speed();
 
     target_max_v_ = std::min({left_max_wheel_speed, right_max_wheel_speed});
+    target_max_w_ = 2.0f * target_max_v_ / wheel_width_;
+
     auto spd_params = speedPlan_->get_params();
     if (spd_params.max_v > target_max_v_) {
         spd_params.max_v = target_max_v_;
-        speedPlan_->set_params(spd_params);
     }
-    speed_percent_ = speedPlan_->get_params().max_v / target_max_v_;
+    if (spd_params.max_w > target_max_w_) {
+        spd_params.max_w = target_max_w_;
+    }
+    speedPlan_->set_params(spd_params);
+
+    linear_speed_percent_ = speedPlan_->get_params().max_v / target_max_v_;
+    angular_speed_percent_ = speedPlan_->get_params().max_w / target_max_w_;
 }
 
 void MotionControlTask::test_motors() {

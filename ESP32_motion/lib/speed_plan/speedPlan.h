@@ -5,6 +5,7 @@
 #include <math.h>
 
 struct SpdPlanParams {
+    volatile float max_w = 1.0;     // 最大角速度 rad/s
     volatile float max_v = 1.0;     // 最大速度 m/s
     volatile float max_acc = 5.0;   // 最大加速度 m/s²
     volatile float jerk = 1.0;      // 最大加 jerk m/s³
@@ -17,7 +18,7 @@ public:
     SpeedPlan();
     std::deque<float> plan(float current_v, float target_v);
     void set_params(const SpdPlanParams &params);
-    void set_params(int milliseconds, float max_v, float max_acc, float jerk, bool enable);
+    void set_params(int milliseconds, float max_v, float max_w, float max_acc, float jerk, bool enable);
     const SpdPlanParams &get_params();
 
 private:

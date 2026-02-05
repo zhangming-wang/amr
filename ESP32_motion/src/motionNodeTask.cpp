@@ -147,18 +147,6 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
         motionControl->move_front();
     } else if (request->mode == MotionService::Type::MoveBack) {
         motionControl->move_back();
-    } else if (request->mode == MotionService::Type::MoveLeft) {
-        motionControl->move_left();
-    } else if (request->mode == MotionService::Type::MoveRight) {
-        motionControl->move_right();
-    } else if (request->mode == MotionService::Type::MoveLeftFront) {
-        motionControl->move_left_front();
-    } else if (request->mode == MotionService::Type::MoveRightFront) {
-        motionControl->move_right_front();
-    } else if (request->mode == MotionService::Type::MoveLeftBack) {
-        motionControl->move_left_back();
-    } else if (request->mode == MotionService::Type::MoveRightBack) {
-        motionControl->move_right_back();
     } else if (request->mode == MotionService::Type::TurnLeft) {
         motionControl->turn_left();
     } else if (request->mode == MotionService::Type::TurnRight) {
@@ -170,9 +158,10 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
     }
 
     else if (request->mode == MotionService::Type::SetSpeedPercent) {
-        motionControl->set_speed_percent(request->speed_percent);
+        motionControl->set_speed_percent(request->linear_speed_percent, request->angular_speed_percent);
         response->spd_plan_settings.max_v = motionControl->get_speed_plan_parms().max_v;
-        response->speed_percent = motionControl->get_speed_percent();
+        response->spd_plan_settings.max_w = motionControl->get_speed_plan_parms().max_w;
+        motionControl->get_speed_percent(response->linear_speed_percent, response->angular_speed_percent);
     } else if (request->mode == MotionService::Type::SetSpeedPlanState) {
         auto spd_params = motionControl->get_speed_plan_parms();
         spd_params.enable = request->spd_plan_settings.enable;
@@ -191,7 +180,7 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
         motionControl->write_params(request);
         sensorsControl->write_params(request);
 
-        response->speed_percent = motionControl->get_speed_percent();
+        motionControl->get_speed_percent(response->linear_speed_percent, response->angular_speed_percent);
     } else if (request->mode == MotionService::Type::SaveParams) {
         motionControl->save_params();
         sensorsControl->save_params();

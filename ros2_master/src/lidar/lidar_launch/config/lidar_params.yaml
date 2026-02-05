@@ -30,5 +30,7 @@ tcpserver:
     tcp_port: 8889
     serial_port: /tmp/tty_lidar
 
-# micro_ros_agent:
-#   arguments: ["udp4", "--port", "8888"]
+serialserver:
+  ros__parameters:
+    serial_port: /tmp/tty_lidar
+    motion_status_topic: /esp32/motion_status_topic

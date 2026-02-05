@@ -2,9 +2,9 @@ uint64 id
 int32 mode
 
 float32 wheel_width
-float32 track_width
 
-float32 speed_percent
+float32 linear_speed_percent
+float32 angular_speed_percent
 
 motion_settings_service/DriverSettings[2] drivers_settings
 motion_settings_service/SensorSettings sensor_settings
@@ -18,9 +18,9 @@ uint64 id
 int32 mode
 
 float32 wheel_width
-float32 track_width
 
-float32 speed_percent
+float32 linear_speed_percent
+float32 angular_speed_percent
 
 motion_settings_service/DriverSettings[2] drivers_settings
 motion_settings_service/SensorSettings sensor_settings
