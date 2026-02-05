@@ -26,7 +26,8 @@ typedef struct motion_status_msgs__msg__SensorStatus
   float gyro_x;
   float gyro_y;
   float gyro_z;
-  uint8_t data[90];
+  uint8_t data[128];
+  uint8_t size;
 } motion_status_msgs__msg__SensorStatus;
 
 // Struct for a sequence of motion_status_msgs__msg__SensorStatus.

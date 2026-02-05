@@ -31,7 +31,7 @@ void motion_settings_service__msg__SpdPlanSettings__rosidl_typesupport_introspec
   motion_settings_service__msg__SpdPlanSettings__fini(message_memory);
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__msg__SpdPlanSettings__rosidl_typesupport_introspection_c__SpdPlanSettings_message_member_array[6] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__msg__SpdPlanSettings__rosidl_typesupport_introspection_c__SpdPlanSettings_message_member_array[7] = {
   {
     "milliseconds",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
@@ -75,6 +75,23 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     0,  // array size
     false,  // is upper bound
     offsetof(motion_settings_service__msg__SpdPlanSettings, max_v),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "max_w",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__msg__SpdPlanSettings, max_w),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -139,7 +156,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
 static const rosidl_typesupport_introspection_c__MessageMembers motion_settings_service__msg__SpdPlanSettings__rosidl_typesupport_introspection_c__SpdPlanSettings_message_members = {
   "motion_settings_service__msg",  // message namespace
   "SpdPlanSettings",  // message name
-  6,  // number of fields
+  7,  // number of fields
   sizeof(motion_settings_service__msg__SpdPlanSettings),
   motion_settings_service__msg__SpdPlanSettings__rosidl_typesupport_introspection_c__SpdPlanSettings_message_member_array,  // message members
   motion_settings_service__msg__SpdPlanSettings__rosidl_typesupport_introspection_c__SpdPlanSettings_init_function,  // function to initialize message memory (memory has to be allocated)

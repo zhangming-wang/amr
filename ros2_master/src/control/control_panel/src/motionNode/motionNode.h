@@ -26,7 +26,7 @@ public:
     MotionNode(QObject *parent = nullptr);
     void publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist);
     void ask_service_response(MotionSettingsSrv::Request::SharedPtr request);
-    void set_model_param(double track_width, double wheel_width, bool is_mecanum_wheel);
+    void set_model_param(double track_width);
     void set_wheels_diameter(const std::vector<double> &wheels_diameter_vector);
 
 signals:
@@ -52,14 +52,13 @@ private:
 
     MotionStatusMsg::SharedPtr last_motion_status_msg_ = nullptr;
 
-    double track_width_ = 1.0, wheel_width_ = 1.0;
-    std::vector<double> wheels_diameter_vector_{0.3, 0.3, 0.3, 0.3}; // 左上，左下，右上，右下
-    bool is_mecanum_wheel_ = false;
+    double wheel_width_ = 1.0;
+    std::vector<double> wheels_diameter_vector_{0.3, 0.3}; // 左边，右边
 
     void _init_msgs();
 
-    void _forwardKinematicsDistance(double left_front_distance, double left_back_distance, double right_front_distance, double right_back_distance);
-    void _forwardKinematicsSpeed(double left_front_speed, double left_back_speed, double right_front_speed, double right_back_speed);
+    void _forwardKinematicsDistance(double left_distance, double right_distance);
+    void _forwardKinematicsSpeed(double left_speed, double right_speed);
 
     void _pub_static_odomToBasefootprint_tf();
 

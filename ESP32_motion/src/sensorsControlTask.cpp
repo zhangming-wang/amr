@@ -63,7 +63,7 @@ void SensorsControlTask::write_config(const motion_settings_service__srv__Motion
 
 void SensorsControlTask::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
     mpu6050Control_->get_pins(response->sensor_settings.pin_sda, response->sensor_settings.pin_scl);
-    lidarControl_->get_pins(response->sensor_settings.pin_rx, response->sensor_settings.pin_tx, response->sensor_settings.pin_pwm);
+    lidarControl_->get_pins(response->sensor_settings.pin_tx, response->sensor_settings.pin_rx, response->sensor_settings.pin_pwm);
 }
 
 void SensorsControlTask::save_config() {

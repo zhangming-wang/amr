@@ -45,7 +45,5 @@ static constexpr const char *odom_tf_frame_id = "odom";
 static constexpr const char *imu_tf_frame_id = "imu_link";
 static constexpr const char *camera_tf_frame_id = "camera_link";
 
-static constexpr const char *left_front_wheel_joint_name = "left_front_wheel_joint";
-static constexpr const char *left_back_wheel_joint_name = "left_back_wheel_joint";
-static constexpr const char *right_front_wheel_joint_name = "right_front_wheel_joint";
-static constexpr const char *right_back_wheel_joint_name = "right_back_wheel_joint";
+static constexpr const char *left_wheel_joint_name = "left_wheel_joint";
+static constexpr const char *right_wheel_joint_name = "right_wheel_joint";

@@ -79,26 +79,24 @@ void LidarControl::motorOff() {
 }
 
 void LidarControl::update() {
-    if (Serial.available()) {
-        while (Serial.available()) {
-            current_data_ = Serial.read();
-            if (current_data_ == 0xaa) {
-                is_data_begin_sig_ = true;
-            } else if (current_data_ == 0x55) {
-                if (is_data_begin_sig_) {
-                    if (data_buffer_[using_buffer_index_].data_buffer[0] == 0xaa) {
-                        data_buffer_[using_buffer_index_].size--;
-                        using_buffer_index_ = 1 - using_buffer_index_;
-                        ready_buffer_index_ = 1 - ready_buffer_index_;
-                    }
-                    data_buffer_[using_buffer_index_].size = 1;
-                    data_buffer_[using_buffer_index_].data_buffer[0] = 0xaa;
-                    is_data_begin_sig_ = false;
+    while (Serial2.available()) {
+        current_data_ = Serial2.read();
+        if (current_data_ == 0xaa) {
+            is_data_begin_sig_ = true;
+        } else if (current_data_ == 0x55) {
+            if (is_data_begin_sig_) {
+                if (data_buffer_[using_buffer_index_].data_buffer[0] == 0xaa) {
+                    data_buffer_[using_buffer_index_].size--;
+                    using_buffer_index_ = 1 - using_buffer_index_;
+                    ready_buffer_index_ = 1 - ready_buffer_index_;
                 }
-            } else {
+                data_buffer_[using_buffer_index_].size = 1;
+                data_buffer_[using_buffer_index_].data_buffer[0] = 0xaa;
                 is_data_begin_sig_ = false;
             }
-            data_buffer_[using_buffer_index_].data_buffer[data_buffer_[using_buffer_index_].size++] = current_data_;
+        } else {
+            is_data_begin_sig_ = false;
         }
+        data_buffer_[using_buffer_index_].data_buffer[data_buffer_[using_buffer_index_].size++] = current_data_;
     }
 }

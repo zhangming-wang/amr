@@ -149,7 +149,7 @@ void MPU6050Control::_start_calibration_task() {
 
     save_params();
 
-    serial_print("校准完成!");
+    serial_print("校准完成,请重新读取参数！");
 
     is_calibrating_.store(false);
 }

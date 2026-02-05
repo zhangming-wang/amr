@@ -53,6 +53,10 @@ protected:
     bool heartbeat_publisher_initialized_ = false;
     std::atomic<bool> connected_{false};
 
+    bool enable_heartbeat_{true};
+
+    unsigned long check_connect_time_ = 0, last_check_connect_time_ = 0;
+
     std::string serial_msg_topic_name_, heartbeat_topic_name_;
 
 protected:
@@ -70,6 +74,9 @@ protected:
         agent_ip.fromString(String(ip_.c_str()));
         locator_.address = agent_ip;
         locator_.port = port_;
+
+        check_connect_time_ = millis();
+        last_check_connect_time_ = check_connect_time_;
     }
 
     virtual bool init_micro_ros() { return true; }
@@ -104,11 +111,22 @@ public:
             }
         }
 
+        check_connect_time_ = millis();
+        if (check_connect_time_ > last_check_connect_time_ + 3000) {
+            if (rmw_uros_ping_agent(10, 10) != RCL_RET_OK) {
+                Serial.println("ping agent failed, reconnecting...");
+                _clean_micro_ros();
+                connected_.store(false);
+                vTaskDelay(pdMS_TO_TICKS(500));
+            }
+            last_check_connect_time_ = check_connect_time_;
+        }
+
         if (rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(5)) != RCL_RET_OK) {
             Serial.println("rclc_executor_spin_some error");
             _clean_micro_ros();
             connected_.store(false);
-            return;
+            vTaskDelay(pdMS_TO_TICKS(500));
         }
 
         vTaskDelay(pdMS_TO_TICKS(5));
@@ -224,19 +242,21 @@ private:
             }
             heartbeat_publisher_initialized_ = true;
         }
-        if (!heartbeat_timer_initialized_) {
-            ret = rclc_timer_init_default(&heartbeat_timer_, &support_, RCL_MS_TO_NS(1000), heartbeat_timer_callback);
-            if (ret != RCL_RET_OK) {
-                Serial.printf("heartbeat_timer_: rclc_timer_init_default error: %d\n", ret);
-                return false;
+        if (enable_heartbeat_) {
+            if (!heartbeat_timer_initialized_) {
+                ret = rclc_timer_init_default(&heartbeat_timer_, &support_, RCL_MS_TO_NS(1000), heartbeat_timer_callback);
+                if (ret != RCL_RET_OK) {
+                    Serial.printf("heartbeat_timer_: rclc_timer_init_default error: %d\n", ret);
+                    return false;
+                }
+                ret = rclc_executor_add_timer(&executor_, &heartbeat_timer_);
+                if (ret != RCL_RET_OK) {
+                    ret = rcl_timer_fini(&heartbeat_timer_);
+                    Serial.printf("heartbeat_timer_: rclc_executor_add_timer error: %d\n", ret);
+                    return false;
+                }
+                heartbeat_timer_initialized_ = true;
             }
-            ret = rclc_executor_add_timer(&executor_, &heartbeat_timer_);
-            if (ret != RCL_RET_OK) {
-                ret = rcl_timer_fini(&heartbeat_timer_);
-                Serial.printf("heartbeat_timer_: rclc_executor_add_timer error: %d\n", ret);
-                return false;
-            }
-            heartbeat_timer_initialized_ = true;
         }
 
         return init_micro_ros();
@@ -245,12 +265,14 @@ private:
         clean_micro_ros();
 
         rcl_ret_t ret;
-        if (heartbeat_timer_initialized_) {
-            ret = rcl_timer_fini(&heartbeat_timer_);
-            if (ret != RCL_RET_OK) {
-                Serial.printf("heartbeat_timer_: rcl_timer_fini error: %d\n", ret);
+        if (enable_heartbeat_) {
+            if (heartbeat_timer_initialized_) {
+                ret = rcl_timer_fini(&heartbeat_timer_);
+                if (ret != RCL_RET_OK) {
+                    Serial.printf("heartbeat_timer_: rcl_timer_fini error: %d\n", ret);
+                }
+                heartbeat_timer_initialized_ = false;
             }
-            heartbeat_timer_initialized_ = false;
         }
         if (heartbeat_publisher_initialized_) {
             ret = rcl_publisher_fini(&heartbeat_publisher_, &node_);

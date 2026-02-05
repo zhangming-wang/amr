@@ -18,17 +18,17 @@ MotionNode::MotionNode(QObject *parent)
     odom_publisher_ = node_->create_publisher<nav_msgs::msg::Odometry>(odom_topic_name, reliable_qos_);
     imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(imu_topic_name, best_effort_qos_);
 
-    _init_msgs();
+    // _init_msgs();
 }
 
 void MotionNode::_init_msgs() {
     current_tf_.header.frame_id = odom_tf_frame_id;
     current_tf_.child_frame_id = base_footprint_tf_frame_id;
 
-    current_joint_state_.name = {left_front_wheel_joint_name, left_back_wheel_joint_name, right_front_wheel_joint_name, right_back_wheel_joint_name};
-    current_joint_state_.position.resize(4, 0.0);
-    current_joint_state_.velocity.resize(4, 0.0);
-    current_joint_state_.effort.resize(4, 0.0);
+    current_joint_state_.name = {left_wheel_joint_name, right_wheel_joint_name};
+    current_joint_state_.position.resize(2, 0.0);
+    current_joint_state_.velocity.resize(2, 0.0);
+    current_joint_state_.effort.resize(2, 0.0);
     current_joint_state_.header.frame_id = base_footprint_tf_frame_id;
 
     imu_msg_.header.frame_id = imu_tf_frame_id;
@@ -77,6 +77,7 @@ void MotionNode::_init_msgs() {
 }
 
 void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
+    recv_heartbeat_msg(nullptr);
     // auto stamp = rclcpp::Time(msg->stamp / 1000000000, msg->stamp % 1000000000);
     auto stamp = node_->now();
 
@@ -85,75 +86,58 @@ void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
     current_joint_state_.header.stamp = stamp;
     current_tf_.header.stamp = stamp;
 
-    if (last_motion_status_msg_ && msg->seq - last_motion_status_msg_->seq != 1) {
-        _forwardKinematicsDistance(msg->left_front_total_distance - last_motion_status_msg_->left_front_total_distance, msg->left_back_total_distance - last_motion_status_msg_->left_back_total_distance, msg->right_front_total_distance - last_motion_status_msg_->right_front_total_distance, msg->right_back_total_distance - last_motion_status_msg_->right_back_total_distance);
-    } else {
-        _forwardKinematicsDistance(msg->left_front_dt_distance, msg->left_back_dt_distance, msg->right_front_dt_distance, msg->right_back_dt_distance);
-    }
+    // if (last_motion_status_msg_ && msg->seq - last_motion_status_msg_->seq != 1) {
+    //     _forwardKinematicsDistance(msg->left_front_total_distance - last_motion_status_msg_->left_front_total_distance, msg->left_back_total_distance - last_motion_status_msg_->left_back_total_distance, msg->right_front_total_distance - last_motion_status_msg_->right_front_total_distance, msg->right_back_total_distance - last_motion_status_msg_->right_back_total_distance);
+    // } else {
+    //     _forwardKinematicsDistance(msg->left_front_dt_distance, msg->left_back_dt_distance, msg->right_front_dt_distance, msg->right_back_dt_distance);
+    // }
 
-    _forwardKinematicsSpeed(msg->left_front_current_v, msg->left_back_current_v, msg->right_front_current_v, msg->right_back_current_v);
-    last_motion_status_msg_ = msg;
+    // _forwardKinematicsSpeed(msg->left_front_current_v, msg->left_back_current_v, msg->right_front_current_v, msg->right_back_current_v);
+    // last_motion_status_msg_ = msg;
 
-    odom_msg_.pose.pose = current_pose_;
-    odom_msg_.twist.twist = current_twist_;
+    // odom_msg_.pose.pose = current_pose_;
+    // odom_msg_.twist.twist = current_twist_;
 
-    current_tf_.transform.translation.x = current_pose_.position.x;
-    current_tf_.transform.translation.y = current_pose_.position.y;
-    current_tf_.transform.translation.z = current_pose_.position.z;
-    current_tf_.transform.rotation = current_pose_.orientation;
+    // current_tf_.transform.translation.x = current_pose_.position.x;
+    // current_tf_.transform.translation.y = current_pose_.position.y;
+    // current_tf_.transform.translation.z = current_pose_.position.z;
+    // current_tf_.transform.rotation = current_pose_.orientation;
 
-    current_joint_state_.position[0] = msg->left_front_total_distance / (wheels_diameter_vector_[0] * M_PI);
-    current_joint_state_.position[1] = msg->left_back_total_distance / (wheels_diameter_vector_[1] * M_PI);
-    current_joint_state_.position[2] = msg->right_front_total_distance / (wheels_diameter_vector_[2] * M_PI);
-    current_joint_state_.position[3] = msg->right_back_total_distance / (wheels_diameter_vector_[3] * M_PI);
+    // current_joint_state_.position[0] = msg->left_total_distance / (wheels_diameter_vector_[0] * M_PI);
+    // current_joint_state_.position[1] = msg->right_total_distance / (wheels_diameter_vector_[1] * M_PI);
 
-    current_joint_state_.velocity[0] = msg->left_front_current_v / (wheels_diameter_vector_[0] * M_PI);
-    current_joint_state_.velocity[1] = msg->left_back_current_v / (wheels_diameter_vector_[1] * M_PI);
-    current_joint_state_.velocity[2] = msg->right_front_current_v / (wheels_diameter_vector_[2] * M_PI);
-    current_joint_state_.velocity[3] = msg->right_back_current_v / (wheels_diameter_vector_[3] * M_PI);
+    // current_joint_state_.velocity[0] = msg->left_front_current_v / (wheels_diameter_vector_[0] * M_PI);
+    // current_joint_state_.velocity[1] = msg->left_back_current_v / (wheels_diameter_vector_[1] * M_PI);
+    // current_joint_state_.velocity[2] = msg->right_front_current_v / (wheels_diameter_vector_[2] * M_PI);
+    // current_joint_state_.velocity[3] = msg->right_back_current_v / (wheels_diameter_vector_[3] * M_PI);
 
-    imu_msg_.angular_velocity.x = msg->imu_gyro_x;
-    imu_msg_.angular_velocity.y = msg->imu_gyro_y;
-    imu_msg_.angular_velocity.z = msg->imu_gyro_z;
+    // imu_msg_.angular_velocity.x = msg->imu_gyro_x;
+    // imu_msg_.angular_velocity.y = msg->imu_gyro_y;
+    // imu_msg_.angular_velocity.z = msg->imu_gyro_z;
 
-    tf2::Quaternion q;
-    q.setRPY(msg->imu_roll, msg->imu_pitch, msg->imu_yaw); // 弧度
-    imu_msg_.orientation.x = q.x();
-    imu_msg_.orientation.y = q.y();
-    imu_msg_.orientation.z = q.z();
-    imu_msg_.orientation.w = q.w();
+    // tf2::Quaternion q;
+    // q.setRPY(msg->imu_roll, msg->imu_pitch, msg->imu_yaw); // 弧度
+    // imu_msg_.orientation.x = q.x();
+    // imu_msg_.orientation.y = q.y();
+    // imu_msg_.orientation.z = q.z();
+    // imu_msg_.orientation.w = q.w();
 
-    joint_state_publisher_->publish(current_joint_state_);
-    tf_broadcaster_->sendTransform(current_tf_);
-    imu_publisher_->publish(imu_msg_);
-    odom_publisher_->publish(odom_msg_);
+    // joint_state_publisher_->publish(current_joint_state_);
+    // tf_broadcaster_->sendTransform(current_tf_);
+    // imu_publisher_->publish(imu_msg_);
+    // odom_publisher_->publish(odom_msg_);
 
     emit motionStatusMsgChanged(msg);
 }
 
-void MotionNode::_forwardKinematicsDistance(double left_front_distance, double left_back_distance, double right_front_distance, double right_back_distance) {
-    if (is_mecanum_wheel_) {
-        double dx = (left_front_distance + left_back_distance + right_front_distance + right_back_distance) / 4.0;
-        double dy = (-left_front_distance + left_back_distance - right_front_distance + right_back_distance) / 4.0;
-        double dtheta = (-left_front_distance + left_back_distance + right_front_distance - right_back_distance) / (4.0 * (track_width_ + wheel_width_));
+void MotionNode::_forwardKinematicsDistance(double left_distance, double right_distance) {
+    double d_center = 0.5 * (left_distance + right_distance);
+    double dtheta = (right_distance - left_distance) / wheel_width_;
+    double yaw_mid = current_pose2d_.theta + 0.5 * dtheta;
 
-        double cos_yaw = cos(current_pose2d_.theta);
-        double sin_yaw = sin(current_pose2d_.theta);
-
-        current_pose2d_.x += cos_yaw * dx - sin_yaw * dy;
-        current_pose2d_.y += sin_yaw * dx + cos_yaw * dy;
-        current_pose2d_.theta += dtheta;
-    } else {
-        double dl = 0.5 * (left_front_distance + left_back_distance);
-        double dr = 0.5 * (right_front_distance + right_back_distance);
-        double d_center = 0.5 * (dl + dr);
-        double dtheta = (dr - dl) / wheel_width_;
-        double yaw_mid = current_pose2d_.theta + 0.5 * dtheta;
-
-        current_pose2d_.x += d_center * cos(yaw_mid);
-        current_pose2d_.y += d_center * sin(yaw_mid);
-        current_pose2d_.theta += dtheta;
-    }
+    current_pose2d_.x += d_center * cos(yaw_mid);
+    current_pose2d_.y += d_center * sin(yaw_mid);
+    current_pose2d_.theta += dtheta;
 
     current_pose2d_.theta = atan2(sin(current_pose2d_.theta), cos(current_pose2d_.theta));
 
@@ -167,31 +151,18 @@ void MotionNode::_forwardKinematicsDistance(double left_front_distance, double l
     current_pose_.orientation.w = cos(current_pose2d_.theta * 0.5);
 }
 
-void MotionNode::_forwardKinematicsSpeed(double left_front_speed, double left_back_speed, double right_front_speed, double right_back_speed) {
-    if (is_mecanum_wheel_) {
-        current_twist_.linear.x = (left_front_speed - left_back_speed - right_front_speed + right_back_speed) / 4.0;
-        current_twist_.linear.y = (left_front_speed + left_back_speed + right_front_speed + right_back_speed) / 4.0;
-        current_twist_.angular.z = (-left_front_speed - left_back_speed + right_front_speed + right_back_speed) / (2.0 * (track_width_ + wheel_width_));
-    } else {
-        double v_left = (left_front_speed + left_back_speed) / 2.0;
-        double v_right = (right_front_speed + right_back_speed) / 2.0;
-
-        current_twist_.linear.x = (v_left + v_right) / 2.0;
-        current_twist_.linear.y = 0.0;
-        current_twist_.angular.z = (v_right - v_left) / wheel_width_;
-    }
+void MotionNode::_forwardKinematicsSpeed(double left_speed, double right_speed) {
+    current_twist_.linear.x = (left_speed + right_speed) / 2.0;
+    current_twist_.linear.y = 0.0;
+    current_twist_.angular.z = (right_speed - left_speed) / wheel_width_;
 }
 
-void MotionNode::set_model_param(double track_width, double wheel_width, bool is_mecanum_wheel) {
-    track_width_ = track_width;
+void MotionNode::set_model_param(double wheel_width) {
     wheel_width_ = wheel_width;
-    is_mecanum_wheel_ = is_mecanum_wheel;
 }
 
 void MotionNode::set_wheels_diameter(const std::vector<double> &wheels_diameter_vector) {
-    if (wheels_diameter_vector.size() == 4) {
-        wheels_diameter_vector_ = wheels_diameter_vector;
-    }
+    wheels_diameter_vector_ = wheels_diameter_vector;
 }
 
 void MotionNode::publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist) {

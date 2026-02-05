@@ -45,12 +45,6 @@ public:
 
     void move_front();
     void move_back();
-    void move_left();
-    void move_right();
-    void move_left_front();
-    void move_left_back();
-    void move_right_front();
-    void move_right_back();
     void turn_left();
     void turn_right();
 
@@ -60,7 +54,6 @@ public:
     void clear_plot();
 
     void on_gamepad_button_clicked();
-    void on_gamepad_axis_changed();
     void on_show_plot_changed(bool show);
 
     void on_write_params();
@@ -100,7 +93,7 @@ private:
     void _ask_motion_settings_service(MotionSettingsSrv::Request::SharedPtr request, QString &cmd_string);
     void _show_service_command_state(uint64_t id, bool success);
 
-    void _update_speed_percent_label(double percent);
+    void _update_speed_percent_label(double linear_percent, double angular_percent);
 
     bool stop_plot_ = false;
     double reference_seconds_ = 0;

@@ -7,7 +7,7 @@ from script.kill_process import kill_process  # type: ignore
 
 def generate_launch_description():
 
-    # kill_process(["serialserver", "ydlidar_node"])
+    kill_process(["serialserver", "ydlidar_node"])
 
     share_dir = get_package_share_directory("lidar_launch")
 

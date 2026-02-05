@@ -27,8 +27,8 @@ motion_settings_service__srv__MotionSettingsService_Request__init(motion_setting
   // id
   // mode
   // wheel_width
-  // track_width
-  // speed_percent
+  // linear_speed_percent
+  // angular_speed_percent
   // drivers_settings
   for (size_t i = 0; i < 2; ++i) {
     if (!motion_settings_service__msg__DriverSettings__init(&msg->drivers_settings[i])) {
@@ -59,8 +59,8 @@ motion_settings_service__srv__MotionSettingsService_Request__fini(motion_setting
   // id
   // mode
   // wheel_width
-  // track_width
-  // speed_percent
+  // linear_speed_percent
+  // angular_speed_percent
   // drivers_settings
   for (size_t i = 0; i < 2; ++i) {
     motion_settings_service__msg__DriverSettings__fini(&msg->drivers_settings[i]);
@@ -90,12 +90,12 @@ motion_settings_service__srv__MotionSettingsService_Request__are_equal(const mot
   if (lhs->wheel_width != rhs->wheel_width) {
     return false;
   }
-  // track_width
-  if (lhs->track_width != rhs->track_width) {
+  // linear_speed_percent
+  if (lhs->linear_speed_percent != rhs->linear_speed_percent) {
     return false;
   }
-  // speed_percent
-  if (lhs->speed_percent != rhs->speed_percent) {
+  // angular_speed_percent
+  if (lhs->angular_speed_percent != rhs->angular_speed_percent) {
     return false;
   }
   // drivers_settings
@@ -139,10 +139,10 @@ motion_settings_service__srv__MotionSettingsService_Request__copy(
   output->mode = input->mode;
   // wheel_width
   output->wheel_width = input->wheel_width;
-  // track_width
-  output->track_width = input->track_width;
-  // speed_percent
-  output->speed_percent = input->speed_percent;
+  // linear_speed_percent
+  output->linear_speed_percent = input->linear_speed_percent;
+  // angular_speed_percent
+  output->angular_speed_percent = input->angular_speed_percent;
   // drivers_settings
   for (size_t i = 0; i < 2; ++i) {
     if (!motion_settings_service__msg__DriverSettings__copy(
@@ -368,8 +368,8 @@ motion_settings_service__srv__MotionSettingsService_Response__init(motion_settin
   // id
   // mode
   // wheel_width
-  // track_width
-  // speed_percent
+  // linear_speed_percent
+  // angular_speed_percent
   // drivers_settings
   for (size_t i = 0; i < 2; ++i) {
     if (!motion_settings_service__msg__DriverSettings__init(&msg->drivers_settings[i])) {
@@ -400,8 +400,8 @@ motion_settings_service__srv__MotionSettingsService_Response__fini(motion_settin
   // id
   // mode
   // wheel_width
-  // track_width
-  // speed_percent
+  // linear_speed_percent
+  // angular_speed_percent
   // drivers_settings
   for (size_t i = 0; i < 2; ++i) {
     motion_settings_service__msg__DriverSettings__fini(&msg->drivers_settings[i]);
@@ -431,12 +431,12 @@ motion_settings_service__srv__MotionSettingsService_Response__are_equal(const mo
   if (lhs->wheel_width != rhs->wheel_width) {
     return false;
   }
-  // track_width
-  if (lhs->track_width != rhs->track_width) {
+  // linear_speed_percent
+  if (lhs->linear_speed_percent != rhs->linear_speed_percent) {
     return false;
   }
-  // speed_percent
-  if (lhs->speed_percent != rhs->speed_percent) {
+  // angular_speed_percent
+  if (lhs->angular_speed_percent != rhs->angular_speed_percent) {
     return false;
   }
   // drivers_settings
@@ -480,10 +480,10 @@ motion_settings_service__srv__MotionSettingsService_Response__copy(
   output->mode = input->mode;
   // wheel_width
   output->wheel_width = input->wheel_width;
-  // track_width
-  output->track_width = input->track_width;
-  // speed_percent
-  output->speed_percent = input->speed_percent;
+  // linear_speed_percent
+  output->linear_speed_percent = input->linear_speed_percent;
+  // angular_speed_percent
+  output->angular_speed_percent = input->angular_speed_percent;
   // drivers_settings
   for (size_t i = 0; i < 2; ++i) {
     if (!motion_settings_service__msg__DriverSettings__copy(

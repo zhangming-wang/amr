@@ -37,8 +37,9 @@ class SerialServerNode(Node):
         self.get_logger().info(f"串口设备:{self.serial_port} 已创建")
 
     def motion_status_callback(self, msg: MotionStatus):
-        data = msg.sensor_status.data[0 : msg.sensor_status.size]
-        os.write(self.master, data)
+        if msg.sensor_status.size > 0:
+            data = msg.sensor_status.data[0 : msg.sensor_status.size]
+            os.write(self.master, data)
 
 
 def main():

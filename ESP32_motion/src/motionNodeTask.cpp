@@ -6,6 +6,7 @@ MotionNodeTask::MotionNodeTask() {
     priority_ = 9;
     stack_size_ = 16384;
     num_handles_ = 6;
+    enable_heartbeat_ = false;
 
     node_name_ = esp32_motion_node_name;
     node_namespace_ = esp32_motion_node_namespace;
@@ -231,7 +232,7 @@ bool MotionNodeTask::_create_publish_motion_status_timer() {
     _destroy_publish_motion_status_timer();
 
     if (!publish_motion_status_timer_initialized_) {
-        rcl_ret_t ret = rclc_timer_init_default(&publish_motion_status_timer_, &support_, RCL_MS_TO_NS(MotionControlTask::instance().get_speed_plan_parms().milliseconds), publish_motion_status_timer_callback);
+        rcl_ret_t ret = rclc_timer_init_default(&publish_motion_status_timer_, &support_, RCL_MS_TO_NS(10), publish_motion_status_timer_callback);
         if (ret != RCL_RET_OK) {
             Serial.printf("[micro_ros] publish motion status timer init failed: %d\n", ret);
             return false;

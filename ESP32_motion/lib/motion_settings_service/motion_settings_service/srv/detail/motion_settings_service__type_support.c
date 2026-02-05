@@ -143,14 +143,14 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     NULL  // resize(index) function pointer
   },
   {
-    "track_width",  // name
+    "linear_speed_percent",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
     0,  // upper bound of string
     NULL,  // members of sub message
     false,  // is array
     0,  // array size
     false,  // is upper bound
-    offsetof(motion_settings_service__srv__MotionSettingsService_Request, track_width),  // bytes offset in struct
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, linear_speed_percent),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -160,14 +160,14 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     NULL  // resize(index) function pointer
   },
   {
-    "speed_percent",  // name
+    "angular_speed_percent",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
     0,  // upper bound of string
     NULL,  // members of sub message
     false,  // is array
     0,  // array size
     false,  // is upper bound
-    offsetof(motion_settings_service__srv__MotionSettingsService_Request, speed_percent),  // bytes offset in struct
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, angular_speed_percent),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -438,14 +438,14 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     NULL  // resize(index) function pointer
   },
   {
-    "track_width",  // name
+    "linear_speed_percent",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
     0,  // upper bound of string
     NULL,  // members of sub message
     false,  // is array
     0,  // array size
     false,  // is upper bound
-    offsetof(motion_settings_service__srv__MotionSettingsService_Response, track_width),  // bytes offset in struct
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, linear_speed_percent),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -455,14 +455,14 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     NULL  // resize(index) function pointer
   },
   {
-    "speed_percent",  // name
+    "angular_speed_percent",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
     0,  // upper bound of string
     NULL,  // members of sub message
     false,  // is array
     0,  // array size
     false,  // is upper bound
-    offsetof(motion_settings_service__srv__MotionSettingsService_Response, speed_percent),  // bytes offset in struct
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, angular_speed_percent),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer

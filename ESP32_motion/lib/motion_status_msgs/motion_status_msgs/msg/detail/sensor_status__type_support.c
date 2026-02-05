@@ -35,7 +35,7 @@ size_t motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c
   const void * untyped_member)
 {
   (void)untyped_member;
-  return 90;
+  return 128;
 }
 
 const void * motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__get_const_function__SensorStatus__data(
@@ -76,7 +76,7 @@ void motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__
   *item = *value;
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__SensorStatus_message_member_array[7] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__SensorStatus_message_member_array[8] = {
   {
     "roll",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
@@ -185,7 +185,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_status_msgs__msg
     0,  // upper bound of string
     NULL,  // members of sub message
     true,  // is array
-    90,  // array size
+    128,  // array size
     false,  // is upper bound
     offsetof(motion_status_msgs__msg__SensorStatus, data),  // bytes offset in struct
     NULL,  // default value
@@ -195,13 +195,30 @@ static rosidl_typesupport_introspection_c__MessageMember motion_status_msgs__msg
     motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__fetch_function__SensorStatus__data,  // fetch(index, &value) function pointer
     motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__assign_function__SensorStatus__data,  // assign(index, value) function pointer
     NULL  // resize(index) function pointer
+  },
+  {
+    "size",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_UINT8,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_status_msgs__msg__SensorStatus, size),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
   }
 };
 
 static const rosidl_typesupport_introspection_c__MessageMembers motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__SensorStatus_message_members = {
   "motion_status_msgs__msg",  // message namespace
   "SensorStatus",  // message name
-  7,  // number of fields
+  8,  // number of fields
   sizeof(motion_status_msgs__msg__SensorStatus),
   motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__SensorStatus_message_member_array,  // message members
   motion_status_msgs__msg__SensorStatus__rosidl_typesupport_introspection_c__SensorStatus_init_function,  // function to initialize message memory (memory has to be allocated)

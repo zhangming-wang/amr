@@ -24,6 +24,7 @@ motion_status_msgs__msg__SensorStatus__init(motion_status_msgs__msg__SensorStatu
   // gyro_y
   // gyro_z
   // data
+  // size
   return true;
 }
 
@@ -40,6 +41,7 @@ motion_status_msgs__msg__SensorStatus__fini(motion_status_msgs__msg__SensorStatu
   // gyro_y
   // gyro_z
   // data
+  // size
 }
 
 bool
@@ -73,10 +75,14 @@ motion_status_msgs__msg__SensorStatus__are_equal(const motion_status_msgs__msg__
     return false;
   }
   // data
-  for (size_t i = 0; i < 90; ++i) {
+  for (size_t i = 0; i < 128; ++i) {
     if (lhs->data[i] != rhs->data[i]) {
       return false;
     }
+  }
+  // size
+  if (lhs->size != rhs->size) {
+    return false;
   }
   return true;
 }
@@ -102,9 +108,11 @@ motion_status_msgs__msg__SensorStatus__copy(
   // gyro_z
   output->gyro_z = input->gyro_z;
   // data
-  for (size_t i = 0; i < 90; ++i) {
+  for (size_t i = 0; i < 128; ++i) {
     output->data[i] = input->data[i];
   }
+  // size
+  output->size = input->size;
   return true;
 }
 
