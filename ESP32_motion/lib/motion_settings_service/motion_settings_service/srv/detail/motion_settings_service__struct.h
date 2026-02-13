@@ -31,6 +31,7 @@ typedef struct motion_settings_service__srv__MotionSettingsService_Request
   uint64_t id;
   int32_t mode;
   float wheel_width;
+  float track_width;
   float linear_speed_percent;
   float angular_speed_percent;
   motion_settings_service__msg__DriverSettings drivers_settings[2];
@@ -69,6 +70,7 @@ typedef struct motion_settings_service__srv__MotionSettingsService_Response
   uint64_t id;
   int32_t mode;
   float wheel_width;
+  float track_width;
   float linear_speed_percent;
   float angular_speed_percent;
   motion_settings_service__msg__DriverSettings drivers_settings[2];

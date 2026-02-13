@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-    <xacro:property name="wheel_radius" value="0.0325" />
-    <xacro:property name="wheel_width" value="0.026" />
+    <xacro:property name="wheel_radius" value="0.0335" />
+    <xacro:property name="wheel_height" value="0.026" />
 
     <xacro:property name="link_xyz" value="0 0 0" />
     <xacro:property name="link_rpy" value="${pi/2} 0 0" />
@@ -11,17 +11,17 @@
             <visual>
                 <origin xyz="${link_xyz}" rpy="${link_rpy}" />
                 <geometry>
-                    <cylinder radius="${wheel_radius}" length="${wheel_width}" />
+                    <cylinder radius="${wheel_radius}" length="${wheel_height}" />
                 </geometry>
                 <material name="yellow">
-                    <color rgba="1.0 1.0 0.0 1" />
+                    <color rgba="1.0 1.0 0.0 0.5" />
                 </material>
             </visual>
 
             <collision>
                 <origin xyz="${link_xyz}" rpy="${link_rpy}" />
                 <geometry>
-                    <cylinder radius="${wheel_radius}" length="${wheel_width}" />
+                    <cylinder radius="${wheel_radius}" length="${wheel_height}" />
                 </geometry>
             </collision>
         </link>

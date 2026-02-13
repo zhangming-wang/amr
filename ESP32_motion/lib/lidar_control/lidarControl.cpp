@@ -47,12 +47,16 @@ void LidarControl::set_pins(int pin_tx, int pin_rx, int pin_pwm) {
     pin_tx_ = pin_tx;
     pin_rx_ = pin_rx;
 
+    serial_print("LidarControl set pins: tx=" + std::to_string(pin_tx_) + ", rx=" + std::to_string(pin_rx_) + ", pwm=" + std::to_string(pin_pwm_));
+
     if (Serial2) {
         Serial2.end();
     }
     Serial2.setRxBufferSize(512);
     Serial2.begin(baudrate_, SERIAL_8N1, pin_tx_, pin_rx_);
     delay(500);
+
+    motorOn(1.0f);
 }
 
 void LidarControl::get_pins(int &pin_tx, int &pin_rx, int &pin_pwm) {
@@ -85,14 +89,16 @@ void LidarControl::update() {
             is_data_begin_sig_ = true;
         } else if (current_data_ == 0x55) {
             if (is_data_begin_sig_) {
-                if (data_buffer_[using_buffer_index_].data_buffer[0] == 0xaa) {
+                if (data_buffer_[using_buffer_index_].data_buffer[0] == 0xaa && data_buffer_[using_buffer_index_].data_buffer[1] == 0x55) {
                     data_buffer_[using_buffer_index_].size--;
                     using_buffer_index_ = 1 - using_buffer_index_;
                     ready_buffer_index_ = 1 - ready_buffer_index_;
                 }
-                data_buffer_[using_buffer_index_].size = 1;
+                data_buffer_[using_buffer_index_].size = 2;
                 data_buffer_[using_buffer_index_].data_buffer[0] = 0xaa;
+                data_buffer_[using_buffer_index_].data_buffer[1] = 0x55;
                 is_data_begin_sig_ = false;
+                break;
             }
         } else {
             is_data_begin_sig_ = false;

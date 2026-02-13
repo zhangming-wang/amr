@@ -26,7 +26,7 @@ public:
     MotionNode(QObject *parent = nullptr);
     void publish_twist(std::shared_ptr<geometry_msgs::msg::Twist> twist);
     void ask_service_response(MotionSettingsSrv::Request::SharedPtr request);
-    void set_model_param(double track_width);
+    void set_model_param(double wheel_width, double track_width);
     void set_wheels_diameter(const std::vector<double> &wheels_diameter_vector);
 
 signals:
@@ -52,7 +52,7 @@ private:
 
     MotionStatusMsg::SharedPtr last_motion_status_msg_ = nullptr;
 
-    double wheel_width_ = 1.0;
+    double wheel_width_ = 1.0, track_width_ = 1.0;
     std::vector<double> wheels_diameter_vector_{0.3, 0.3}; // 左边，右边
 
     void _init_msgs();

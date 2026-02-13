@@ -12,6 +12,7 @@ extern "C" {
 #include "baseTask.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "sensorsControlTask.h"
 #include <Arduino.h>
 #include <Preferences.h>
 #include <geometry_msgs/msg/quaternion.h>

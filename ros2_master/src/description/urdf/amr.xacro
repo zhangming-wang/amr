@@ -1,28 +1,35 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="amr">
+    <xacro:property name="track_width" value="0.110" />
+    <xacro:property name="wheel_width" value="0.168" />
+
     <xacro:property name="base_link" value="base_link" />
     <xacro:property name="lidar_link" value="lidar_link" />
     <xacro:property name="camera_link" value="camera_link" />
     <xacro:property name="imu_link" value="imu_link" />
+    <xacro:property name="chassis_link" value="chassis_link" />
+    <xacro:property name="castor_link" value="castor_link" />
 
-    <xacro:property name="left_front_wheel" value="left_front_wheel" />
-    <xacro:property name="left_back_wheel" value="left_back_wheel" />
-    <xacro:property name="right_front_wheel" value="right_front_wheel" />
-    <xacro:property name="right_back_wheel" value="right_back_wheel" />
+    <xacro:property name="left_wheel" value="left_wheel" />
+    <xacro:property name="right_wheel" value="right_wheel" />
 
     <xacro:include filename="$(find description)/urdf/base.xacro" />
     <xacro:include filename="$(find description)/urdf/wheel.xacro" />
     <xacro:include filename="$(find description)/urdf/lidar.xacro" />
     <xacro:include filename="$(find description)/urdf/camera.xacro" />
     <xacro:include filename="$(find description)/urdf/imu.xacro" />
+    <xacro:include filename="$(find description)/urdf/chassis.xacro" />
+    <xacro:include filename="$(find description)/urdf/castor.xacro" />
 
-    <xacro:base name="${base_link}" joint_xyz="0 0 ${wheel_radius*2+base_height/2}" />
-    <xacro:lidar name="${lidar_link}" joint_xyz="-${lidar_radius+0.015+0.005} 0 ${lidar_height/2+0.040}" parent_name="${base_link}" />
-    <xacro:camera name="${camera_link}" joint_xyz="${camera_length/2+0.010+0.0675} 0 ${camera_height/2+base_height/2}" parent_name="${base_link}" />
-    <xacro:imu name="${imu_link}" joint_xyz="0 0 ${imu_height/2+base_height/2+0.002}" parent_name="${base_link}" />
+    <xacro:property name="ground_clearance" value="${castor_radius*2+chassis_height/2}" />
 
-    <xacro:wheel name="${left_front_wheel}" joint_xyz="0.0835 0.0875 -${wheel_radius+base_height/2}" parent_name="${base_link}" />
-    <xacro:wheel name="${left_back_wheel}" joint_xyz="-0.0835 0.0875 -${wheel_radius+base_height/2}" parent_name="${base_link}" />
-    <xacro:wheel name="${right_front_wheel}" joint_xyz="0.0835 -0.0875 -${wheel_radius+base_height/2}" parent_name="${base_link}" />
-    <xacro:wheel name="${right_back_wheel}" joint_xyz="-0.0835 -0.0875 -${wheel_radius+base_height/2}" parent_name="${base_link}" />
+    <xacro:base name="${base_link}" joint_xyz="0 0 ${wheel_radius}" />
+    <xacro:wheel name="${left_wheel}" joint_xyz="0 ${wheel_width/2} 0" parent_name="${base_link}" />
+    <xacro:wheel name="${right_wheel}" joint_xyz="0 -${wheel_width/2} 0" parent_name="${base_link}" />
+    <xacro:chassis name="${chassis_link}" joint_xyz="${track_width/2} 0 -${wheel_radius-ground_clearance}" parent_name="${base_link}" />
+
+    <xacro:castor name="${castor_link}" joint_xyz="${track_width/2} 0 -${ground_clearance-castor_radius}" parent_name="${chassis_link}" />
+    <xacro:lidar name="${lidar_link}" joint_xyz="0 0 ${0.106-chassis_height/2}" parent_name="${chassis_link}" />
+    <xacro:imu name="${imu_link}" joint_xyz="0 0 ${0.056-chassis_height/2}" parent_name="${chassis_link}" />
+    <xacro:camera name="${camera_link}" joint_xyz="${track_width/2+0.016} 0 ${0.053+camera_height/2-chassis_height/2}" parent_name="${chassis_link}" />
 </robot>

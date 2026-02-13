@@ -41,6 +41,8 @@ void MPU6050Control::set_pins(int pin_SDA, int pin_SCL) {
     pin_SDA_ = pin_SDA;
     pin_SCL_ = pin_SCL;
 
+    serial_print("MPU6050Control set pins: SDA=" + std::to_string(pin_SDA_) + ", SCL=" + std::to_string(pin_SCL_));
+
     if (is_dmp_handle_) {
         init_success_.store(_dmp_init());
     } else {
@@ -186,11 +188,6 @@ void MPU6050Control::set_offset(int16_t xAccOffset, int16_t yAccOffset, int16_t 
 }
 
 void MPU6050Control::save_params() {
-    if (!init_success_.load()) {
-        serial_print("MPU6050模块未初始化，无法保存参数.");
-        return;
-    }
-
     if (name_.empty()) {
         serial_print("MPU6050Control name is empty, cannot save params.");
         return;
@@ -208,11 +205,6 @@ void MPU6050Control::save_params() {
 }
 
 void MPU6050Control::load_params() {
-    if (!init_success_.load()) {
-        serial_print("MPU6050模块未初始化，无法加载参数.");
-        return;
-    }
-
     if (name_.empty()) {
         serial_print("MPU6050Control name is empty, cannot load params.");
         return;

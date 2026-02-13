@@ -14,11 +14,8 @@ MotionControlTask::MotionControlTask() {
     left_motor_control_ = std::make_shared<MotorControl>("lm");
     right_motor_control_ = std::make_shared<MotorControl>("rm");
 
-    // _load_config();
-    // _load_params();
-
-    left_motor_control_->set_motor_config(11, 12, 10, 9, 13, 0.065f, 1320, 310);
-    right_motor_control_->set_motor_config(6, 7, 15, 16, 4, 0.065f, 1320, 310);
+    _load_config();
+    _load_params();
 
     _refresh_target_max_v();
 }
@@ -206,6 +203,8 @@ void MotionControlTask::update() {
     current_time = millis();
     if (last_time != current_time && last_time != 0) {
         dt_ = (current_time - last_time) / 1000.0;
+
+        SensorsControlTask::instance().get_mpu6050_control()->update();
         left_motor_control_->update();
         right_motor_control_->update();
 
@@ -255,15 +254,15 @@ geometry_msgs__msg__Twist MotionControlTask::_forwardKinematics(const MotionCont
     double v_left = wheelSpeed.left_v;
     double v_right = wheelSpeed.right_v;
 
-    twist.linear.x = 0.0f; // 非麦克纳姆没有侧向速度
-    twist.linear.y = (v_left + v_right) / 2.0f;
+    twist.linear.x = (v_left + v_right) / 2.0f; // 前进线速度
+    twist.linear.y = 0.0f;                      // 非麦克纳姆没有侧向速度
     twist.angular.z = (v_right - v_left) / wheel_width_;
     return twist;
 }
 
 MotionControlTask::WheelSpeed MotionControlTask::_inverseKinematics(const geometry_msgs__msg__Twist &twist) {
     MotionControlTask::WheelSpeed wheelSpeed;
-    float v = twist.linear.z;  // 前进线速度
+    float v = twist.linear.x;  // 前进线速度
     float w = twist.angular.z; // 角速度（绕 z 轴）
 
     // 左右轮速度
@@ -379,6 +378,7 @@ void MotionControlTask::_load_params() {
 
 void MotionControlTask::write_config(const motion_settings_service__srv__MotionSettingsService_Request *request) {
     wheel_width_ = request->wheel_width;
+    track_width_ = request->track_width;
 
     left_motor_control_->set_motor_config(request->drivers_settings[0].motor_pina,
                                           request->drivers_settings[0].motor_pinb,
@@ -403,6 +403,7 @@ void MotionControlTask::write_config(const motion_settings_service__srv__MotionS
 
 void MotionControlTask::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {
     response->wheel_width = wheel_width_;
+    response->track_width = track_width_;
 
     response->drivers_settings[0].motor_pina = left_motor_control_->get_motor_config().motor_AIN1;
     response->drivers_settings[0].motor_pinb = left_motor_control_->get_motor_config().motor_AIN2;
@@ -427,6 +428,7 @@ void MotionControlTask::save_config() {
     preferences_.begin("mctsettings", false);
     preferences_.clear();
     preferences_.putFloat("wheWid", wheel_width_);
+    preferences_.putFloat("traWid", track_width_);
     preferences_.end();
 
     left_motor_control_->save_config();
@@ -436,6 +438,7 @@ void MotionControlTask::save_config() {
 void MotionControlTask::_load_config() {
     preferences_.begin("mctsettings", true); // 只读模式
     wheel_width_ = preferences_.getFloat("wheWid", wheel_width_);
+    track_width_ = preferences_.getFloat("traWid", track_width_);
     preferences_.end();
 
     left_motor_control_->load_config();
@@ -463,6 +466,11 @@ void MotionControlTask::_refresh_target_max_v() {
 }
 
 void MotionControlTask::test_motors() {
+    left_motor_control_->update();
+    right_motor_control_->update();
+
+    Serial.printf("%d, %d \n", left_motor_control_->get_encoder_count_change(), right_motor_control_->get_encoder_count_change());
+
     long left_current = 0;
     long right_current = 0;
 
@@ -471,6 +479,12 @@ void MotionControlTask::test_motors() {
 
     uint left_dead_pwm = 200;
     uint right_dead_pwm = 300;
+
+    // left_motor_control_->set_speed(0.5f);
+    // right_motor_control_->set_speed(0.5f);
+
+    // left_motor_control_->move();
+    // right_motor_control_->move();
 
     // left_motor_control_->set_dead_pwm(left_dead_pwm);
     // right_motor_control_->set_dead_pwm(right_dead_pwm);
@@ -488,34 +502,34 @@ void MotionControlTask::test_motors() {
     //     right_motor_control_->set_speed(right_pwm);
     //     // }
 
-    for (int pwm = 400; pwm <= 768; pwm += 4) {
-        left_pwm = pwm * -1;
-        right_pwm = pwm * -1;
+    // for (int pwm = 400; pwm <= 768; pwm += 4) {
+    //     left_pwm = pwm * -1;
+    //     right_pwm = pwm * -1;
 
-        left_motor_control_->set_speed(left_pwm);
-        right_motor_control_->set_speed(right_pwm);
+    //     left_motor_control_->set_speed(left_pwm);
+    //     right_motor_control_->set_speed(right_pwm);
 
-        left_motor_control_->move();
-        right_motor_control_->move();
+    //     left_motor_control_->move();
+    //     right_motor_control_->move();
 
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+    //     vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-        left_motor_control_->update();
-        right_motor_control_->update();
+    //     left_motor_control_->update();
+    //     right_motor_control_->update();
 
-        current_time = millis();
-        dt = (current_time - previous_time) / 1000.0;
-        previous_time = current_time;
+    //     current_time = millis();
+    //     dt = (current_time - previous_time) / 1000.0;
+    //     previous_time = current_time;
 
-        left_motor_control_->calculate(0.0f, dt, false);
-        right_motor_control_->calculate(0.0f, dt, false);
+    //     left_motor_control_->calculate(0.0f, dt, false);
+    //     right_motor_control_->calculate(0.0f, dt, false);
 
-        left_current = left_motor_control_->get_encoder_count_change();
-        right_current = right_motor_control_->get_encoder_count_change();
+    //     left_current = left_motor_control_->get_encoder_count_change();
+    //     right_current = right_motor_control_->get_encoder_count_change();
 
-        Serial.printf(" %d, %d, %d, %d,  %f, %f\n", left_pwm, right_pwm, left_current, right_current, left_motor_control_->get_current_speed(), right_motor_control_->get_current_speed());
-    }
+    //     Serial.printf(" %d, %d, %d, %d,  %f, %f\n", left_pwm, right_pwm, left_current, right_current, left_motor_control_->get_current_speed(), right_motor_control_->get_current_speed());
+    // }
 
-    left_motor_control_->set_speed(0);
-    right_motor_control_->set_speed(0);
+    // left_motor_control_->set_speed(0);
+    // right_motor_control_->set_speed(0);
 }

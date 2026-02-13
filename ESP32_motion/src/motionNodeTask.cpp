@@ -132,7 +132,6 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
     const motion_settings_service__srv__MotionSettingsService_Request *request = (const motion_settings_service__srv__MotionSettingsService_Request *)req;
     motion_settings_service__srv__MotionSettingsService_Response *response = (motion_settings_service__srv__MotionSettingsService_Response *)res;
 
-    auto instance = &MotionNodeTask::instance();
     auto motionControl = &MotionControlTask::instance();
     auto sensorsControl = &SensorsControlTask::instance();
 
@@ -174,10 +173,6 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
         motionControl->read_params(response);
         sensorsControl->read_params(response);
     } else if (request->mode == MotionService::Type::WriteParams) {
-        if (motionControl->get_speed_plan_parms().milliseconds != request->spd_plan_settings.milliseconds) {
-            instance->_create_publish_motion_status_timer();
-        }
-
         motionControl->write_params(request);
         sensorsControl->write_params(request);
 
@@ -208,9 +203,11 @@ void MotionNodeTask::msg_twist_callback(const void *msg) {
 }
 
 void MotionNodeTask::publish_msgs() {
-    if (!connected()) {
-        return;
-    }
+    // if (!connected()) {
+    //     return;
+    // }
+
+    // SensorsControlTask::instance().get_lidar_control()->update();
 
     if (motion_status_publisher_initialized_) {
         motion_status_msg_.seq++;

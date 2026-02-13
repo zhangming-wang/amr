@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:property name="chassis_length" value="0.165" />
+    <xacro:property name="chassis_width" value="0.110" />
+    <xacro:property name="chassis_height" value="0.003" />
+
+    <xacro:macro name="chassis" params="name joint_xyz parent_name">
+        <link name='${name}'>
+            <visual>
+                <origin xyz="0 0 -${chassis_height/2}" rpy="0 0 0" />
+                <!-- <geometry>
+                    <box size="${chassis_length} ${chassis_width} ${chassis_height}" />
+                </geometry> -->
+                <geometry>
+                    <mesh filename="package://description/mesh/lower_chassis.stl" scale="0.001 0.001 0.001" />
+                </geometry>
+
+                <material name="grey">
+                    <color rgba="1 1 1 1" />
+                </material>
+            </visual>
+
+            <visual>
+                <origin xyz="0 0 ${chassis_height/2+0.050}" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://description/mesh/upper_chassis.stl" scale="0.001 0.001 0.001" />
+                </geometry>
+                <!-- <geometry>
+                    <box size="${chassis_length} ${chassis_width} ${chassis_height}" />
+                </geometry> -->
+                <material name="grey">
+                    <color rgba="1 1 1 1" />
+                </material>
+            </visual>
+        </link>
+
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${parent_name}" />
+            <child link="${name}" />
+            <origin xyz="${joint_xyz}" rpy="0 0 0" />
+        </joint>
+    </xacro:macro>
+</robot>

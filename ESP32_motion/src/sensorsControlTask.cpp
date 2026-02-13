@@ -11,17 +11,12 @@ SensorsControlTask::SensorsControlTask() {
     mpu6050Control_ = std::make_shared<MPU6050Control>("mpu");
     lidarControl_ = std::make_shared<LidarControl>("lidar");
 
-    // _load_config();
-    // _load_params();
-
-    mpu6050Control_->set_pins(1, 2);
-    lidarControl_->set_pins(18, -1, -1);
+    _load_config();
+    _load_params();
 }
 
 void SensorsControlTask::update() {
-    mpu6050Control_->update();
     lidarControl_->update();
-
     vTaskDelayUntil(&task_tick_count_, 10 / portTICK_PERIOD_MS);
 }
 
@@ -58,7 +53,7 @@ void SensorsControlTask::_load_params() {
 
 void SensorsControlTask::write_config(const motion_settings_service__srv__MotionSettingsService_Request *request) {
     mpu6050Control_->set_pins(request->sensor_settings.pin_sda, request->sensor_settings.pin_scl);
-    lidarControl_->set_pins(request->sensor_settings.pin_rx, request->sensor_settings.pin_tx, request->sensor_settings.pin_pwm);
+    lidarControl_->set_pins(request->sensor_settings.pin_tx, request->sensor_settings.pin_rx, request->sensor_settings.pin_pwm);
 }
 
 void SensorsControlTask::read_config(motion_settings_service__srv__MotionSettingsService_Response *response) {

@@ -18,7 +18,7 @@ MotionNode::MotionNode(QObject *parent)
     odom_publisher_ = node_->create_publisher<nav_msgs::msg::Odometry>(odom_topic_name, reliable_qos_);
     imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(imu_topic_name, best_effort_qos_);
 
-    // _init_msgs();
+    _init_msgs();
 }
 
 void MotionNode::_init_msgs() {
@@ -77,7 +77,6 @@ void MotionNode::_init_msgs() {
 }
 
 void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
-    recv_heartbeat_msg(nullptr);
     // auto stamp = rclcpp::Time(msg->stamp / 1000000000, msg->stamp % 1000000000);
     auto stamp = node_->now();
 
@@ -85,48 +84,50 @@ void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
     imu_msg_.header.stamp = stamp;
     current_joint_state_.header.stamp = stamp;
     current_tf_.header.stamp = stamp;
+    if (last_motion_status_msg_) {
+        if (msg->seq - last_motion_status_msg_->seq != 1) {
+            _forwardKinematicsDistance(msg->drivers_status[0].total_distance - last_motion_status_msg_->drivers_status[0].total_distance, msg->drivers_status[1].total_distance - last_motion_status_msg_->drivers_status[1].total_distance);
+        } else {
+            _forwardKinematicsDistance(msg->drivers_status[0].dt_distance, msg->drivers_status[1].dt_distance);
+        }
+    } else {
+        _forwardKinematicsDistance(msg->drivers_status[0].dt_distance, msg->drivers_status[1].dt_distance);
+    }
 
-    // if (last_motion_status_msg_ && msg->seq - last_motion_status_msg_->seq != 1) {
-    //     _forwardKinematicsDistance(msg->left_front_total_distance - last_motion_status_msg_->left_front_total_distance, msg->left_back_total_distance - last_motion_status_msg_->left_back_total_distance, msg->right_front_total_distance - last_motion_status_msg_->right_front_total_distance, msg->right_back_total_distance - last_motion_status_msg_->right_back_total_distance);
-    // } else {
-    //     _forwardKinematicsDistance(msg->left_front_dt_distance, msg->left_back_dt_distance, msg->right_front_dt_distance, msg->right_back_dt_distance);
-    // }
+    _forwardKinematicsSpeed(msg->drivers_status[0].current_v, msg->drivers_status[1].current_v);
+    last_motion_status_msg_ = msg;
 
-    // _forwardKinematicsSpeed(msg->left_front_current_v, msg->left_back_current_v, msg->right_front_current_v, msg->right_back_current_v);
-    // last_motion_status_msg_ = msg;
+    odom_msg_.pose.pose = current_pose_;
+    odom_msg_.twist.twist = current_twist_;
 
-    // odom_msg_.pose.pose = current_pose_;
-    // odom_msg_.twist.twist = current_twist_;
+    current_tf_.transform.translation.x = current_pose_.position.x;
+    current_tf_.transform.translation.y = current_pose_.position.y;
+    current_tf_.transform.translation.z = current_pose_.position.z;
+    current_tf_.transform.rotation = current_pose_.orientation;
 
-    // current_tf_.transform.translation.x = current_pose_.position.x;
-    // current_tf_.transform.translation.y = current_pose_.position.y;
-    // current_tf_.transform.translation.z = current_pose_.position.z;
-    // current_tf_.transform.rotation = current_pose_.orientation;
+    current_joint_state_.position[0] = msg->drivers_status[0].total_distance / (wheels_diameter_vector_[0] * M_PI);
+    current_joint_state_.position[1] = msg->drivers_status[1].total_distance / (wheels_diameter_vector_[1] * M_PI);
 
-    // current_joint_state_.position[0] = msg->left_total_distance / (wheels_diameter_vector_[0] * M_PI);
-    // current_joint_state_.position[1] = msg->right_total_distance / (wheels_diameter_vector_[1] * M_PI);
+    current_joint_state_.velocity[0] = msg->drivers_status[0].current_v / (wheels_diameter_vector_[0] * M_PI);
+    current_joint_state_.velocity[1] = msg->drivers_status[1].current_v / (wheels_diameter_vector_[1] * M_PI);
 
-    // current_joint_state_.velocity[0] = msg->left_front_current_v / (wheels_diameter_vector_[0] * M_PI);
-    // current_joint_state_.velocity[1] = msg->left_back_current_v / (wheels_diameter_vector_[1] * M_PI);
-    // current_joint_state_.velocity[2] = msg->right_front_current_v / (wheels_diameter_vector_[2] * M_PI);
-    // current_joint_state_.velocity[3] = msg->right_back_current_v / (wheels_diameter_vector_[3] * M_PI);
+    imu_msg_.angular_velocity.x = msg->sensor_status.gyro_x;
+    imu_msg_.angular_velocity.y = msg->sensor_status.gyro_y;
+    imu_msg_.angular_velocity.z = msg->sensor_status.gyro_z;
 
-    // imu_msg_.angular_velocity.x = msg->imu_gyro_x;
-    // imu_msg_.angular_velocity.y = msg->imu_gyro_y;
-    // imu_msg_.angular_velocity.z = msg->imu_gyro_z;
+    tf2::Quaternion q;
+    q.setRPY(msg->sensor_status.roll, msg->sensor_status.pitch, msg->sensor_status.yaw); // 弧度
+    imu_msg_.orientation.x = q.x();
+    imu_msg_.orientation.y = q.y();
+    imu_msg_.orientation.z = q.z();
+    imu_msg_.orientation.w = q.w();
 
-    // tf2::Quaternion q;
-    // q.setRPY(msg->imu_roll, msg->imu_pitch, msg->imu_yaw); // 弧度
-    // imu_msg_.orientation.x = q.x();
-    // imu_msg_.orientation.y = q.y();
-    // imu_msg_.orientation.z = q.z();
-    // imu_msg_.orientation.w = q.w();
+    joint_state_publisher_->publish(current_joint_state_);
+    tf_broadcaster_->sendTransform(current_tf_);
+    imu_publisher_->publish(imu_msg_);
+    odom_publisher_->publish(odom_msg_);
 
-    // joint_state_publisher_->publish(current_joint_state_);
-    // tf_broadcaster_->sendTransform(current_tf_);
-    // imu_publisher_->publish(imu_msg_);
-    // odom_publisher_->publish(odom_msg_);
-
+    recv_heartbeat_msg(nullptr);
     emit motionStatusMsgChanged(msg);
 }
 
@@ -157,8 +158,9 @@ void MotionNode::_forwardKinematicsSpeed(double left_speed, double right_speed) 
     current_twist_.angular.z = (right_speed - left_speed) / wheel_width_;
 }
 
-void MotionNode::set_model_param(double wheel_width) {
+void MotionNode::set_model_param(double wheel_width, double track_width) {
     wheel_width_ = wheel_width;
+    track_width_ = track_width;
 }
 
 void MotionNode::set_wheels_diameter(const std::vector<double> &wheels_diameter_vector) {

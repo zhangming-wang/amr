@@ -2,6 +2,7 @@ uint64 id
 int32 mode
 
 float32 wheel_width
+float32 track_width
 
 float32 linear_speed_percent
 float32 angular_speed_percent
@@ -18,6 +19,7 @@ uint64 id
 int32 mode
 
 float32 wheel_width
+float32 track_width
 
 float32 linear_speed_percent
 float32 angular_speed_percent

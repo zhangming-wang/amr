@@ -16,14 +16,14 @@ void setup() {
     WiFi.mode(WIFI_STA);
     WiFi.persistent(false);
 
-    auto motionNodeTask = &MotionNodeTask::instance();
-    motionNodeTask->start_task();
+    auto sensorsControlTask = &SensorsControlTask::instance();
+    sensorsControlTask->start_task();
 
     auto motionControlTask = &MotionControlTask::instance();
     motionControlTask->start_task();
 
-    auto sensorsControlTask = &SensorsControlTask::instance();
-    sensorsControlTask->start_task();
+    auto motionNodeTask = &MotionNodeTask::instance();
+    motionNodeTask->start_task();
 }
 
 void loop() {

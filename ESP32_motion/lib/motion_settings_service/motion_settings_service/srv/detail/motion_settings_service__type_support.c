@@ -90,7 +90,7 @@ void motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesup
   *item = *value;
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[9] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[10] = {
   {
     "id",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_UINT64,  // type
@@ -134,6 +134,23 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     0,  // array size
     false,  // is upper bound
     offsetof(motion_settings_service__srv__MotionSettingsService_Request, wheel_width),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "track_width",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Request, track_width),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -249,7 +266,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
 static const rosidl_typesupport_introspection_c__MessageMembers motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_members = {
   "motion_settings_service__srv",  // message namespace
   "MotionSettingsService_Request",  // message name
-  9,  // number of fields
+  10,  // number of fields
   sizeof(motion_settings_service__srv__MotionSettingsService_Request),
   motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array,  // message members
   motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_init_function,  // function to initialize message memory (memory has to be allocated)
@@ -267,11 +284,11 @@ static rosidl_message_type_support_t motion_settings_service__srv__MotionSetting
 ROSIDL_TYPESUPPORT_INTROSPECTION_C_EXPORT_motion_settings_service
 const rosidl_message_type_support_t *
 ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, srv, MotionSettingsService_Request)() {
-  motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[5].members_ =
-    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, DriverSettings)();
   motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[6].members_ =
-    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, SensorSettings)();
+    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, DriverSettings)();
   motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[7].members_ =
+    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, SensorSettings)();
+  motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_member_array[8].members_ =
     ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, SpdPlanSettings)();
   if (!motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_type_support_handle.typesupport_identifier) {
     motion_settings_service__srv__MotionSettingsService_Request__rosidl_typesupport_introspection_c__MotionSettingsService_Request_message_type_support_handle.typesupport_identifier =
@@ -385,7 +402,7 @@ void motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesu
   *item = *value;
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[9] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[10] = {
   {
     "id",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_UINT64,  // type
@@ -429,6 +446,23 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     0,  // array size
     false,  // is upper bound
     offsetof(motion_settings_service__srv__MotionSettingsService_Response, wheel_width),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
+  },
+  {
+    "track_width",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_FLOAT,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__srv__MotionSettingsService_Response, track_width),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer
@@ -544,7 +578,7 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
 static const rosidl_typesupport_introspection_c__MessageMembers motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_members = {
   "motion_settings_service__srv",  // message namespace
   "MotionSettingsService_Response",  // message name
-  9,  // number of fields
+  10,  // number of fields
   sizeof(motion_settings_service__srv__MotionSettingsService_Response),
   motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array,  // message members
   motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_init_function,  // function to initialize message memory (memory has to be allocated)
@@ -562,11 +596,11 @@ static rosidl_message_type_support_t motion_settings_service__srv__MotionSetting
 ROSIDL_TYPESUPPORT_INTROSPECTION_C_EXPORT_motion_settings_service
 const rosidl_message_type_support_t *
 ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, srv, MotionSettingsService_Response)() {
-  motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[5].members_ =
-    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, DriverSettings)();
   motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[6].members_ =
-    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, SensorSettings)();
+    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, DriverSettings)();
   motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[7].members_ =
+    ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, SensorSettings)();
+  motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_member_array[8].members_ =
     ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(rosidl_typesupport_introspection_c, motion_settings_service, msg, SpdPlanSettings)();
   if (!motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_type_support_handle.typesupport_identifier) {
     motion_settings_service__srv__MotionSettingsService_Response__rosidl_typesupport_introspection_c__MotionSettingsService_Response_message_type_support_handle.typesupport_identifier =

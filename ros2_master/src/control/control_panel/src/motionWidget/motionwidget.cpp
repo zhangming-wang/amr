@@ -285,6 +285,7 @@ void MotionWidget::on_write_params() {
 
     request->spd_plan_settings.milliseconds = ui->spinBox_spdPlan_milliseconds->value();
     request->spd_plan_settings.max_v = ui->doubleSpinBox_spdPlan_max_v->value();
+    request->spd_plan_settings.max_w = ui->doubleSpinBox_spdPlan_max_w->value();
     request->spd_plan_settings.max_acc = ui->doubleSpinBox_spdPlan_max_acc->value();
     request->spd_plan_settings.jerk = ui->doubleSpinBox_spdPlan_jerk->value();
     request->spd_plan_settings.enable = ui->checkBox_spdPlan_enable->isChecked();
@@ -333,6 +334,7 @@ void MotionWidget::on_write_config() {
     request->mode = MotionService::Type::WriteConfig;
 
     request->wheel_width = ui->spinBox_wheel_width->value() / 1000.0;
+    request->track_width = ui->spinBox_track_width->value() / 1000.0;
 
     request->drivers_settings[0].motor_pina = ui->spinBox_left_motor_pin0->value();
     request->drivers_settings[0].motor_pinb = ui->spinBox_left_motor_pin1->value();
@@ -431,8 +433,8 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         ui->doubleSpinBox_left_motor_i->setValue(response->drivers_settings[0].i);
         ui->doubleSpinBox_left_motor_d->setValue(response->drivers_settings[0].d);
         ui->doubleSpinBox_left_motor_max_total_i->setValue(response->drivers_settings[0].max_total_i);
-        ui->doubleSpinBox_right_motor_k->setValue(response->drivers_settings[0].k);
-        ui->doubleSpinBox_right_motor_b->setValue(response->drivers_settings[0].b);
+        ui->doubleSpinBox_left_motor_k->setValue(response->drivers_settings[0].k);
+        ui->doubleSpinBox_left_motor_b->setValue(response->drivers_settings[0].b);
 
         ui->doubleSpinBox_right_motor_p->setValue(response->drivers_settings[1].p);
         ui->doubleSpinBox_right_motor_i->setValue(response->drivers_settings[1].i);
@@ -449,6 +451,7 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         ui->spinBox_mpu6050_gyro_offset_z->setValue(response->sensor_settings.gyro_offset_z);
     } else if (response->mode == MotionService::Type::ReadConfig) {
         ui->spinBox_wheel_width->setValue(response->wheel_width * 1000);
+        ui->spinBox_track_width->setValue(response->track_width * 1000);
 
         ui->spinBox_left_motor_pin0->setValue(response->drivers_settings[0].motor_pina);
         ui->spinBox_left_motor_pin1->setValue(response->drivers_settings[0].motor_pinb);
@@ -489,7 +492,7 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
     }
 
     if (response->mode == MotionService::Type::ReadConfig || response->mode == MotionService::Type::WriteConfig) {
-        motionNode_->set_model_param(ui->spinBox_wheel_width->value() / 1000.0);
+        motionNode_->set_model_param(ui->spinBox_wheel_width->value() / 1000.0, ui->spinBox_track_width->value() / 1000.0);
         motionNode_->set_wheels_diameter({
             ui->spinBox_left_motor_wheel_diameter->value() / 1000.0,
             ui->spinBox_right_motor_wheel_diameter->value() / 1000.0,

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <xacro:property name="castor_radius" value="0.0075" />
+
+    <xacro:macro name="castor" params="name joint_xyz parent_name">
+        <link name='${name}'>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <sphere radius="${castor_radius}" />
+                </geometry>
+                <material name="gray">
+                    <color rgba="0.5 0.5 0.5 1" />
+                </material>
+            </visual>
+        </link>
+
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${parent_name}" />
+            <child link="${name}" />
+            <origin xyz="${joint_xyz}" rpy="0 0 0" />
+        </joint>
+
+    </xacro:macro>
+
+</robot>

@@ -1,33 +1,12 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="base">
-    <xacro:property name="base_length" value="0.210" />
-    <xacro:property name="base_width" value="0.120" />
-    <xacro:property name="base_height" value="0.009" />
-
     <xacro:property name="link_xyz" value="0 0 0" />
     <xacro:property name="link_rpy" value="0 0 0" />
 
     <link name="base_footprint" />
 
     <xacro:macro name="base" params="name joint_xyz">
-        <link name="${name}">
-            <visual>
-                <origin xyz="${link_xyz}" rpy="${link_rpy}" />
-                <geometry>
-                    <box size="${base_length} ${base_height} ${base_width}" />
-                </geometry>
-                <material name="grey">
-                    <color rgba="1 1 1 1" />
-                </material>
-            </visual>
-
-            <collision>
-                <origin xyz="${link_xyz}" rpy="${link_rpy}" />
-                <geometry>
-                    <box size="${base_length} ${base_height} ${base_width}" />
-                </geometry>
-            </collision>
-        </link>
+        <link name="${name}" />
 
         <joint name="${name}_joint" type="fixed">
             <origin xyz="${joint_xyz}" rpy="0 0 0" />
