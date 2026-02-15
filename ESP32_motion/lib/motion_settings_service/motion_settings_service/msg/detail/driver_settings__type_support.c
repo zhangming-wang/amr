@@ -31,7 +31,7 @@ void motion_settings_service__msg__DriverSettings__rosidl_typesupport_introspect
   motion_settings_service__msg__DriverSettings__fini(message_memory);
 }
 
-static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__msg__DriverSettings__rosidl_typesupport_introspection_c__DriverSettings_message_member_array[14] = {
+static rosidl_typesupport_introspection_c__MessageMember motion_settings_service__msg__DriverSettings__rosidl_typesupport_introspection_c__DriverSettings_message_member_array[15] = {
   {
     "motor_pina",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_INT32,  // type
@@ -269,13 +269,30 @@ static rosidl_typesupport_introspection_c__MessageMember motion_settings_service
     NULL,  // fetch(index, &value) function pointer
     NULL,  // assign(index, value) function pointer
     NULL  // resize(index) function pointer
+  },
+  {
+    "dead_pwm",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_UINT32,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(motion_settings_service__msg__DriverSettings, dead_pwm),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL,  // fetch(index, &value) function pointer
+    NULL,  // assign(index, value) function pointer
+    NULL  // resize(index) function pointer
   }
 };
 
 static const rosidl_typesupport_introspection_c__MessageMembers motion_settings_service__msg__DriverSettings__rosidl_typesupport_introspection_c__DriverSettings_message_members = {
   "motion_settings_service__msg",  // message namespace
   "DriverSettings",  // message name
-  14,  // number of fields
+  15,  // number of fields
   sizeof(motion_settings_service__msg__DriverSettings),
   motion_settings_service__msg__DriverSettings__rosidl_typesupport_introspection_c__DriverSettings_message_member_array,  // message members
   motion_settings_service__msg__DriverSettings__rosidl_typesupport_introspection_c__DriverSettings_init_function,  // function to initialize message memory (memory has to be allocated)

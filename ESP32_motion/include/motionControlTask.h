@@ -67,7 +67,7 @@ public:
     void set_speed_percent(float linear_percent, float angular_percent);
     void get_speed_percent(float &linear_percent, float &angular_percent);
 
-    void get_data(motion_status_msgs__msg__MotionStatus &msg);
+    bool get_data(motion_status_msgs__msg__MotionStatus &msg);
 
     void read_config(motion_settings_service__srv__MotionSettingsService_Response *response);
     void write_config(const motion_settings_service__srv__MotionSettingsService_Request *request);
@@ -89,6 +89,7 @@ private:
 
     volatile bool running_ = false;
     volatile float dt_ = 0;
+    std::atomic<bool> data_is_valid_{false};
 
     WheelSpeed current_wheel_v_, target_wheel_v_;
     std::deque<WheelSpeed> wheel_speed_deque_;

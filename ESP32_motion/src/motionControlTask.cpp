@@ -226,6 +226,8 @@ void MotionControlTask::update() {
             target_wheel_v_.right_v = 0;
         }
 
+        // Serial.println("\n");
+
         left_motor_control_->set_speed(target_wheel_v_.left_v, dt_, running_);
         right_motor_control_->set_speed(target_wheel_v_.right_v, dt_, running_);
 
@@ -233,11 +235,17 @@ void MotionControlTask::update() {
         right_motor_control_->move();
     }
     last_time = current_time;
+
+    data_is_valid_.store(true);
     // test_motors();
     vTaskDelayUntil(&task_tick_count_, speedPlan_->get_params().milliseconds);
 }
 
-void MotionControlTask::get_data(motion_status_msgs__msg__MotionStatus &msg) {
+bool MotionControlTask::get_data(motion_status_msgs__msg__MotionStatus &msg) {
+    if (!data_is_valid_.load()) {
+        return false;
+    }
+
     msg.drivers_status[0].current_v = left_motor_control_->get_current_speed();
     msg.drivers_status[0].target_v = left_motor_control_->get_target_speed();
     msg.drivers_status[0].total_distance = left_motor_control_->get_total_distance();
@@ -247,6 +255,11 @@ void MotionControlTask::get_data(motion_status_msgs__msg__MotionStatus &msg) {
     msg.drivers_status[1].target_v = right_motor_control_->get_target_speed();
     msg.drivers_status[1].total_distance = right_motor_control_->get_total_distance();
     msg.drivers_status[1].dt_distance = right_motor_control_->get_dt_distance();
+
+    SensorsControlTask::instance().get_mpu6050_control()->get_data(msg.sensor_status.gyro_x, msg.sensor_status.gyro_y, msg.sensor_status.gyro_z, msg.sensor_status.yaw, msg.sensor_status.pitch, msg.sensor_status.roll);
+
+    data_is_valid_.store(false);
+    return true;
 }
 
 geometry_msgs__msg__Twist MotionControlTask::_forwardKinematics(const MotionControlTask::WheelSpeed &wheelSpeed) {
@@ -264,6 +277,18 @@ MotionControlTask::WheelSpeed MotionControlTask::_inverseKinematics(const geomet
     MotionControlTask::WheelSpeed wheelSpeed;
     float v = twist.linear.x;  // 前进线速度
     float w = twist.angular.z; // 角速度（绕 z 轴）
+
+    if (fabs(v) < speedPlan_->get_params().min_v) {
+        v = 0;
+    } else if (fabs(v) > speedPlan_->get_params().max_v) {
+        v = (v > 0 ? 1.0f : -1.0f) * speedPlan_->get_params().max_v;
+    }
+
+    if (fabs(w) < speedPlan_->get_params().min_w) {
+        w = 0;
+    } else if (fabs(w) > speedPlan_->get_params().max_w) {
+        w = (w > 0 ? 1.0f : -1.0f) * speedPlan_->get_params().max_w;
+    }
 
     // 左右轮速度
     float v_left = v - w * wheel_width_ / 2.0f;
@@ -302,7 +327,9 @@ void MotionControlTask::write_params(const motion_settings_service__srv__MotionS
 
     speedPlan_->set_params(request->spd_plan_settings.milliseconds,
                            request->spd_plan_settings.max_v,
+                           request->spd_plan_settings.min_v,
                            request->spd_plan_settings.max_w,
+                           request->spd_plan_settings.min_w,
                            request->spd_plan_settings.max_acc,
                            request->spd_plan_settings.jerk,
                            request->spd_plan_settings.enable);
@@ -319,7 +346,9 @@ void MotionControlTask::read_params(motion_settings_service__srv__MotionSettings
     response->spd_plan_settings.milliseconds = speedPlan_->get_params().milliseconds;
     response->spd_plan_settings.enable = speedPlan_->get_params().enable;
     response->spd_plan_settings.max_v = speedPlan_->get_params().max_v;
+    response->spd_plan_settings.min_v = speedPlan_->get_params().min_v;
     response->spd_plan_settings.max_w = speedPlan_->get_params().max_w;
+    response->spd_plan_settings.min_w = speedPlan_->get_params().min_w;
     response->spd_plan_settings.max_acc = speedPlan_->get_params().max_acc;
     response->spd_plan_settings.jerk = speedPlan_->get_params().jerk;
 
@@ -348,7 +377,9 @@ void MotionControlTask::save_params() {
     preferences_.putBool("spdPlan", speedPlan_->get_params().enable);
 
     preferences_.putFloat("maxV", speedPlan_->get_params().max_v);
+    preferences_.putFloat("minV", speedPlan_->get_params().min_v);
     preferences_.putFloat("maxW", speedPlan_->get_params().max_w);
+    preferences_.putFloat("minW", speedPlan_->get_params().min_w);
     preferences_.putFloat("maxAcc", speedPlan_->get_params().max_acc);
     preferences_.putFloat("jerk", speedPlan_->get_params().jerk);
 
@@ -365,7 +396,9 @@ void MotionControlTask::_load_params() {
     params.milliseconds = preferences_.getInt("millisec", params.milliseconds);
     params.enable = preferences_.getBool("spdPlan", params.enable);
     params.max_v = preferences_.getFloat("maxV", params.max_v);
+    params.min_v = preferences_.getFloat("minV", params.min_v);
     params.max_w = preferences_.getFloat("maxW", params.max_w);
+    params.min_w = preferences_.getFloat("minW", params.min_w);
     params.max_acc = preferences_.getFloat("maxAcc", params.max_acc);
     params.jerk = preferences_.getFloat("jerk", params.jerk);
     preferences_.end();
@@ -387,7 +420,8 @@ void MotionControlTask::write_config(const motion_settings_service__srv__MotionS
                                           request->drivers_settings[0].motor_pinpwm,
                                           request->drivers_settings[0].wheel_diameter,
                                           request->drivers_settings[0].pluses_per_revolution,
-                                          request->drivers_settings[0].revolutions_per_minute);
+                                          request->drivers_settings[0].revolutions_per_minute,
+                                          request->drivers_settings[0].dead_pwm);
 
     right_motor_control_->set_motor_config(request->drivers_settings[1].motor_pina,
                                            request->drivers_settings[1].motor_pinb,
@@ -396,7 +430,8 @@ void MotionControlTask::write_config(const motion_settings_service__srv__MotionS
                                            request->drivers_settings[1].motor_pinpwm,
                                            request->drivers_settings[1].wheel_diameter,
                                            request->drivers_settings[1].pluses_per_revolution,
-                                           request->drivers_settings[1].revolutions_per_minute);
+                                           request->drivers_settings[1].revolutions_per_minute,
+                                           request->drivers_settings[1].dead_pwm);
 
     _refresh_target_max_v();
 }
@@ -413,6 +448,7 @@ void MotionControlTask::read_config(motion_settings_service__srv__MotionSettings
     response->drivers_settings[0].revolutions_per_minute = left_motor_control_->get_motor_config().revolutions_per_minute;
     response->drivers_settings[0].encoder_pina = left_motor_control_->get_motor_config().encoder_pinA;
     response->drivers_settings[0].encoder_pinb = left_motor_control_->get_motor_config().encoder_pinB;
+    response->drivers_settings[0].dead_pwm = left_motor_control_->get_motor_config().dead_pwm;
 
     response->drivers_settings[1].motor_pina = right_motor_control_->get_motor_config().motor_AIN1;
     response->drivers_settings[1].motor_pinb = right_motor_control_->get_motor_config().motor_AIN2;
@@ -422,6 +458,7 @@ void MotionControlTask::read_config(motion_settings_service__srv__MotionSettings
     response->drivers_settings[1].revolutions_per_minute = right_motor_control_->get_motor_config().revolutions_per_minute;
     response->drivers_settings[1].encoder_pina = right_motor_control_->get_motor_config().encoder_pinA;
     response->drivers_settings[1].encoder_pinb = right_motor_control_->get_motor_config().encoder_pinB;
+    response->drivers_settings[1].dead_pwm = right_motor_control_->get_motor_config().dead_pwm;
 }
 
 void MotionControlTask::save_config() {
@@ -466,10 +503,10 @@ void MotionControlTask::_refresh_target_max_v() {
 }
 
 void MotionControlTask::test_motors() {
-    left_motor_control_->update();
-    right_motor_control_->update();
+    // left_motor_control_->update();
+    // right_motor_control_->update();
 
-    Serial.printf("%d, %d \n", left_motor_control_->get_encoder_count_change(), right_motor_control_->get_encoder_count_change());
+    // Serial.printf("%d, %d \n", left_motor_control_->get_encoder_count_change(), right_motor_control_->get_encoder_count_change());
 
     long left_current = 0;
     long right_current = 0;
@@ -500,36 +537,42 @@ void MotionControlTask::test_motors() {
 
     //     left_motor_control_->set_speed(left_pwm);
     //     right_motor_control_->set_speed(right_pwm);
-    //     // }
-
-    // for (int pwm = 400; pwm <= 768; pwm += 4) {
-    //     left_pwm = pwm * -1;
-    //     right_pwm = pwm * -1;
-
-    //     left_motor_control_->set_speed(left_pwm);
-    //     right_motor_control_->set_speed(right_pwm);
-
-    //     left_motor_control_->move();
-    //     right_motor_control_->move();
-
-    //     vTaskDelay(3000 / portTICK_PERIOD_MS);
-
-    //     left_motor_control_->update();
-    //     right_motor_control_->update();
-
-    //     current_time = millis();
-    //     dt = (current_time - previous_time) / 1000.0;
-    //     previous_time = current_time;
-
-    //     left_motor_control_->calculate(0.0f, dt, false);
-    //     right_motor_control_->calculate(0.0f, dt, false);
-
-    //     left_current = left_motor_control_->get_encoder_count_change();
-    //     right_current = right_motor_control_->get_encoder_count_change();
-
-    //     Serial.printf(" %d, %d, %d, %d,  %f, %f\n", left_pwm, right_pwm, left_current, right_current, left_motor_control_->get_current_speed(), right_motor_control_->get_current_speed());
     // }
 
-    // left_motor_control_->set_speed(0);
-    // right_motor_control_->set_speed(0);
+    for (int pwm = 250; pwm <= 768; pwm += 4) {
+        left_pwm = pwm * 1;
+        right_pwm = pwm * 1;
+
+        left_motor_control_->set_speed(left_pwm);
+        right_motor_control_->set_speed(right_pwm);
+
+        left_motor_control_->move();
+        right_motor_control_->move();
+
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+
+        left_motor_control_->update();
+        right_motor_control_->update();
+
+        previous_time = millis();
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        left_motor_control_->update();
+        right_motor_control_->update();
+
+        current_time = millis();
+
+        dt = (current_time - previous_time) / 1000.0f;
+
+        left_motor_control_->calculate(0.0f, dt);
+        right_motor_control_->calculate(0.0f, dt);
+
+        left_current = left_motor_control_->get_encoder_count_change();
+        right_current = right_motor_control_->get_encoder_count_change();
+
+        Serial.printf("%.3f, %d, %d, %d, %d, %f, %f\n", dt, left_pwm, right_pwm, left_current, right_current, left_motor_control_->get_current_speed(), right_motor_control_->get_current_speed());
+    }
+
+    left_motor_control_->set_speed(0);
+    right_motor_control_->set_speed(0);
 }

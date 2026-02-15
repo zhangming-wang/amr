@@ -25,6 +25,7 @@ void MotorControl::load_config() {
     motorConfig_.pluses_per_revolution = preferences_.getInt("plPeRe", motorConfig_.pluses_per_revolution);
     motorConfig_.revolutions_per_minute = preferences_.getInt("rePeMi", motorConfig_.revolutions_per_minute);
     motorConfig_.wheel_diameter = preferences_.getFloat("wheDia", motorConfig_.wheel_diameter);
+    motorConfig_.dead_pwm = preferences_.getUInt("deadPWM", motorConfig_.dead_pwm);
     preferences_.end();
 
     _refresh_config();
@@ -40,6 +41,7 @@ void MotorControl::save_config() {
     preferences_.putInt("plPeRe", motorConfig_.pluses_per_revolution);
     preferences_.putInt("rePeMi", motorConfig_.revolutions_per_minute);
     preferences_.putFloat("wheDia", motorConfig_.wheel_diameter);
+    preferences_.putUInt("deadPWM", motorConfig_.dead_pwm);
     preferences_.end();
 }
 
@@ -81,7 +83,7 @@ void MotorControl::set_motor_config(const MotorConfig &motorConfig) {
     _refresh_config();
 }
 
-void MotorControl::set_motor_config(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute) {
+void MotorControl::set_motor_config(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute, uint dead_pwm) {
     motorConfig_.motor_AIN1 = motor_AIN1;
     motorConfig_.motor_AIN2 = motor_AIN2;
     motorConfig_.motor_pwmPin = motor_pwmPin;
@@ -90,6 +92,7 @@ void MotorControl::set_motor_config(int motor_AIN1, int motor_AIN2, int encoder_
     motorConfig_.wheel_diameter = wheel_diameter;
     motorConfig_.pluses_per_revolution = pluses_per_revolution;
     motorConfig_.revolutions_per_minute = revolutions_per_minute;
+    motorConfig_.dead_pwm = dead_pwm;
 
     _refresh_config();
 }
@@ -172,7 +175,7 @@ long MotorControl::get_encoder_count_change() {
     return encoder_->get_count_change();
 }
 
-float MotorControl::calculate(float target_v, float dt, bool pid_adjust) {
+void MotorControl::calculate(float target_v, float dt, bool running) {
     target_v_ = target_v;
 
     raw_vel_ = get_dt_distance() / dt;
@@ -180,30 +183,30 @@ float MotorControl::calculate(float target_v, float dt, bool pid_adjust) {
     current_acc_ = (smoothed_v_ - current_v_) / dt;
     current_v_ = smoothed_v_;
 
-    // current_v_ = get_dt_distance() / dt;
-
-    if (pid_adjust) {
-        if (fabs(target_v_) < 0.001f && fabs(current_v_) < 0.02f) {
-            pid_value_ = 0.0f;
-            pidControl_->reset(); // 这一步非常重要，清空积分累积
-        } else {
-            pid_value_ = pidControl_->calculate(current_v_ * 1000.0f, target_v_ * 1000.0f, dt) / 100.0f;
-        }
+    if (running) {
+        pid_value_ = pidControl_->calculate(current_v_, target_v_, dt);
+        ff_value_ = ffControl_->calculate(target_v_ * motorConfig_.pluses_per_revolution / (PI * motorConfig_.wheel_diameter));
     } else {
-        pid_value_ = target_v_ / max_v_;
-        pidControl_->reset();
+        pid_value_ = 0;
+        ff_value_ = 0;
     }
+    cal_pwm_ = pid_value_ + ff_value_;
 
-    return pid_value_;
+    if (fabs(cal_pwm_) < motorConfig_.dead_pwm) {
+        cal_pwm_ = 0;
+        pidControl_->reset();
+    } else {
+        Serial.printf("pid: %f, ff: %f, pwm: %d\n", pid_value_, ff_value_, cal_pwm_);
+    }
+}
+
+void MotorControl::set_speed(float target_v, float dt, bool running) {
+    calculate(target_v, dt, running);
+    motor_->set_speed(cal_pwm_);
 }
 
 void MotorControl::set_speed(int pwm) {
     motor_->set_speed(pwm);
-}
-
-void MotorControl::set_speed(float target_v, float dt, bool pid_adjust) {
-    calculate(target_v, dt, pid_adjust);
-    motor_->set_speed(pid_value_);
 }
 
 void MotorControl::set_speed(float speed_percent) {

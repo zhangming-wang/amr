@@ -20,7 +20,9 @@ motion_settings_service__msg__SpdPlanSettings__init(motion_settings_service__msg
   // milliseconds
   // speed_percent
   // max_v
+  // min_v
   // max_w
+  // min_w
   // max_acc
   // jerk
   // enable
@@ -36,7 +38,9 @@ motion_settings_service__msg__SpdPlanSettings__fini(motion_settings_service__msg
   // milliseconds
   // speed_percent
   // max_v
+  // min_v
   // max_w
+  // min_w
   // max_acc
   // jerk
   // enable
@@ -60,8 +64,16 @@ motion_settings_service__msg__SpdPlanSettings__are_equal(const motion_settings_s
   if (lhs->max_v != rhs->max_v) {
     return false;
   }
+  // min_v
+  if (lhs->min_v != rhs->min_v) {
+    return false;
+  }
   // max_w
   if (lhs->max_w != rhs->max_w) {
+    return false;
+  }
+  // min_w
+  if (lhs->min_w != rhs->min_w) {
     return false;
   }
   // max_acc
@@ -93,8 +105,12 @@ motion_settings_service__msg__SpdPlanSettings__copy(
   output->speed_percent = input->speed_percent;
   // max_v
   output->max_v = input->max_v;
+  // min_v
+  output->min_v = input->min_v;
   // max_w
   output->max_w = input->max_w;
+  // min_w
+  output->min_w = input->min_w;
   // max_acc
   output->max_acc = input->max_acc;
   // jerk

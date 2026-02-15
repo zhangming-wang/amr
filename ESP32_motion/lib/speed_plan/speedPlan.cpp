@@ -9,10 +9,12 @@ void SpeedPlan::set_params(const SpdPlanParams &params) {
     _update();
 }
 
-void SpeedPlan::set_params(int milliseconds, float max_v, float max_w, float max_acc, float jerk, bool enable) {
+void SpeedPlan::set_params(int milliseconds, float max_v, float min_v, float max_w, float min_w, float max_acc, float jerk, bool enable) {
     params_.milliseconds = milliseconds;
     params_.max_v = max_v;
+    params_.min_v = min_v;
     params_.max_w = max_w;
+    params_.min_w = min_w;
     params_.max_acc = max_acc;
     params_.jerk = jerk;
     params_.enable = enable;
@@ -26,6 +28,18 @@ const SpdPlanParams &SpeedPlan::get_params() {
 void SpeedPlan::_update() {
     if (params_.milliseconds <= 0)
         params_.milliseconds = 10;
+
+    params_.max_v = fabs(params_.max_v);
+    params_.min_v = fabs(params_.min_v);
+    params_.max_w = fabs(params_.max_w);
+    params_.min_w = fabs(params_.min_w);
+    params_.max_acc = fabs(params_.max_acc);
+    params_.jerk = fabs(params_.jerk);
+
+    if (params_.min_v > params_.max_v)
+        params_.min_v = params_.max_v;
+    if (params_.min_w > params_.max_w)
+        params_.min_w = params_.max_w;
 
     dt_ = params_.milliseconds / 1000.0f;
 }

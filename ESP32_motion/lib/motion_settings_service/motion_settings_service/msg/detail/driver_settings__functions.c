@@ -31,6 +31,7 @@ motion_settings_service__msg__DriverSettings__init(motion_settings_service__msg_
   // wheel_diameter
   // pluses_per_revolution
   // revolutions_per_minute
+  // dead_pwm
   return true;
 }
 
@@ -54,6 +55,7 @@ motion_settings_service__msg__DriverSettings__fini(motion_settings_service__msg_
   // wheel_diameter
   // pluses_per_revolution
   // revolutions_per_minute
+  // dead_pwm
 }
 
 bool
@@ -118,6 +120,10 @@ motion_settings_service__msg__DriverSettings__are_equal(const motion_settings_se
   if (lhs->revolutions_per_minute != rhs->revolutions_per_minute) {
     return false;
   }
+  // dead_pwm
+  if (lhs->dead_pwm != rhs->dead_pwm) {
+    return false;
+  }
   return true;
 }
 
@@ -157,6 +163,8 @@ motion_settings_service__msg__DriverSettings__copy(
   output->pluses_per_revolution = input->pluses_per_revolution;
   // revolutions_per_minute
   output->revolutions_per_minute = input->revolutions_per_minute;
+  // dead_pwm
+  output->dead_pwm = input->dead_pwm;
   return true;
 }
 

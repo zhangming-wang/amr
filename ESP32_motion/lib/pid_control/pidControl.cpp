@@ -6,10 +6,8 @@ void PIDControl::reset() {
 }
 
 float PIDControl::calculate(float current_value, float target_value, float dt, bool debug) {
-    float current_error = target_value - current_value;
-    float output_value = 0;
-
-    total_integral_ += current_error * dt;
+    current_error_ = target_value - current_value;
+    total_integral_ += current_error_ * dt;
 
     if (total_integral_ > 0 && total_integral_ > pidParams_.max_total_integral)
         total_integral_ = pidParams_.max_total_integral;
@@ -17,10 +15,10 @@ float PIDControl::calculate(float current_value, float target_value, float dt, b
     if (total_integral_ < 0 && total_integral_ < (-1.0f * pidParams_.max_total_integral))
         total_integral_ = -1.0f * pidParams_.max_total_integral;
 
-    output_value = pidParams_.p * current_error + pidParams_.i * total_integral_ + pidParams_.d * (current_error - last_error_) / dt;
-    last_error_ = current_error;
+    output_value_ = pidParams_.p * current_error_ + pidParams_.i * total_integral_ + pidParams_.d * (current_error_ - last_error_) / dt;
+    last_error_ = current_error_;
 
-    return output_value;
+    return output_value_;
 }
 
 void PIDControl::set_params(const PidParams &pidParams) {

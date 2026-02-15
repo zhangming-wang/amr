@@ -176,6 +176,8 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
         motionControl->write_params(request);
         sensorsControl->write_params(request);
 
+        response->spd_plan_settings.max_v = motionControl->get_speed_plan_parms().max_v;
+        response->spd_plan_settings.max_w = motionControl->get_speed_plan_parms().max_w;
         motionControl->get_speed_percent(response->linear_speed_percent, response->angular_speed_percent);
     } else if (request->mode == MotionService::Type::SaveParams) {
         motionControl->save_params();
@@ -188,6 +190,10 @@ void MotionNodeTask::motion_settings_service_callback(const void *req, void *res
     } else if (request->mode == MotionService::Type::WriteConfig) {
         motionControl->write_config(request);
         sensorsControl->write_config(request);
+
+        response->spd_plan_settings.max_v = motionControl->get_speed_plan_parms().max_v;
+        response->spd_plan_settings.max_w = motionControl->get_speed_plan_parms().max_w;
+        motionControl->get_speed_percent(response->linear_speed_percent, response->angular_speed_percent);
     } else if (request->mode == MotionService::Type::SaveConfig) {
         motionControl->save_config();
         sensorsControl->save_config();
@@ -210,9 +216,10 @@ void MotionNodeTask::publish_msgs() {
     // SensorsControlTask::instance().get_lidar_control()->update();
 
     if (motion_status_publisher_initialized_) {
-        motion_status_msg_.seq++;
         motion_status_msg_.stamp = get_now_ns();
-        MotionControlTask::instance().get_data(motion_status_msg_);
+        if (MotionControlTask::instance().get_data(motion_status_msg_)) {
+            motion_status_msg_.seq++;
+        }
         SensorsControlTask::instance().get_data(motion_status_msg_);
         rcl_ret_t ret = rcl_publish(&motion_status_publisher_, &motion_status_msg_, nullptr);
         if (ret != RCL_RET_OK) {

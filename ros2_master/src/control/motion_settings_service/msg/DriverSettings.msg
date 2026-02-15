@@ -15,3 +15,4 @@ float32 b
 float32 wheel_diameter
 int32 pluses_per_revolution
 int32 revolutions_per_minute
+uint32 dead_pwm

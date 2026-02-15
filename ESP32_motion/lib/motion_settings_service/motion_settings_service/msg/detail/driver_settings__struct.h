@@ -34,6 +34,7 @@ typedef struct motion_settings_service__msg__DriverSettings
   float wheel_diameter;
   int32_t pluses_per_revolution;
   int32_t revolutions_per_minute;
+  uint32_t dead_pwm;
 } motion_settings_service__msg__DriverSettings;
 
 // Struct for a sequence of motion_settings_service__msg__DriverSettings.

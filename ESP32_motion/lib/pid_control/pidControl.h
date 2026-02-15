@@ -23,6 +23,8 @@ public:
 private:
     PidParams pidParams_;
 
-    volatile float last_error_ = 0;
-    volatile float total_integral_ = 0;
+    float last_error_ = 0;
+    float total_integral_ = 0;
+    float current_error_ = 0;
+    float output_value_ = 0;
 };

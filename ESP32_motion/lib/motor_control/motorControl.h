@@ -21,6 +21,7 @@ struct MotorConfig {
     int pluses_per_revolution = 1000;
     int revolutions_per_minute = 100;
     float wheel_diameter = 0.1f;
+    uint dead_pwm = 0;
 };
 
 class MotorControl {
@@ -41,7 +42,7 @@ public:
     void save_params();
 
     void set_motor_config(const MotorConfig &motorConfig);
-    void set_motor_config(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute);
+    void set_motor_config(int motor_AIN1, int motor_AIN2, int encoder_pinA, int encoder_pinB, int motor_pwmPin, float wheel_diameter, int pluses_per_revolution, int revolutions_per_minute, uint dead_pwm = 0);
     const MotorConfig &get_motor_config();
 
     void set_pid_params(const PidParams &pidParams);
@@ -54,8 +55,9 @@ public:
 
     void set_speed(int pwm);
     void set_speed(float speed_percent);
-    void set_speed(float speed, float dt, bool pid_adjust = false);
-    float calculate(float target_v, float dt, bool pid_adjust = false);
+    void set_speed(float target_v, float dt, bool running = true);
+
+    void calculate(float target_v, float dt, bool running = true);
 
     float get_max_speed();
 
@@ -81,7 +83,8 @@ private:
     volatile float latest_target_v_ = 0, latest_current_v_ = 0, max_v_ = 0;
 
     float raw_vel_ = 0, smoothed_v_ = 0, alpha_ = 0.25;
-    float pid_value_ = 0;
+    float pid_value_ = 0, ff_value_ = 0;
+    int cal_pwm_ = 0;
 
     std::shared_ptr<Encoder> encoder_;
     std::shared_ptr<Motor> motor_;

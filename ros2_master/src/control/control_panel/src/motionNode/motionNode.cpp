@@ -78,12 +78,17 @@ void MotionNode::_init_msgs() {
 
 void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
     // auto stamp = rclcpp::Time(msg->stamp / 1000000000, msg->stamp % 1000000000);
-    auto stamp = node_->now();
 
+    if (last_motion_status_msg_ && msg->seq == last_motion_status_msg_->seq) {
+        return;
+    }
+
+    auto stamp = node_->now();
     odom_msg_.header.stamp = stamp;
     imu_msg_.header.stamp = stamp;
     current_joint_state_.header.stamp = stamp;
     current_tf_.header.stamp = stamp;
+
     if (last_motion_status_msg_) {
         if (msg->seq - last_motion_status_msg_->seq != 1) {
             _forwardKinematicsDistance(msg->drivers_status[0].total_distance - last_motion_status_msg_->drivers_status[0].total_distance, msg->drivers_status[1].total_distance - last_motion_status_msg_->drivers_status[1].total_distance);

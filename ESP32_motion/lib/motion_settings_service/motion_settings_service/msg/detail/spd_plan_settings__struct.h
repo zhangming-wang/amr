@@ -23,7 +23,9 @@ typedef struct motion_settings_service__msg__SpdPlanSettings
   int32_t milliseconds;
   float speed_percent;
   float max_v;
+  float min_v;
   float max_w;
+  float min_w;
   float max_acc;
   float jerk;
   bool enable;

@@ -285,7 +285,9 @@ void MotionWidget::on_write_params() {
 
     request->spd_plan_settings.milliseconds = ui->spinBox_spdPlan_milliseconds->value();
     request->spd_plan_settings.max_v = ui->doubleSpinBox_spdPlan_max_v->value();
+    request->spd_plan_settings.min_v = ui->doubleSpinBox_spdPlan_min_v->value();
     request->spd_plan_settings.max_w = ui->doubleSpinBox_spdPlan_max_w->value();
+    request->spd_plan_settings.min_w = ui->doubleSpinBox_spdPlan_min_w->value();
     request->spd_plan_settings.max_acc = ui->doubleSpinBox_spdPlan_max_acc->value();
     request->spd_plan_settings.jerk = ui->doubleSpinBox_spdPlan_jerk->value();
     request->spd_plan_settings.enable = ui->checkBox_spdPlan_enable->isChecked();
@@ -344,6 +346,7 @@ void MotionWidget::on_write_config() {
     request->drivers_settings[0].wheel_diameter = ui->spinBox_left_motor_wheel_diameter->value() / 1000.0;
     request->drivers_settings[0].encoder_pina = ui->spinBox_left_encoder_pin0->value();
     request->drivers_settings[0].encoder_pinb = ui->spinBox_left_encoder_pin1->value();
+    request->drivers_settings[0].dead_pwm = ui->spinBox_left_motor_dead_pwm->value();
 
     request->drivers_settings[1].motor_pina = ui->spinBox_right_motor_pin0->value();
     request->drivers_settings[1].motor_pinb = ui->spinBox_right_motor_pin1->value();
@@ -353,6 +356,7 @@ void MotionWidget::on_write_config() {
     request->drivers_settings[1].wheel_diameter = ui->spinBox_right_motor_wheel_diameter->value() / 1000.0;
     request->drivers_settings[1].encoder_pina = ui->spinBox_right_encoder_pin0->value();
     request->drivers_settings[1].encoder_pinb = ui->spinBox_right_encoder_pin1->value();
+    request->drivers_settings[1].dead_pwm = ui->spinBox_right_motor_dead_pwm->value();
 
     request->sensor_settings.pin_scl = ui->spinBox_mpu6050_pin_scl->value();
     request->sensor_settings.pin_sda = ui->spinBox_mpu6050_pin_sda->value();
@@ -405,6 +409,21 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         _show_service_command_state(id, true);
     }
 
+    auto update_speed_func = [this](MotionSettingsSrv::Response::SharedPtr response) {
+        ui->horizontalSlider_linear_speed_percent->blockSignals(true);
+        ui->horizontalSlider_linear_speed_percent->setValue(response->linear_speed_percent * ui->horizontalSlider_linear_speed_percent->maximum());
+        ui->horizontalSlider_linear_speed_percent->blockSignals(false);
+
+        ui->horizontalSlider_angular_speed_percent->blockSignals(true);
+        ui->horizontalSlider_angular_speed_percent->setValue(response->angular_speed_percent * ui->horizontalSlider_angular_speed_percent->maximum());
+        ui->horizontalSlider_angular_speed_percent->blockSignals(false);
+
+        ui->doubleSpinBox_spdPlan_max_v->setValue(response->spd_plan_settings.max_v);
+        ui->doubleSpinBox_spdPlan_max_w->setValue(response->spd_plan_settings.max_w);
+
+        _update_speed_percent_label(response->linear_speed_percent, response->angular_speed_percent);
+    };
+
     if (response->mode == MotionService::Type::ReadParams) {
         ui->spinBox_spdPlan_milliseconds->setValue(response->spd_plan_settings.milliseconds);
 
@@ -415,17 +434,9 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         ui->checkBox_right_motor_enable->setChecked(response->motor_enable_flags & 0x01);
         ui->checkBox_left_motor_enable->setChecked(response->motor_enable_flags & 0x02);
 
-        ui->horizontalSlider_linear_speed_percent->blockSignals(true);
-        ui->horizontalSlider_linear_speed_percent->setValue(response->linear_speed_percent * ui->horizontalSlider_linear_speed_percent->maximum());
-        ui->horizontalSlider_linear_speed_percent->blockSignals(false);
-
-        ui->horizontalSlider_angular_speed_percent->blockSignals(true);
-        ui->horizontalSlider_angular_speed_percent->setValue(response->angular_speed_percent * ui->horizontalSlider_angular_speed_percent->maximum());
-        ui->horizontalSlider_angular_speed_percent->blockSignals(false);
-        _update_speed_percent_label(response->linear_speed_percent, response->angular_speed_percent);
-
-        ui->doubleSpinBox_spdPlan_max_v->setValue(response->spd_plan_settings.max_v);
-        ui->doubleSpinBox_spdPlan_max_w->setValue(response->spd_plan_settings.max_w);
+        update_speed_func(response);
+        ui->doubleSpinBox_spdPlan_min_v->setValue(response->spd_plan_settings.min_v);
+        ui->doubleSpinBox_spdPlan_min_w->setValue(response->spd_plan_settings.min_w);
         ui->doubleSpinBox_spdPlan_max_acc->setValue(response->spd_plan_settings.max_acc);
         ui->doubleSpinBox_spdPlan_jerk->setValue(response->spd_plan_settings.jerk);
 
@@ -461,6 +472,7 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         ui->spinBox_left_motor_wheel_diameter->setValue(response->drivers_settings[0].wheel_diameter * 1000);
         ui->spinBox_left_encoder_pin0->setValue(response->drivers_settings[0].encoder_pina);
         ui->spinBox_left_encoder_pin1->setValue(response->drivers_settings[0].encoder_pinb);
+        ui->spinBox_left_motor_dead_pwm->setValue(response->drivers_settings[0].dead_pwm);
 
         ui->spinBox_right_motor_pin0->setValue(response->drivers_settings[1].motor_pina);
         ui->spinBox_right_motor_pin1->setValue(response->drivers_settings[1].motor_pinb);
@@ -470,6 +482,7 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
         ui->spinBox_right_motor_wheel_diameter->setValue(response->drivers_settings[1].wheel_diameter * 1000);
         ui->spinBox_right_encoder_pin0->setValue(response->drivers_settings[1].encoder_pina);
         ui->spinBox_right_encoder_pin1->setValue(response->drivers_settings[1].encoder_pinb);
+        ui->spinBox_right_motor_dead_pwm->setValue(response->drivers_settings[1].dead_pwm);
 
         ui->spinBox_lidar_pin_tx->setValue(response->sensor_settings.pin_tx);
         ui->spinBox_lidar_pin_rx->setValue(response->sensor_settings.pin_rx);
@@ -477,18 +490,8 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
 
         ui->spinBox_mpu6050_pin_sda->setValue(response->sensor_settings.pin_sda);
         ui->spinBox_mpu6050_pin_scl->setValue(response->sensor_settings.pin_scl);
-    } else if (response->mode == MotionService::Type::WriteParams || response->mode == MotionService::Type::SetSpeedPercent) {
-        ui->horizontalSlider_linear_speed_percent->blockSignals(true);
-        ui->horizontalSlider_linear_speed_percent->setValue(response->linear_speed_percent * ui->horizontalSlider_linear_speed_percent->maximum());
-        ui->horizontalSlider_linear_speed_percent->blockSignals(false);
-
-        ui->horizontalSlider_angular_speed_percent->blockSignals(true);
-        ui->horizontalSlider_angular_speed_percent->setValue(response->angular_speed_percent * ui->horizontalSlider_angular_speed_percent->maximum());
-        ui->horizontalSlider_angular_speed_percent->blockSignals(false);
-
-        ui->doubleSpinBox_spdPlan_max_v->setValue(response->spd_plan_settings.max_v);
-        ui->doubleSpinBox_spdPlan_max_w->setValue(response->spd_plan_settings.max_w);
-        _update_speed_percent_label(response->linear_speed_percent, response->angular_speed_percent);
+    } else if (response->mode == MotionService::Type::SetSpeedPercent) {
+        update_speed_func(response);
     }
 
     if (response->mode == MotionService::Type::ReadConfig || response->mode == MotionService::Type::WriteConfig) {
@@ -497,6 +500,10 @@ void MotionWidget::on_recv_motion_settings_service_response(uint64_t id, MotionS
             ui->spinBox_left_motor_wheel_diameter->value() / 1000.0,
             ui->spinBox_right_motor_wheel_diameter->value() / 1000.0,
         });
+    }
+
+    if (response->mode == MotionService::Type::WriteConfig || response->mode == MotionService::Type::WriteParams) {
+        update_speed_func(response);
     }
 }
 
