@@ -26,6 +26,7 @@ setup(
             "init_pose = command.init_pose:main",
             "goto_pose = command.goto_pose:main",
             "waypoints_follow = command.waypoints_follow:main",
+            "save_map = command.save_map:main",
         ],
     },
 )

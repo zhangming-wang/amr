@@ -72,10 +72,15 @@ inline bool monitor_wifi() {
     static bool connected = false;
     if (WiFi.status() != WL_CONNECTED) {
         connected = false;
-        if (millis() - connect_time > 10000) {
-            connect_time = millis();
-            WiFi.begin(wifi_name, wifi_password);
-            Serial.printf("\nConnecting to WiFi...");
+        if (millis() - connect_time > 5000) {
+            auto res = WiFi.begin(wifi_name, wifi_password);
+            if (res == WL_CONNECTED) {
+                connect_time = millis();
+                Serial.printf("\nConnecting to WiFi...");
+            } else {
+                connect_time = -10000;
+                Serial.printf("WiFi begin failed with error code: %d\n", res);
+            }
         }
     } else {
         if (connected == false) {

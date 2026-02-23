@@ -1,0 +1,37 @@
+ekf_node:
+  ros__parameters:
+    frequency: 50.0 # 匹配你的传感器频率
+    sensor_timeout: 0.1
+    two_d_mode: true # 你的机器人只在地面跑，设为 true 效果更好
+    publish_tf: true # 重点：让它来发布 odom -> base_link 变换
+
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_footprint
+    world_frame: odom
+
+    # -----------------------------------------
+    # 1. 编码器里程计 (odom0)：只取线速度，不取绝对位置
+    # -----------------------------------------
+    odom0: /odom
+    odom0_config: [false, false, false, # x, y, z (不取绝对位置，防止累积误差锁死)
+                   false, false, false, # roll, pitch, yaw
+                   true,  false, false, # [线速度 vx] - 信任编码器的前进速度
+                   false, false, false, # vy, vz
+                   false, false, true,  # [角速度 vyaw] - 辅助参考
+                   false, false, false]
+    odom0_differential: true            # 开启微分模式，更平滑
+    odom0_queue_size: 10
+
+    # -----------------------------------------
+    # 2. MPU6050 (imu0)：取角度和角速度，放弃位移加速度
+    # -----------------------------------------
+    imu0: /imu
+    imu0_config: [false, false, false,
+                  false, false, true,  # [偏航角 Yaw] - 信任 IMU 的方向
+                  false, false, true,  # [角速度 Gz] - 极度信任陀螺仪的灵敏转动
+                  false, false, false, # 加速度 - 建议关掉，除非校准极好且需要检测碰撞
+                  false, false, false]
+    imu0_differential: false           # 角度通常直接取绝对值
+    imu0_relative: true                # 以启动时的角度为 0 度起点
+    imu0_queue_size: 10

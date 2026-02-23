@@ -542,7 +542,7 @@ void MotionWidget::on_update_status() {
             }
         }
     } else {
-        ui->label_gamepad_status->setText(" 手柄已连接: " + gamepad_->name() + " (ID:" + QString::number(gamepad_->deviceId()) + ")");
+        ui->label_gamepad_status->setText(gamepad_->name() + " (ID:" + QString::number(gamepad_->deviceId()) + ")");
         ui->label_gamepad_status->setStyleSheet(OK_STYLESHEET);
     }
 }
@@ -570,7 +570,7 @@ void MotionWidget::on_recv_motion_status_msg(const MotionStatusMsg::SharedPtr ms
         return;
     }
 
-    if (wheel_speed_customPlot_->graph(0)->dataCount() >= 10000) {
+    if (wheel_speed_customPlot_->graph(0)->dataCount() >= 5000) {
         clear_plot();
     }
 

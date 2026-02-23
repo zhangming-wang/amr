@@ -2,6 +2,9 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 from script.kill_process import kill_process  # type: ignore
+import os
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -10,7 +13,14 @@ def generate_launch_description():
 
     current_share_directory = get_package_share_directory("control_launch")
 
-    control_panel_nodes = [
+    yolo_config_path = os.path.join(current_share_directory, "config", "yolo_detect.yaml")
+    ekf_config_path = os.path.join(current_share_directory, "config", "ekf.yaml")
+
+    description_launch_path = os.path.join(
+        get_package_share_directory("description"), "launch", "description.launch.py"  # 目标包名  # 文件夹名  # 文件名
+    )
+
+    nodes_list = [
         Node(
             package="micro_ros_agent",
             executable="micro_ros_agent",
@@ -29,12 +39,18 @@ def generate_launch_description():
             executable="yolo_detect",
             name="yolo_detect",
             output="screen",
-            parameters=[current_share_directory + "/config/yolo_detect.yaml"],
+            parameters=[yolo_config_path],
         ),
-    ]
-
-    nodes_list = [
-        *control_panel_nodes,
+        Node(
+            package="robot_localization",
+            executable="ekf_node",
+            name="ekf_node",
+            output="screen",
+            parameters=[ekf_config_path],  # 加载你的参数文件
+        ),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(description_launch_path),
+        ),
     ]
 
     return LaunchDescription(nodes_list)

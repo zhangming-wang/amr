@@ -204,9 +204,9 @@ void MotionControlTask::update() {
     if (last_time != current_time && last_time != 0) {
         dt_ = (current_time - last_time) / 1000.0;
 
-        SensorsControlTask::instance().get_mpu6050_control()->update();
         left_motor_control_->update();
         right_motor_control_->update();
+        SensorsControlTask::instance().get_mpu6050_control()->update();
 
         if (running_) {
             if (xSemaphoreTake(mutex_, portMAX_DELAY) == pdTRUE) {

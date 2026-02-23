@@ -16,7 +16,7 @@ MotionNode::MotionNode(QObject *parent)
 
     joint_state_publisher_ = node_->create_publisher<sensor_msgs::msg::JointState>(joint_states_topic_name, reliable_qos_);
     odom_publisher_ = node_->create_publisher<nav_msgs::msg::Odometry>(odom_topic_name, reliable_qos_);
-    imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(imu_topic_name, best_effort_qos_);
+    imu_publisher_ = node_->create_publisher<sensor_msgs::msg::Imu>(imu_topic_name, reliable_qos_);
 
     _init_msgs();
 }
@@ -32,48 +32,33 @@ void MotionNode::_init_msgs() {
     current_joint_state_.header.frame_id = base_footprint_tf_frame_id;
 
     imu_msg_.header.frame_id = imu_tf_frame_id;
-    for (int i = 0; i < 9; ++i) {
-        imu_msg_.orientation_covariance[i] = 0.0;
-        imu_msg_.angular_velocity_covariance[i] = 0.0;
-        imu_msg_.linear_acceleration_covariance[i] = 0.0;
-    }
-    imu_msg_.orientation_covariance[0] = 0.02 * 0.02; // roll
-    imu_msg_.orientation_covariance[4] = 0.02 * 0.02; // pitch
-    imu_msg_.orientation_covariance[8] = 1e6;         // yaw（无磁力计）
 
-    // linear acceleration
-    imu_msg_.linear_acceleration.x = 0.0;
-    imu_msg_.linear_acceleration.y = 0.0;
-    imu_msg_.linear_acceleration.z = 0.0;
+    // --- IMU 优化 ---
+    imu_msg_.orientation_covariance[0] = 0.01;
+    imu_msg_.orientation_covariance[4] = 0.01;
+    imu_msg_.orientation_covariance[8] = 0.02; // 信任 Yaw 旋转
 
-    // angular velocity
-    imu_msg_.angular_velocity_covariance[0] = 0.001 * 0.001;
-    imu_msg_.angular_velocity_covariance[4] = 0.001 * 0.001;
-    imu_msg_.angular_velocity_covariance[8] = 0.001 * 0.001;
+    imu_msg_.angular_velocity_covariance[0] = 0.000001;
+    imu_msg_.angular_velocity_covariance[4] = 0.000001;
+    imu_msg_.angular_velocity_covariance[8] = 0.000001; // 极度信任角速度
 
-    // linear acceleration
-    imu_msg_.linear_acceleration_covariance[0] = -1;
-    imu_msg_.linear_acceleration_covariance[4] = -1;
-    imu_msg_.linear_acceleration_covariance[8] = -1;
+    // 加速度如果不准，设为很大的值
+    for (int i = 0; i < 9; i++)
+        imu_msg_.linear_acceleration_covariance[i] = 1e6;
 
-    odom_msg_.header.frame_id = odom_tf_frame_id;
-    odom_msg_.child_frame_id = base_footprint_tf_frame_id;
-    odom_msg_.pose.covariance.fill(0.0);
-    odom_msg_.pose.covariance[0] = 0.02 * 0.02;
-    odom_msg_.pose.covariance[7] = 0.02 * 0.02;
-    odom_msg_.pose.covariance[14] = 1e6;
-    odom_msg_.pose.covariance[21] = 1e6;
-    odom_msg_.pose.covariance[28] = 1e6;
-    odom_msg_.pose.covariance[35] = 0.05 * 0.05;
+    // --- Odom 优化 ---
+    // Pose 部分 (虽然 EKF 可能不用，但规范化是有好处的)
+    for (int i = 0; i < 36; i++)
+        odom_msg_.pose.covariance[i] = 1e6; // 默认不信任
+    odom_msg_.pose.covariance[0] = 0.001;   // x
+    odom_msg_.pose.covariance[7] = 0.001;   // y
+    odom_msg_.pose.covariance[35] = 0.01;   // yaw
 
-    // twist
-    odom_msg_.twist.covariance.fill(0.0);
-    odom_msg_.twist.covariance[0] = 0.1 * 0.1;
-    odom_msg_.twist.covariance[7] = 0.1 * 0.1;
-    odom_msg_.twist.covariance[14] = 1e6;
-    odom_msg_.twist.covariance[21] = 1e6;
-    odom_msg_.twist.covariance[28] = 1e6;
-    odom_msg_.twist.covariance[35] = 0.1 * 0.1;
+    // Twist 部分 (EKF 融合的核心)
+    for (int i = 0; i < 36; i++)
+        odom_msg_.twist.covariance[i] = 1e6; // 默认不信任
+    odom_msg_.twist.covariance[0] = 0.001;   // vx: 调小这个值，移动更灵敏
+    odom_msg_.twist.covariance[35] = 0.001;  // vyaw: 调小这个值，原地转动更灵敏
 }
 
 void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
@@ -110,11 +95,11 @@ void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
     current_tf_.transform.translation.z = current_pose_.position.z;
     current_tf_.transform.rotation = current_pose_.orientation;
 
-    current_joint_state_.position[0] = msg->drivers_status[0].total_distance / (wheels_diameter_vector_[0] * M_PI);
-    current_joint_state_.position[1] = msg->drivers_status[1].total_distance / (wheels_diameter_vector_[1] * M_PI);
+    current_joint_state_.position[0] = msg->drivers_status[0].total_distance * 2.0 / wheels_diameter_vector_[0];
+    current_joint_state_.position[1] = msg->drivers_status[1].total_distance * 2.0 / wheels_diameter_vector_[1];
 
-    current_joint_state_.velocity[0] = msg->drivers_status[0].current_v / (wheels_diameter_vector_[0] * M_PI);
-    current_joint_state_.velocity[1] = msg->drivers_status[1].current_v / (wheels_diameter_vector_[1] * M_PI);
+    current_joint_state_.velocity[0] = msg->drivers_status[0].current_v * 2.0 / wheels_diameter_vector_[0];
+    current_joint_state_.velocity[1] = msg->drivers_status[1].current_v * 2.0 / wheels_diameter_vector_[1];
 
     imu_msg_.angular_velocity.x = msg->sensor_status.gyro_x;
     imu_msg_.angular_velocity.y = msg->sensor_status.gyro_y;
@@ -128,9 +113,10 @@ void MotionNode::recv_motion_status_msg(const MotionStatusMsg::SharedPtr msg) {
     imu_msg_.orientation.w = q.w();
 
     joint_state_publisher_->publish(current_joint_state_);
-    tf_broadcaster_->sendTransform(current_tf_);
     imu_publisher_->publish(imu_msg_);
     odom_publisher_->publish(odom_msg_);
+
+    // tf_broadcaster_->sendTransform(current_tf_);
 
     recv_heartbeat_msg(nullptr);
     emit motionStatusMsgChanged(msg);

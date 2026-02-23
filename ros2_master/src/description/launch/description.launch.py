@@ -38,7 +38,7 @@ def generate_launch_description():
         executable="rviz2",
         arguments=["-d", rviz_config_path],
         output="screen",
-        name="rviz2",
+        name="description_rviz2",
         parameters=[{"use_sim_time": use_sim_time}],
     )
 

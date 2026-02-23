@@ -93,43 +93,48 @@ protected:
 
 public:
     void update() override {
-        if (monitor_wifi() == false) {
-            connected_.store(false);
-            Serial.printf(".");
-            vTaskDelay(pdMS_TO_TICKS(500));
-            return;
-        }
+        if (connected_.load()) {
+            check_connect_time_ = millis();
+            if (check_connect_time_ - last_check_connect_time_ > 3000) {
+                if (rmw_uros_ping_agent(10, 10) != RCL_RET_OK) {
+                    Serial.println("ping agent failed, reconnecting...");
+                    connected_.store(false);
+                }
+                if (monitor_wifi() == false) {
+                    connected_.store(false);
+                }
+                last_check_connect_time_ = check_connect_time_;
 
-        if (!connected_.load()) {
-            if (_init_micro_ros()) {
-                connected_.store(true);
-                Serial.println("microRos node task is running...");
-            } else {
-                Serial.println("microRos node init failed, try again...");
-                vTaskDelay(pdMS_TO_TICKS(500));
-                return;
+                if (!connected_.load()) {
+                    vTaskDelay(pdMS_TO_TICKS(500));
+                    return;
+                }
             }
-        }
-
-        check_connect_time_ = millis();
-        if (check_connect_time_ > last_check_connect_time_ + 3000) {
-            if (rmw_uros_ping_agent(10, 10) != RCL_RET_OK) {
-                Serial.println("ping agent failed, reconnecting...");
-                _clean_micro_ros();
+            if (rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(5)) != RCL_RET_OK) {
+                Serial.println("rclc_executor_spin_some error");
                 connected_.store(false);
                 vTaskDelay(pdMS_TO_TICKS(500));
+            } else {
+                vTaskDelay(pdMS_TO_TICKS(5));
             }
-            last_check_connect_time_ = check_connect_time_;
+        } else {
+            if (monitor_wifi()) {
+                Serial.println("\nWiFi connected, initializing micro_ros...");
+                if (_init_micro_ros()) {
+                    connected_.store(true);
+                    check_connect_time_ = millis();
+                    last_check_connect_time_ = check_connect_time_;
+                    Serial.println("microRos node task is running...");
+                } else {
+                    Serial.println("microRos node init failed, try again...");
+                    vTaskDelay(pdMS_TO_TICKS(500));
+                    return;
+                }
+            } else {
+                Serial.printf(".");
+                vTaskDelay(pdMS_TO_TICKS(500));
+            }
         }
-
-        if (rclc_executor_spin_some(&executor_, RCL_MS_TO_NS(5)) != RCL_RET_OK) {
-            Serial.println("rclc_executor_spin_some error");
-            _clean_micro_ros();
-            connected_.store(false);
-            vTaskDelay(pdMS_TO_TICKS(500));
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
     static inline void serial_print(const std::string &msg) {

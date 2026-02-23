@@ -3,7 +3,7 @@
 SensorsControlTask::SensorsControlTask() {
     task_name_ = "sensors_control_task";
     priority_ = 9;
-    core_id_ = 0;
+    core_id_ = 1;
     stack_size_ = 8192;
 
     task_tick_count_ = xTaskGetTickCount();

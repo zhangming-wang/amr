@@ -14,5 +14,9 @@ const FFParams &FFControl::get_params() {
 }
 
 float FFControl::calculate(float target_value) {
-    return params_.k * target_value + params_.b;
+    if (target_value >= 0) {
+        return params_.k * target_value + params_.b;
+    } else {
+        return params_.k * target_value - params_.b;
+    }
 }
