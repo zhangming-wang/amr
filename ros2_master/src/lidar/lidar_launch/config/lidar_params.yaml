@@ -20,9 +20,9 @@ ydlidar_node:
     support_motor_dtr: true # 支持电机DTR
     angle_max: 180.0 # 最大角度
     angle_min: -180.0 # 最小角度
-    range_max: 64.0 # 最大范围
-    range_min: 0.05 # 最小范围
-    frequency: 5.0 # 频率
+    range_max: 6.0 # 最大范围
+    range_min: 0.15 # 最小范围
+    frequency: 6.0 # 频率
     invalid_range_is_inf: false # 无效范围为无穷大
 
 tcpserver:
@@ -34,3 +34,76 @@ serialserver:
   ros__parameters:
     serial_port: /tmp/tty_lidar
     motion_status_topic: /esp32/motion_status_topic
+
+scan_to_scan_filter_chain:
+  ros__parameters:
+
+    filter1:
+      name: speckle_filter
+      type: laser_filters/LaserScanSpeckleFilter
+      params:
+        filter_type: 0              # 0 = 连续邻域模式（推荐）
+        max_range: 6.0              # 参与判断的最大距离
+        max_range_difference: 0.2   # 邻近点差值超过 0.2m 视为噪点
+        filter_window: 7            # 检查窗口大小（X2D 建议 >=7）
+
+    filter2:
+      name: median_filter
+      type: laser_filters/LaserScanMedianSpatialFilter
+      params:
+        window_size: 3   # 中值窗口大小（不要太大，X2D 频率低）
+
+    # filter3:
+    #   name: interp
+    #   type: laser_filters/InterpolationFilter
+    #   params:
+    #     num_points: 450   # 固定输出点数
+
+    # 1️⃣ 角度裁剪
+    # 只保留机器人前方数据，减少无用数据和后方电机干扰
+    # filter1:
+    #   name: angular_bounds
+    #   type: laser_filters/LaserScanAngularBoundsFilter
+    #   params:
+    #     lower_angle: -2.0      # 最小角度（弧度），-2rad ≈ -114°
+    #     upper_angle: 2.0       # 最大角度（弧度），2rad ≈ 114°
+
+    # # 2️⃣ 距离裁剪
+    # # 去掉过近和过远的无效数据
+    # filter2:
+    #   name: range_filter
+    #   type: laser_filters/LaserScanRangeFilter
+    #   params:
+    #     lower_threshold: 0.12  # 小于 12cm 的数据删除（X2D 近距离误报多）
+    #     upper_threshold: 6.0   # 超过 6m 删除（X2D 远距离不稳定）
+
+    # 3️⃣ 去孤立噪点（核心滤波）
+    # 处理单个或少量跳动点（X2D 常见问题）
+    # filter3:
+    #   name: speckle_filter
+    #   type: laser_filters/LaserScanSpeckleFilter
+    #   params:
+    #     filter_type: 0              # 0 = 连续邻域模式（推荐）
+    #     max_range: 6.0              # 参与判断的最大距离
+    #     max_range_difference: 0.2   # 邻近点差值超过 0.2m 视为噪点
+    #     filter_window: 7            # 检查窗口大小（X2D 建议 >=7）
+
+    # 4️⃣ 去阴影点
+    # 处理墙角和遮挡产生的虚假线条
+    # filter4:
+    #   name: shadow_filter
+    #   type: laser_filters/ScanShadowsFilter
+    #   params:
+    #     min_angle: 10.0                 # 阴影判断最小角度（度）
+    #     max_angle: 170.0                # 阴影判断最大角度（度）
+    #     neighbors: 30                   # 参与判断的邻居数量
+    #     window: 1                       # 搜索窗口
+    #     remove_shadow_start_point: true # 是否移除阴影起始点
+
+    # 5️⃣ 中值滤波（轻度平滑）
+    # 让数据更平滑，但避免延迟过大
+    # filter5:
+    #   name: median_filter
+    #   type: laser_filters/LaserScanMedianSpatialFilter
+    #   params:
+    #     window_size: 3   # 中值窗口大小（不要太大，X2D 频率低）

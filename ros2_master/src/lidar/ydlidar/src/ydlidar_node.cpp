@@ -203,21 +203,35 @@ int main(int argc, char *argv[]) {
                 auto scan_msg = std::make_shared<sensor_msgs::msg::LaserScan>();
                 auto pc_msg = std::make_shared<sensor_msgs::msg::PointCloud>();
 
+                // Header 和基本信息依然保持不变
                 scan_msg->header.stamp.sec = RCL_NS_TO_S(scan.stamp);
                 scan_msg->header.stamp.nanosec = scan.stamp - RCL_S_TO_NS(scan_msg->header.stamp.sec);
                 scan_msg->header.frame_id = frame_id;
                 pc_msg->header = scan_msg->header;
-                scan_msg->angle_min = scan.config.min_angle;
-                scan_msg->angle_max = scan.config.max_angle;
-                scan_msg->angle_increment = scan.config.angle_increment;
+
+                // --- 【修改开始】强制重采样到 490 个点 ---
+                int target_points = 490;
+
+                // 物理角度范围保持不变
+                double min_angle = scan.config.min_angle;
+                double max_angle = scan.config.max_angle;
+
+                // 核心：重新计算点数固定为 490 后的角度增量
+                double new_angle_increment = (max_angle - min_angle) / (target_points - 1);
+
+                // 更新 scan_msg 的配置
+                scan_msg->angle_min = min_angle;
+                scan_msg->angle_max = max_angle;
+                scan_msg->angle_increment = new_angle_increment;
                 scan_msg->scan_time = scan.config.scan_time;
-                scan_msg->time_increment = scan.config.time_increment;
+                scan_msg->time_increment = scan.config.scan_time / (target_points - 1);
                 scan_msg->range_min = scan.config.min_range;
                 scan_msg->range_max = scan.config.max_range;
 
-                int size = (scan.config.max_angle - scan.config.min_angle) / scan.config.angle_increment + 1;
-                scan_msg->ranges.resize(size);
-                scan_msg->intensities.resize(size);
+                // 重新调整大小并初始化 ranges
+                scan_msg->ranges.assign(target_points, std::numeric_limits<float>::infinity());
+                scan_msg->intensities.assign(target_points, 0.0);
+                // --- 【修改结束】 ---
 
                 pc_msg->channels.resize(2);
                 int idx_intensity = 0;
@@ -225,15 +239,25 @@ int main(int argc, char *argv[]) {
                 int idx_timestamp = 1;
                 pc_msg->channels[idx_timestamp].name = "stamps";
 
+                // --- 【修改开始】映射逻辑 ---
                 for (size_t i = 0; i < scan.points.size(); i++) {
-                    int index = std::ceil((scan.points[i].angle - scan.config.min_angle) / scan.config.angle_increment);
-                    if (index >= 0 && index < size) {
+                    // 计算当前点落到 490 个桶中的哪一个
+                    double angle = scan.points[i].angle;
+                    // 使用 round 找到最近的索引
+                    int index = std::round((angle - min_angle) / new_angle_increment);
+
+                    if (index >= 0 && index < target_points) {
                         if (scan.points[i].range >= scan.config.min_range) {
-                            scan_msg->ranges[index] = scan.points[i].range;
-                            scan_msg->intensities[index] = scan.points[i].intensity;
+                            // 如果同一个桶有多个点，为了建图稳定，通常取距离最近的点
+                            if (scan.points[i].range < scan_msg->ranges[index]) {
+                                scan_msg->ranges[index] = scan.points[i].range;
+                                scan_msg->intensities[index] = scan.points[i].intensity;
+                            }
                         }
                     }
-
+                    // --- 【修改结束】 ---
+                
+                    // PointCloud 的逻辑保持不变，用于 3D 可视化
                     if (scan.points[i].range >= scan.config.min_range &&
                         scan.points[i].range <= scan.config.max_range) {
                         geometry_msgs::msg::Point32 point;
@@ -245,10 +269,9 @@ int main(int argc, char *argv[]) {
                         pc_msg->channels[idx_timestamp].values.push_back(i * scan.config.time_increment);
                     }
                 }
-
+            
                 laser_pub->publish(*scan_msg);
                 pc_pub->publish(*pc_msg);
-                // RCLCPP_INFO(node->get_logger(), "success to get scan");
             } else {
                 RCLCPP_ERROR(node->get_logger(), "Failed to get scan");
                 initialized = false;
