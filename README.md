@@ -22,3 +22,10 @@
 ## rviz2
 ![rviz2](doc/images/rviz2.png)
 
+## 建图（2.5倍速播放）
+![建图](doc/images/建图-2.5倍速.gif)
+
+## 导航（2倍速播放）
+![建图](doc/images/导航-2倍速.gif)
+
+
