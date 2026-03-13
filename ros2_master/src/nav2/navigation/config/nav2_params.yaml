@@ -44,7 +44,7 @@ bt_navigator:
     use_sim_time: False
     global_frame: map
     robot_base_frame: base_footprint
-    odom_topic: /odom
+    odom_topic: /odom_filtered
     bt_loop_duration: 5
     default_server_timeout: 20
     wait_for_service_timeout: 1000
@@ -344,7 +344,7 @@ velocity_smoother:
     min_velocity: [-0.12, 0.0, -0.4]
     max_accel: [1.0, 0.0, 1.5]
     max_decel: [-1.0, 0.0, -1.5]
-    odom_topic: "odom"
+    odom_topic: "odom_filtered"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 2.0

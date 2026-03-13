@@ -58,6 +58,7 @@ def generate_launch_description():
                 control_params_path,
                 {"use_sim_time": use_sim_time},
             ],  # 加载你的参数文件
+            remappings=[("/odometry/filtered", "/odom_filtered")],
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(description_launch_path),

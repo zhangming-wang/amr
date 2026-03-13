@@ -10,11 +10,12 @@
 #include <cstdint>
 #include <string>
 
-class BaseTask {
+template <typename T>
+class BaseTaskSingleton : public Singleton<T> {
 
-protected:
-    BaseTask() = default;
-    virtual ~BaseTask() = default;
+  protected:
+    BaseTaskSingleton() = default;
+    virtual ~BaseTaskSingleton() = default;
 
     virtual void clean_task() {}
     virtual void init_task() {}
@@ -24,11 +25,11 @@ protected:
     uint32_t stack_size_{8192};
     int8_t priority_{1}, core_id_{-1};
 
-    std::string task_name_{"BaseTask"};
+    std::string task_name_{"BaseTaskSingleton"};
 
-public:
-    BaseTask(const BaseTask &) = delete;
-    BaseTask &operator=(const BaseTask &) = delete;
+  public:
+    BaseTaskSingleton(const BaseTaskSingleton &) = delete;
+    BaseTaskSingleton &operator=(const BaseTaskSingleton &) = delete;
 
     virtual void update() { vTaskDelay(pdMS_TO_TICKS(10)); }
 
@@ -72,9 +73,9 @@ public:
         start_task();
     }
 
-private:
+  private:
     static inline void task_loop(void *args) {
-        auto *self = static_cast<BaseTask *>(args);
+        auto *self = static_cast<BaseTaskSingleton *>(args);
 
         self->init_task();
         while (self->enable_task_run_.load()) {
@@ -87,11 +88,11 @@ private:
     }
 };
 
-template <typename T>
-class BaseTaskSingleton : public BaseTask, public Singleton<T> {
-protected:
-    BaseTaskSingleton() = default;
-    ~BaseTaskSingleton() = default;
-};
+// template <typename T>
+// class BaseTaskSingleton : public Singleton<T> {
+//   protected:
+//     BaseTaskSingleton() = default;
+//     ~BaseTaskSingleton() = default;
+// };
 
 #endif // ARDUINO_ARCH_ESP32
